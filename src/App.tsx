@@ -141,6 +141,12 @@ export default function App() {
     ? store.bookings.filter(b => b.status === 'pending' && (!b.preferredDesigner || b.preferredDesigner === user.designerName)).length
     : store.bookings.filter(b => b.status === 'pending').length;
 
+  // 모바일 상단 헤더용 뷰 제목
+  const VIEW_TITLES: Partial<Record<typeof store.currentView, string>> = {
+    dashboard: '대시보드', clients: '고객 관리', bookings: '예약 관리', 'owner-staff': '직원 관리',
+  };
+  const mobileTitle = VIEW_TITLES[store.currentView];
+
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar
@@ -152,7 +158,26 @@ export default function App() {
         onLogout={logout}
         pendingBookings={pendingBookings}
       />
-      <main className="flex-1 overflow-y-auto">
+      {/* 모바일에서는 하단 탭 바 높이(약 68px)만큼 패딩 확보 */}
+      <main className="flex-1 overflow-y-auto pb-20 md:pb-0 min-w-0">
+        {/* 모바일 전용 상단 헤더 */}
+        {mobileTitle && (
+          <header className="md:hidden sticky top-0 z-10 border-b px-4 py-3 flex items-center justify-between"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-black text-xs">J</span>
+              </div>
+              <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{mobileTitle}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
+                <span className="text-rose-600 font-bold text-xs">{user.name.charAt(0)}</span>
+              </div>
+              <span>{user.name}</span>
+            </div>
+          </header>
+        )}
 
         {store.currentView === 'dashboard' && (
           <Dashboard

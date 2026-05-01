@@ -1,0 +1,54 @@
+name: Deploy Hair JJaL to GitHub Pages
+
+on:
+  push:
+    branches: [main]        # main 브랜치에 push 되면 자동 배포
+  workflow_dispatch:         # GitHub Actions 탭에서 수동 실행도 가능
+
+# GitHub Pages 배포에 필요한 권한
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 방지 (이전 배포가 진행 중이어도 최신 것을 우선)
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # ── 1단계: 빌드 ──────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 프로덕션 빌드
+        run: npm run build
+
+      - name: GitHub Pages 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist          # Vite 빌드 결과물 폴더
+
+  # ── 2단계: 배포 ──────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: GitHub Pages에 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

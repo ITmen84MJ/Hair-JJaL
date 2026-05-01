@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 배경 -->
+  <rect width="512" height="512" rx="96" fill="#f43f5e"/>
+  <!-- J 글자 -->
+  <text
+    x="256"
+    y="370"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="320"
+    font-weight="900"
+    fill="white"
+    text-anchor="middle"
+    dominant-baseline="auto"
+  >J</text>
+  <!-- 작은 가위 모양 장식 (우측 하단) -->
+  <circle cx="390" cy="390" r="60" fill="rgba(255,255,255,0.2)"/>
+  <text x="390" y="408" font-family="Arial" font-size="52" fill="white" text-anchor="middle">✂</text>
+</svg>

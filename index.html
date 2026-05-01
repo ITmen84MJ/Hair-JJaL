@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- 모바일 뷰포트 최적화 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- 앱 정보 -->
+    <title>Hair JJaL — 헤어 상담 이력 관리</title>
+    <meta name="description" content="헤어 상담 이력을 쉽게 기록하고 공유하는 서비스입니다." />
+    <meta name="theme-color" content="#f43f5e" />
+
+    <!-- PWA 매니페스트 -->
+    <link rel="manifest" href="/Hair-JJaL/manifest.json" />
+
+    <!-- 파비콘 -->
+    <link rel="icon" type="image/svg+xml" href="/Hair-JJaL/icon.svg" />
+
+    <!-- iOS Safari "홈 화면에 추가" 지원 -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Hair JJaL" />
+    <link rel="apple-touch-icon" href="/Hair-JJaL/apple-touch-icon.png" />
+
+    <!-- 노치/다이나믹 아일랜드 대응 safe-area -->
+    <style>
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

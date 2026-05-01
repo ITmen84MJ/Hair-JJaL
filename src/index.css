@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+    'Noto Sans KR', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+/* ===== Theme CSS Variables ===== */
+:root {
+  --bg-app:        #f9fafb;
+  --bg-card:       #ffffff;
+  --bg-sidebar:    #ffffff;
+  --bg-input:      #ffffff;
+  --bg-hover:      #f9fafb;
+  --bg-muted:      #f3f4f6;
+  --bg-tag:        #fef3c7;
+  --bg-tag-rose:   #fff1f2;
+  --bg-icon-blue:  #eff6ff;
+  --bg-icon-rose:  #fff1f2;
+  --bg-icon-amber: #fffbeb;
+  --bg-icon-green: #f0fdf4;
+  --bg-formula:    #f9fafb;
+  --bg-badge-green:#f0fdf4;
+  --bg-note:       #f9fafb;
+  --text-primary:  #111827;
+  --text-secondary:#6b7280;
+  --text-muted:    #9ca3af;
+  --text-tag:      #92400e;
+  --text-tag-rose: #be123c;
+  --text-icon-blue:#2563eb;
+  --text-icon-rose:#e11d48;
+  --text-icon-amber:#d97706;
+  --text-icon-green:#16a34a;
+  --text-badge-green:#15803d;
+  --border:        #f3f4f6;
+  --border-input:  #e5e7eb;
+  --divider:       #f9fafb;
+  --tooltip-bg:    #ffffff;
+  --chart-grid:    #f0f0f0;
+  --shadow:        0 1px 3px rgba(0,0,0,.08);
+}
+
+.dark {
+  --bg-app:        #0f172a;
+  --bg-card:       #1e293b;
+  --bg-sidebar:    #0f172a;
+  --bg-input:      #334155;
+  --bg-hover:      #334155;
+  --bg-muted:      #334155;
+  --bg-tag:        #451a0340;
+  --bg-tag-rose:   #4c051540;
+  --bg-icon-blue:  #1e3a5f40;
+  --bg-icon-rose:  #4c051540;
+  --bg-icon-amber: #451a0340;
+  --bg-icon-green: #05261040;
+  --bg-formula:    #334155;
+  --bg-badge-green:#05261040;
+  --bg-note:       #334155;
+  --text-primary:  #f1f5f9;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+  --text-tag:      #fbbf24;
+  --text-tag-rose: #fb7185;
+  --text-icon-blue:#60a5fa;
+  --text-icon-rose:#fb7185;
+  --text-icon-amber:#fbbf24;
+  --text-icon-green:#4ade80;
+  --text-badge-green:#4ade80;
+  --border:        #334155;
+  --border-input:  #475569;
+  --divider:       #1e293b;
+  --tooltip-bg:    #1e293b;
+  --chart-grid:    #334155;
+  --shadow:        0 1px 3px rgba(0,0,0,.4);
+}
+
+/* ===== Theme-aware utility classes ===== */
+.theme-bg-app    { background-color: var(--bg-app); }
+.theme-bg-card   { background-color: var(--bg-card); }
+.theme-bg-sidebar{ background-color: var(--bg-sidebar); }
+.theme-bg-input  { background-color: var(--bg-input); }
+.theme-bg-hover:hover { background-color: var(--bg-hover); }
+.theme-bg-muted  { background-color: var(--bg-muted); }
+.theme-text-primary   { color: var(--text-primary); }
+.theme-text-secondary { color: var(--text-secondary); }
+.theme-text-muted     { color: var(--text-muted); }
+.theme-border    { border-color: var(--border); }
+.theme-border-input { border-color: var(--border-input); }
+.theme-divide > * + * { border-color: var(--divider); }
+.theme-shadow    { box-shadow: var(--shadow); }
+
+/* ===== Smooth scrollbar ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #fda4af; border-radius: 99px; }

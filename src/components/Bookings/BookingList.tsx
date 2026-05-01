@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { CalendarDays, Clock, CheckCircle2, XCircle, User, Scissors, MessageSquare, ChevronDown } from 'lucide-react';
 import { Booking, BookingStatus, AuthUser } from '../../types';
-import { SERVICE_LABELS } from '../Consultations/serviceLabels';
+import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 
 interface Props {
   bookings: Booking[];
@@ -13,10 +13,10 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
-const STATUS_INFO: Record<BookingStatus, { label: string; cls: string }> = {
-  pending:   { label: '대기중',  cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  confirmed: { label: '확정',    cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  cancelled: { label: '취소',    cls: 'bg-gray-100 text-gray-500 border-gray-200' },
+const STATUS_STYLES: Record<BookingStatus, { label: string; bg: string; border: string; text: string }> = {
+  pending:   { label: '대기중', bg: 'var(--bg-warning)', border: 'var(--border-warning)', text: 'var(--text-warning)' },
+  confirmed: { label: '확정',   bg: 'var(--bg-success)', border: 'var(--border-success)', text: 'var(--text-success)' },
+  cancelled: { label: '취소',   bg: 'var(--bg-neutral)', border: 'var(--border-neutral)', text: 'var(--text-neutral)' },
 };
 
 const TABS: { id: BookingStatus | 'all'; label: string }[] = [
@@ -116,7 +116,7 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
       ) : (
         <div className="space-y-3">
           {sorted.map(b => {
-            const { label, cls } = STATUS_INFO[b.status];
+            const ss = STATUS_STYLES[b.status];
             const isOpen = expanded === b.id;
             return (
               <div key={b.id} className="rounded-2xl border overflow-hidden" style={card}>
@@ -131,7 +131,8 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                         <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                           {b.clientName}
                         </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${cls}`}>{label}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full border font-medium"
+                          style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.text }}>{ss.label}</span>
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-0.5">
                         <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -151,7 +152,7 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {b.serviceTypes.map(s => (
-                          <span key={s} className="text-xs px-2 py-0.5 rounded-full bg-rose-50 text-rose-600">
+                          <span key={s} className={`text-xs px-2 py-0.5 rounded-full ${SERVICE_COLORS[s]}`}>
                             {SERVICE_LABELS[s]}
                           </span>
                         ))}
@@ -172,7 +173,8 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                       </div>
                     )}
                     {b.cancelReason && (
-                      <p className="text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600">취소 사유: {b.cancelReason}</p>
+                      <p className="text-xs px-3 py-2 rounded-lg"
+                        style={{ backgroundColor: 'var(--bg-danger)', color: 'var(--text-danger)' }}>취소 사유: {b.cancelReason}</p>
                     )}
                     {b.confirmedBy && b.status === 'confirmed' && (
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>확정: {b.confirmedBy}</p>
@@ -189,8 +191,10 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                         </button>
                         <button
                           onClick={() => setCancelTarget(b.id)}
-                          className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                          className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors"
                           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                          onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-danger)'; el.style.color = 'var(--text-danger)'; el.style.borderColor = 'var(--border-danger)'; }}
+                          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.color = 'var(--text-secondary)'; el.style.borderColor = 'var(--border)'; }}
                         >
                           <XCircle size={14} /> 취소
                         </button>
@@ -199,8 +203,10 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                     {b.status === 'confirmed' && (
                       <button
                         onClick={() => setCancelTarget(b.id)}
-                        className="flex items-center gap-1.5 w-full justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                        className="flex items-center gap-1.5 w-full justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                        onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-danger)'; el.style.color = 'var(--text-danger)'; el.style.borderColor = 'var(--border-danger)'; }}
+                        onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.color = 'var(--text-secondary)'; el.style.borderColor = 'var(--border)'; }}
                       >
                         <XCircle size={14} /> 예약 취소
                       </button>

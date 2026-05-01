@@ -14,10 +14,10 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
-const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.ElementType; cls: string }> = {
-  pending:   { label: '대기중',  Icon: HourglassIcon,  cls: 'text-amber-600 bg-amber-50'  },
-  confirmed: { label: '확정',    Icon: CheckCircle2,   cls: 'text-emerald-600 bg-emerald-50' },
-  cancelled: { label: '취소됨',  Icon: XCircle,        cls: 'text-gray-400 bg-gray-50'    },
+const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.ElementType; bg: string; text: string }> = {
+  pending:   { label: '대기중', Icon: HourglassIcon, bg: 'var(--bg-warning)', text: 'var(--text-warning)' },
+  confirmed: { label: '확정',   Icon: CheckCircle2,  bg: 'var(--bg-success)', text: 'var(--text-success)' },
+  cancelled: { label: '취소됨', Icon: XCircle,       bg: 'var(--bg-neutral)', text: 'var(--text-neutral)' },
 };
 
 export function CustomerHome({ client, consultations, bookings, onSelectConsultation, onNewBooking }: Props) {
@@ -46,15 +46,16 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
     <div className="p-5 space-y-5 max-w-lg mx-auto" style={{ backgroundColor: 'var(--bg-app)' }}>
 
       {/* Welcome */}
-      <div className="rounded-2xl p-5 border" style={{ ...card, background: 'linear-gradient(135deg, #fff1f2, #fff9f0)' }}>
+      <div className="rounded-2xl p-5 border" style={{ ...card, backgroundColor: 'var(--bg-card-warm)' }}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-rose-200 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl font-bold text-rose-600">{client.name.charAt(0)}</span>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+              <span className="text-2xl font-bold" style={{ color: 'var(--text-icon-rose)' }}>{client.name.charAt(0)}</span>
             </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">{client.name} 고객님</p>
-              <p className="text-sm text-gray-500">방문 {consultations.length}회 · 총 {totalSpend.toLocaleString()}원</p>
+              <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{client.name} 고객님</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>방문 {consultations.length}회 · 총 {totalSpend.toLocaleString()}원</p>
             </div>
           </div>
           {/* 예약 버튼 */}
@@ -75,10 +76,11 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
             <Calendar size={16} className="text-rose-400" /> 나의 예약
           </h2>
           {myBookings.map(b => {
-            const { label, Icon, cls } = BOOKING_STATUS[b.status];
+            const { label, Icon, bg, text } = BOOKING_STATUS[b.status];
             return (
               <div key={b.id} className="rounded-2xl border p-4 flex items-center gap-4" style={card}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cls}`}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: bg, color: text }}>
                   <Icon size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -96,7 +98,8 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
                     <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{b.preferredDesigner} 디자이너</p>
                   )}
                 </div>
-                <span className={`text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0 ${cls}`}>{label}</span>
+                <span className="text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0"
+                  style={{ backgroundColor: bg, color: text }}>{label}</span>
               </div>
             );
           })}
@@ -105,16 +108,18 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
 
       {/* Next visit recommendation */}
       {next?.nextVisitDate && (
-        <div className="rounded-2xl p-4 bg-amber-50 border border-amber-100 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <Clock size={18} className="text-amber-600" />
+        <div className="rounded-2xl p-4 border flex items-center gap-3"
+          style={{ backgroundColor: 'var(--bg-warning)', borderColor: 'var(--border-warning)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'var(--bg-warning-soft)' }}>
+            <Clock size={18} style={{ color: 'var(--text-warning)' }} />
           </div>
           <div className="flex-1">
-            <p className="text-xs font-semibold text-amber-600">다음 방문 권장일</p>
-            <p className="text-sm font-bold text-amber-900">
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-warning)' }}>다음 방문 권장일</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--text-warning-2)' }}>
               {format(parseISO(next.nextVisitDate), 'yyyy년 M월 d일 (EEE)', { locale: ko })}
             </p>
-            {next.nextVisitNote && <p className="text-xs text-amber-700">{next.nextVisitNote}</p>}
+            {next.nextVisitNote && <p className="text-xs" style={{ color: 'var(--text-warning)' }}>{next.nextVisitNote}</p>}
           </div>
           <button onClick={onNewBooking}
             className="flex-shrink-0 text-xs px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-medium">

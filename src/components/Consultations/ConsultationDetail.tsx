@@ -110,10 +110,11 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
       )}
 
       {con.nextVisitDate && (
-        <div className="rounded-2xl p-4 bg-amber-50 border border-amber-100">
-          <p className="text-xs font-medium text-amber-700 mb-1">다음 방문 예정</p>
-          <p className="text-sm font-semibold text-amber-900">{format(parseISO(con.nextVisitDate), 'yyyy년 M월 d일', { locale: ko })}</p>
-          {con.nextVisitNote && <p className="text-sm text-amber-700 mt-0.5">{con.nextVisitNote}</p>}
+        <div className="rounded-2xl p-4 border"
+          style={{ backgroundColor: 'var(--bg-warning)', borderColor: 'var(--border-warning)' }}>
+          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-warning)' }}>다음 방문 예정</p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-warning-2)' }}>{format(parseISO(con.nextVisitDate), 'yyyy년 M월 d일', { locale: ko })}</p>
+          {con.nextVisitNote && <p className="text-sm mt-0.5" style={{ color: 'var(--text-warning)' }}>{con.nextVisitNote}</p>}
         </div>
       )}
 

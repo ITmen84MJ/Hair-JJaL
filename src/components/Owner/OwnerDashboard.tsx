@@ -236,15 +236,19 @@ export function OwnerDashboard({ clients, consultations, designers, onAddDesigne
               <div key={d.id} className="rounded-2xl border p-4" style={{ ...card, opacity: d.status === 'inactive' ? 0.7 : 1 }}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0
-                      ${d.status === 'active' ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-400'}`}>
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0"
+                      style={d.status === 'active'
+                        ? { backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' }
+                        : { backgroundColor: 'var(--bg-neutral)', color: 'var(--text-neutral)' }}>
                       {d.name.charAt(0)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{d.name}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          d.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                          style={d.status === 'active'
+                            ? { backgroundColor: 'var(--bg-success)', color: 'var(--text-success)' }
+                            : { backgroundColor: 'var(--bg-neutral)', color: 'var(--text-neutral)' }}>
                           {d.status === 'active' ? '재직' : `퇴직 (${d.leftReason ?? ''})`}
                         </span>
                       </div>
@@ -280,14 +284,18 @@ export function OwnerDashboard({ clients, consultations, designers, onAddDesigne
                 <div className="flex gap-2 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
                   {d.status === 'active' ? (
                     <button onClick={() => setLeavingDesigner(d)}
-                      className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-red-50 hover:border-red-300 hover:text-red-600"
-                      style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                      className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-danger)'; el.style.borderColor = 'var(--border-danger)'; el.style.color = 'var(--text-danger)'; }}
+                      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-secondary)'; }}>
                       <UserX size={12} /> 퇴직 처리
                     </button>
                   ) : (
                     <button onClick={() => handleReactivate(d.id)}
-                      className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600"
-                      style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                      className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-success)'; el.style.borderColor = 'var(--border-success)'; el.style.color = 'var(--text-success)'; }}
+                      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.borderColor = 'var(--border)'; el.style.color = 'var(--text-secondary)'; }}>
                       <UserCheck size={12} /> 재활성화
                     </button>
                   )}

@@ -29,6 +29,7 @@ body {
   --bg-formula:    #f9fafb;
   --bg-badge-green:#f0fdf4;
   --bg-note:       #f9fafb;
+  --bg-card-warm:  #fff1f2;
   --text-primary:  #111827;
   --text-secondary:#6b7280;
   --text-muted:    #9ca3af;
@@ -45,6 +46,47 @@ body {
   --tooltip-bg:    #ffffff;
   --chart-grid:    #f0f0f0;
   --shadow:        0 1px 3px rgba(0,0,0,.08);
+
+  /* Semantic: warning (amber) */
+  --bg-warning:      #fffbeb;
+  --bg-warning-soft: #fef3c7;
+  --border-warning:  #fde68a;
+  --text-warning:    #b45309;
+  --text-warning-2:  #92400e;
+
+  /* Semantic: success (emerald) */
+  --bg-success:      #ecfdf5;
+  --border-success:  #a7f3d0;
+  --text-success:    #047857;
+
+  /* Semantic: danger (red) */
+  --bg-danger:       #fef2f2;
+  --border-danger:   #fecaca;
+  --text-danger:     #b91c1c;
+
+  /* Semantic: neutral (gray) */
+  --bg-neutral:      #f3f4f6;
+  --border-neutral:  #e5e7eb;
+  --text-neutral:    #6b7280;
+
+  /* Nav active */
+  --nav-active-bg:   #fff1f2;
+
+  /* Role badges */
+  --role-designer-bg:   #fff1f2;  --role-designer-text:  #e11d48;
+  --role-owner-bg:      #fffbeb;  --role-owner-text:     #b45309;
+  --role-customer-bg:   #eff6ff;  --role-customer-text:  #1d4ed8;
+
+  /* Service tag colors */
+  --svc-cut-bg:      #eff6ff;  --svc-cut-text:      #1d4ed8;
+  --svc-color-bg:    #fff1f2;  --svc-color-text:    #be123c;
+  --svc-bleach-bg:   #fefce8;  --svc-bleach-text:   #a16207;
+  --svc-perm-bg:     #faf5ff;  --svc-perm-text:     #7e22ce;
+  --svc-straight-bg: #eef2ff;  --svc-straight-text: #4338ca;
+  --svc-treat-bg:    #f0fdf4;  --svc-treat-text:    #15803d;
+  --svc-scalp-bg:    #f0fdfa;  --svc-scalp-text:    #0f766e;
+  --svc-styling-bg:  #fdf4ff;  --svc-styling-text:  #a21caf;
+  --svc-other-bg:    #f9fafb;  --svc-other-text:    #4b5563;
 }
 
 .dark {
@@ -63,6 +105,7 @@ body {
   --bg-formula:    #334155;
   --bg-badge-green:#05261040;
   --bg-note:       #334155;
+  --bg-card-warm:  #2d1b1e;
   --text-primary:  #f1f5f9;
   --text-secondary:#94a3b8;
   --text-muted:    #64748b;
@@ -79,6 +122,47 @@ body {
   --tooltip-bg:    #1e293b;
   --chart-grid:    #334155;
   --shadow:        0 1px 3px rgba(0,0,0,.4);
+
+  /* Semantic: warning (amber) */
+  --bg-warning:      #451a0340;
+  --bg-warning-soft: #451a0360;
+  --border-warning:  #92400e70;
+  --text-warning:    #fbbf24;
+  --text-warning-2:  #fde68a;
+
+  /* Semantic: success (emerald) */
+  --bg-success:      #05261040;
+  --border-success:  #06542870;
+  --text-success:    #34d399;
+
+  /* Semantic: danger (red) */
+  --bg-danger:       #4c051540;
+  --border-danger:   #b91c1c70;
+  --text-danger:     #f87171;
+
+  /* Semantic: neutral (gray) */
+  --bg-neutral:      #33415550;
+  --border-neutral:  #475569;
+  --text-neutral:    #94a3b8;
+
+  /* Nav active */
+  --nav-active-bg:   #4c051530;
+
+  /* Role badges */
+  --role-designer-bg:   #4c051535;  --role-designer-text:  #fb7185;
+  --role-owner-bg:      #451a0335;  --role-owner-text:     #fbbf24;
+  --role-customer-bg:   #1e3a5f35;  --role-customer-text:  #60a5fa;
+
+  /* Service tag colors */
+  --svc-cut-bg:      #1e3a5f40;  --svc-cut-text:      #60a5fa;
+  --svc-color-bg:    #4c051540;  --svc-color-text:    #fb7185;
+  --svc-bleach-bg:   #451a0340;  --svc-bleach-text:   #fbbf24;
+  --svc-perm-bg:     #3b076440;  --svc-perm-text:     #c084fc;
+  --svc-straight-bg: #1e1b4b40;  --svc-straight-text: #818cf8;
+  --svc-treat-bg:    #05261040;  --svc-treat-text:    #4ade80;
+  --svc-scalp-bg:    #04352a40;  --svc-scalp-text:    #2dd4bf;
+  --svc-styling-bg:  #4a044e40;  --svc-styling-text:  #e879f9;
+  --svc-other-bg:    #33415540;  --svc-other-text:    #94a3b8;
 }
 
 /* ===== Theme-aware utility classes ===== */
@@ -95,6 +179,17 @@ body {
 .theme-border-input { border-color: var(--border-input); }
 .theme-divide > * + * { border-color: var(--divider); }
 .theme-shadow    { box-shadow: var(--shadow); }
+
+/* ===== Service tag classes (theme-aware) ===== */
+.svc-cut      { background-color: var(--svc-cut-bg);      color: var(--svc-cut-text); }
+.svc-color    { background-color: var(--svc-color-bg);    color: var(--svc-color-text); }
+.svc-bleach   { background-color: var(--svc-bleach-bg);   color: var(--svc-bleach-text); }
+.svc-perm     { background-color: var(--svc-perm-bg);     color: var(--svc-perm-text); }
+.svc-straight { background-color: var(--svc-straight-bg); color: var(--svc-straight-text); }
+.svc-treat    { background-color: var(--svc-treat-bg);    color: var(--svc-treat-text); }
+.svc-scalp    { background-color: var(--svc-scalp-bg);    color: var(--svc-scalp-text); }
+.svc-styling  { background-color: var(--svc-styling-bg);  color: var(--svc-styling-text); }
+.svc-other    { background-color: var(--svc-other-bg);    color: var(--svc-other-text); }
 
 /* ===== Smooth scrollbar ===== */
 ::-webkit-scrollbar { width: 5px; }

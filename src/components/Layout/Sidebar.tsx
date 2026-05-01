@@ -1,3 +1,4 @@
+import React from 'react';
 import { LayoutDashboard, Users, Sun, Moon, LogOut, Crown, CalendarDays } from 'lucide-react';
 import { View, AuthUser, ROLE_LABELS } from '../../types';
 
@@ -25,10 +26,10 @@ const NAV_ITEMS: Record<string, { id: View; label: string; Icon: React.ElementTy
   ],
 };
 
-const ROLE_BADGE: Record<string, string> = {
-  designer: 'bg-rose-50 text-rose-600',
-  owner: 'bg-amber-50 text-amber-700',
-  customer: 'bg-blue-50 text-blue-600',
+const ROLE_BADGE_STYLE: Record<string, React.CSSProperties> = {
+  designer: { backgroundColor: 'var(--role-designer-bg)', color: 'var(--role-designer-text)' },
+  owner:    { backgroundColor: 'var(--role-owner-bg)',    color: 'var(--role-owner-text)'    },
+  customer: { backgroundColor: 'var(--role-customer-bg)', color: 'var(--role-customer-text)' },
 };
 
 export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, onLogout, pendingBookings = 0 }: Props) {
@@ -65,7 +66,8 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-              <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${ROLE_BADGE[user.role] ?? ''}`}>
+              <span className="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                style={ROLE_BADGE_STYLE[user.role] ?? {}}>
                 {ROLE_LABELS[user.role]}
               </span>
             </div>
@@ -76,8 +78,10 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
         <nav className="flex-1 px-3 py-4 space-y-1">
           {items.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => onNavigate(id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(id) ? 'bg-rose-50 text-rose-600' : ''}`}
-              style={!isActive(id) ? { color: 'var(--text-secondary)' } : {}}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              style={isActive(id)
+                ? { backgroundColor: 'var(--nav-active-bg)', color: 'var(--role-designer-text)' }
+                : { color: 'var(--text-secondary)' }}
               onMouseEnter={e => { if (!isActive(id)) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
               onMouseLeave={e => { if (!isActive(id)) (e.currentTarget as HTMLElement).style.backgroundColor = ''; }}
             >

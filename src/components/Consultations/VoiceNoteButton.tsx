@@ -91,16 +91,18 @@ export function VoiceNoteButton({ onAppend }: Props) {
 
       {/* 권한 오류 안내 박스 */}
       {err && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 flex gap-2">
-          <AlertCircle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="rounded-xl border px-3 py-2.5 flex gap-2"
+          style={{ backgroundColor: 'var(--bg-warning)', borderColor: 'var(--border-warning)' }}>
+          <AlertCircle size={15} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-warning)' }} />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-amber-800">{err.title}</p>
-            <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">{err.hint}</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-warning-2)' }}>{err.title}</p>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-warning)' }}>{err.hint}</p>
             {err.canRetry && (
               <button
                 type="button"
                 onClick={handleClick}
-                className="mt-1.5 text-xs font-medium text-amber-700 underline underline-offset-2 hover:text-amber-900"
+                className="mt-1.5 text-xs font-medium underline underline-offset-2"
+                style={{ color: 'var(--text-warning-2)' }}
               >
                 다시 시도하기
               </button>
@@ -109,7 +111,8 @@ export function VoiceNoteButton({ onAppend }: Props) {
           <button
             type="button"
             onClick={() => setErrorCode('')}
-            className="flex-shrink-0 text-amber-400 hover:text-amber-600 mt-0.5"
+            className="flex-shrink-0 mt-0.5 transition-opacity hover:opacity-70"
+            style={{ color: 'var(--text-warning)' }}
           >
             <X size={13} />
           </button>

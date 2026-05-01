@@ -120,8 +120,10 @@ export default function App() {
     : store.consultations;
 
   const visibleClientIds = new Set(visibleConsultations.map(c => c.clientId));
+  // Clients with no consultations at all are treated as "new/unassigned" — visible to all designers
+  const clientsWithAnyCon = new Set(store.consultations.map(c => c.clientId));
   const visibleClients = isDesigner
-    ? store.clients.filter(c => visibleClientIds.has(c.id))
+    ? store.clients.filter(c => visibleClientIds.has(c.id) || !clientsWithAnyCon.has(c.id))
     : store.clients;
 
   const selectedClient = store.selectedClientId

@@ -22,6 +22,7 @@ interface Props {
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
   onUpdateClient: (id: string, data: Partial<Client>) => void;
+  onCancelBooking: (id: string) => void;
 }
 
 type CustomerTab = 'home' | 'bookings' | 'profile';
@@ -86,7 +87,7 @@ export function CustomerLayout({
   user, client, consultations, bookings, shopName,
   currentView, selectedConsultationId,
   isDark, onToggleTheme, onLogout, onNavigate,
-  onSelectConsultation, onNewBooking, onUpdateClient,
+  onSelectConsultation, onNewBooking, onUpdateClient, onCancelBooking,
 }: Props) {
   // P2-14: 탭 선택을 sessionStorage에 유지
   const [tab, setTab] = useState<CustomerTab>(() => {
@@ -94,6 +95,8 @@ export function CustomerLayout({
     return (saved as CustomerTab) ?? 'home';
   });
   const [editingProfile, setEditingProfile] = useState(false);
+  // 취소 확인 중인 예약 ID
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   const switchTab = (t: CustomerTab) => {
     setTab(t);
@@ -152,8 +155,12 @@ export function CustomerLayout({
           </button>
         </div>
         {active.map(b => {
-          const isPending = b.status === 'pending';
+          const isPending   = b.status === 'pending';
           const isConfirmed = b.status === 'confirmed';
+          const isCancelling = confirmCancelId === b.id;
+          // 오늘 이후 예약만 취소 가능
+          const today = new Date().toISOString().slice(0, 10);
+          const canCancel = b.requestedDate >= today;
           return (
             <div key={b.id} className="rounded-2xl border p-4 space-y-2" style={card}>
               <div className="flex items-center justify-between">
@@ -179,6 +186,41 @@ export function CustomerLayout({
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>담당: {b.preferredDesigner} 디자이너</p>
               )}
               {b.notes && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{b.notes}</p>}
+
+              {/* 취소 영역 */}
+              {canCancel && (
+                isCancelling ? (
+                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
+                      예약을 취소하시겠어요? 취소 후에는 되돌릴 수 없습니다.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmCancelId(null)}
+                        className="flex-1 py-1.5 rounded-xl border text-xs font-medium"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                        아니요
+                      </button>
+                      <button
+                        onClick={() => { onCancelBooking(b.id); setConfirmCancelId(null); }}
+                        className="flex-1 py-1.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-semibold">
+                        예약 취소
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <button
+                      onClick={() => setConfirmCancelId(b.id)}
+                      className="text-xs transition-colors"
+                      style={{ color: 'var(--text-muted)' }}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}>
+                      예약 취소
+                    </button>
+                  </div>
+                )
+              )}
             </div>
           );
         })}

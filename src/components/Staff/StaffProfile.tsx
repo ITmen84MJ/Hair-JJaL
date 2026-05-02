@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
+  Download, Upload, HardDrive,
 } from 'lucide-react';
+import { exportData, importData, getStorageUsage } from '../../utils/backup';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Designer, Shop, Consultation, Booking, ROLE_LABELS } from '../../types';
@@ -89,6 +91,19 @@ export function StaffProfile({
     setShopAddress(shop?.address ?? '');
     setShopPhone(shop?.phone ?? '');
     setEditShop(false);
+  };
+
+  /* ── 데이터 관리 ── */
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { usedMB, percent } = getStorageUsage();
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ok = await importData(file);
+    setImportStatus(ok ? 'success' : 'error');
+    if (ok) setTimeout(() => window.location.reload(), 1200);
+    e.target.value = '';
   };
 
   /* ── 역할 색 ── */
@@ -333,6 +348,68 @@ export function StaffProfile({
           )}
         </div>
       )}
+      {/* ── 데이터 관리 ── */}
+      <div className="rounded-2xl border p-5 space-y-4" style={card}>
+        <div className="flex items-center gap-2">
+          <HardDrive size={14} style={{ color: 'var(--text-muted)' }} />
+          <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>데이터 관리</h3>
+        </div>
+
+        {/* 저장소 사용량 게이지 */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>저장소 사용량</span>
+            <span className="text-xs font-medium" style={{ color: percent >= 80 ? '#ef4444' : 'var(--text-secondary)' }}>
+              {usedMB} MB / 약 5 MB ({percent}%)
+            </span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-muted)' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${percent}%`,
+                backgroundColor: percent >= 80 ? '#ef4444' : percent >= 60 ? '#f97316' : '#f43f5e',
+              }}
+            />
+          </div>
+          {percent >= 80 && (
+            <p className="text-xs mt-1 text-red-500">⚠ 저장공간이 부족합니다. 데이터를 내보낸 후 정리를 권장합니다.</p>
+          )}
+        </div>
+
+        {/* 액션 버튼 */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={exportData}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            <Download size={13} /> 데이터 내보내기
+          </button>
+
+          {/* 가져오기는 원장만 */}
+          {isOwner && (
+            <>
+              <button
+                onClick={() => importRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                <Upload size={13} /> 데이터 가져오기
+              </button>
+              <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+            </>
+          )}
+        </div>
+
+        {importStatus === 'success' && (
+          <p className="text-xs text-emerald-600">✓ 가져오기 성공! 잠시 후 새로고침됩니다.</p>
+        )}
+        {importStatus === 'error' && (
+          <p className="text-xs text-red-500">✗ 가져오기 실패. Hair JJaL 백업 파일인지 확인해 주세요.</p>
+        )}
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          내보내기 파일은 JSON 형식으로 저장됩니다. 가져오기 시 현재 데이터를 덮어씁니다.
+        </p>
+      </div>
     </div>
   );
 }

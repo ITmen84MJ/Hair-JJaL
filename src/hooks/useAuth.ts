@@ -84,10 +84,27 @@ export function useAuth() {
     });
   }, []);
 
+  // 3-3: 디자이너 정보 변경(이름·이메일) 시 extra_users 계정 동기화
+  // OwnerDashboard 또는 StaffProfile에서 Designer를 수정할 때 함께 호출
+  const updateExtraUser = useCallback((designerId: string, data: { name?: string; email?: string }) => {
+    const extras = loadExtraUsers();
+    const updated = extras.map(u =>
+      u.designerId === designerId ? { ...u, ...data } : u
+    );
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(updated));
+    // 현재 로그인된 유저가 대상 디자이너라면 세션도 갱신
+    setUser(prev => {
+      if (!prev || prev.designerId !== designerId) return prev;
+      const updatedUser = { ...prev, ...data };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
     setUser(null);
   }, []);
 
-  return { user, login, loginAs, logout, addDesignerAccount, updateName };
+  return { user, login, loginAs, logout, addDesignerAccount, updateName, updateExtraUser };
 }

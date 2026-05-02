@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
-import { X, Plus, Trash2, Upload, Image } from 'lucide-react';
+import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
-import { inputCls as sharedInputCls, inputStyle } from '../../styles/form';
+import { inputCls as sharedInputCls } from '../../styles/form';
+import { compressImage } from '../../utils/imageCompress';
+import { useFormulaTemplates } from '../../hooks/useFormulaTemplates';
 
 interface Props {
   clientId: string;
@@ -28,11 +30,16 @@ function PhotoUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => onChange(ev.target?.result as string);
+    reader.onload = async (ev) => {
+      const raw = ev.target?.result as string;
+      // 이미지 압축: 최대 1280px, JPEG 80% 품질
+      const compressed = await compressImage(raw);
+      onChange(compressed);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -68,6 +75,10 @@ function PhotoUpload({
 
 export function ConsultationForm({ clientId, clientName, initial, designers, lastConsultation, onSave, onClose }: Props) {
   const [showLastVisit, setShowLastVisit] = useState(false);
+  const { templates, addTemplate, removeTemplate } = useFormulaTemplates();
+  const [showColorTpl, setShowColorTpl] = useState(false);
+  const [showPermTpl,  setShowPermTpl]  = useState(false);
+
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
     stylistName: initial?.stylistName ?? '',
@@ -242,15 +253,96 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* 컬러 포뮬러 + 템플릿 */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">컬러 포뮬러</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">컬러 포뮬러</label>
+                <div className="flex items-center gap-1">
+                  {form.colorFormula.trim() && (
+                    <button type="button" title="현재 포뮬러 저장"
+                      onClick={() => addTemplate('color', form.colorFormula)}
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors"
+                      style={{ color: 'var(--text-muted)' }}>
+                      <Bookmark size={10} /> 저장
+                    </button>
+                  )}
+                  {templates.color.length > 0 && (
+                    <button type="button"
+                      onClick={() => setShowColorTpl(v => !v)}
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors"
+                      style={{ color: 'var(--text-muted)' }}>
+                      <ChevronDown size={10} /> 저장됨 {templates.color.length}
+                    </button>
+                  )}
+                </div>
+              </div>
               <textarea value={form.colorFormula} onChange={e => setField('colorFormula', e.target.value)} rows={2}
                 className={`${inputCls} resize-none`} placeholder="예: Wella 7/0 + 6% (1:1.5)" />
+              {showColorTpl && templates.color.length > 0 && (
+                <div className="mt-1 p-2 rounded-lg border space-y-1 max-h-32 overflow-y-auto"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-muted)' }}>
+                  {templates.color.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between gap-1 group">
+                      <button type="button"
+                        onClick={() => { setField('colorFormula', t); setShowColorTpl(false); }}
+                        className="flex-1 text-left text-[11px] truncate hover:text-rose-500 transition-colors"
+                        style={{ color: 'var(--text-secondary)' }}>
+                        {t}
+                      </button>
+                      <button type="button" onClick={() => removeTemplate('color', t)}
+                        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity flex-shrink-0">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* 펌 포뮬러 + 템플릿 */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">펌 포뮬러</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">펌 포뮬러</label>
+                <div className="flex items-center gap-1">
+                  {form.permFormula.trim() && (
+                    <button type="button" title="현재 포뮬러 저장"
+                      onClick={() => addTemplate('perm', form.permFormula)}
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors"
+                      style={{ color: 'var(--text-muted)' }}>
+                      <Bookmark size={10} /> 저장
+                    </button>
+                  )}
+                  {templates.perm.length > 0 && (
+                    <button type="button"
+                      onClick={() => setShowPermTpl(v => !v)}
+                      className="text-[10px] flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-rose-50 transition-colors"
+                      style={{ color: 'var(--text-muted)' }}>
+                      <ChevronDown size={10} /> 저장됨 {templates.perm.length}
+                    </button>
+                  )}
+                </div>
+              </div>
               <textarea value={form.permFormula} onChange={e => setField('permFormula', e.target.value)} rows={2}
                 className={`${inputCls} resize-none`} placeholder="예: 1액 15분, 2액 10분" />
+              {showPermTpl && templates.perm.length > 0 && (
+                <div className="mt-1 p-2 rounded-lg border space-y-1 max-h-32 overflow-y-auto"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-muted)' }}>
+                  {templates.perm.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between gap-1 group">
+                      <button type="button"
+                        onClick={() => { setField('permFormula', t); setShowPermTpl(false); }}
+                        className="flex-1 text-left text-[11px] truncate hover:text-rose-500 transition-colors"
+                        style={{ color: 'var(--text-secondary)' }}>
+                        {t}
+                      </button>
+                      <button type="button" onClick={() => removeTemplate('perm', t)}
+                        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity flex-shrink-0">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

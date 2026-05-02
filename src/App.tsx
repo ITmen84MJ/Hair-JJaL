@@ -20,7 +20,7 @@ const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').th
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, updateName } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, updateName, updateExtraUser } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -100,6 +100,7 @@ export default function App() {
         onSelectConsultation={id => store.navigate('customer-consultation', undefined, id)}
         onNewBooking={() => store.navigate('customer-booking')}
         onUpdateClient={(id, data) => store.updateClient(id, data)}
+        onCancelBooking={id => store.updateBooking(id, { status: 'cancelled', cancelReason: '고객 취소' })}
       />
       </ErrorBoundary>
     );
@@ -260,7 +261,13 @@ export default function App() {
                   password,
                 });
               }}
-              onUpdateDesigner={store.updateDesigner}
+              onUpdateDesigner={(id, data) => {
+                store.updateDesigner(id, data);
+                // 3-3: 이름·이메일 변경 시 로그인 계정 동기화
+                if (data.name !== undefined || data.email !== undefined) {
+                  updateExtraUser(id, { name: data.name, email: data.email });
+                }
+              }}
               onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
             />
           </Suspense>
@@ -275,7 +282,13 @@ export default function App() {
             shopConsultations={shopConsultations}
             shopDesigners={shopDesigners}
             shopBookings={shopBookings}
-            onUpdateDesigner={store.updateDesigner}
+            onUpdateDesigner={(id, data) => {
+              store.updateDesigner(id, data);
+              // 3-3: 이름·이메일 변경 시 로그인 계정 동기화
+              if (data.name !== undefined || data.email !== undefined) {
+                updateExtraUser(id, { name: data.name, email: data.email });
+              }
+            }}
             onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
             onUpdateName={updateName}
           />

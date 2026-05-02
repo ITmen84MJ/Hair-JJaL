@@ -4,18 +4,25 @@ import { mockClients, mockConsultations, mockDesigners, mockBookings, mockShops 
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'hairlog_data';
+// 버전을 올리면 구버전 localStorage를 자동으로 초기화합니다.
+// shopId 추가(v2), designerId + 오컬러 계정(v3) 등 스키마 변경 시 반드시 올릴 것.
+const DATA_VERSION = 3;
 
-function loadFromStorage(): {
-  clients: Client[];
-  consultations: Consultation[];
-  designers: Designer[];
-  bookings: Booking[];
-  shops: Shop[];
-} {
+const MOCK_DEFAULTS = () => ({
+  clients: mockClients, consultations: mockConsultations,
+  designers: mockDesigners, bookings: mockBookings, shops: mockShops,
+});
+
+function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const p = JSON.parse(raw);
+      // 버전 불일치 → 구버전 데이터 파기, 새 mockData 사용
+      if (p.version !== DATA_VERSION) {
+        localStorage.removeItem(STORAGE_KEY);
+        return MOCK_DEFAULTS();
+      }
       return {
         clients:       p.clients       ?? mockClients,
         consultations: p.consultations ?? mockConsultations,
@@ -25,17 +32,17 @@ function loadFromStorage(): {
       };
     }
   } catch {}
-  return {
-    clients: mockClients, consultations: mockConsultations,
-    designers: mockDesigners, bookings: mockBookings, shops: mockShops,
-  };
+  return MOCK_DEFAULTS();
 }
 
 function save(
   clients: Client[], consultations: Consultation[],
   designers: Designer[], bookings: Booking[], shops: Shop[],
 ) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, consultations, designers, bookings, shops }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    version: DATA_VERSION,
+    clients, consultations, designers, bookings, shops,
+  }));
 }
 
 export function useStore() {

@@ -81,6 +81,16 @@ export const demoUsers: AuthUser[] = [
     designerId: 'd4',
   },
   {
+    id: 'u8',                          // 오컬러 — Designer 레코드(d5)와 연결
+    shopId: 's2',
+    name: '오컬러',
+    role: 'designer',
+    email: 'oh@hairjjal.com',
+    password: '1234',
+    designerName: '오컬러',
+    designerId: 'd5',
+  },
+  {
     id: 'u7',
     shopId: 's2',
     name: '최원장',

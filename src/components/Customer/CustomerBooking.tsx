@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ArrowLeft, CalendarDays, Clock, Scissors, MessageSquare, CheckCircle2 } from 'lucide-react';
-import { Booking, ServiceType, Designer, Client } from '../../types';
+import { ArrowLeft, CalendarDays, Clock, Scissors, MessageSquare, CheckCircle2, MapPin } from 'lucide-react';
+import { Booking, ServiceType, Designer, Client, Shop } from '../../types';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 
 interface Props {
   client: Client;
-  designers: Designer[];
-  onSubmit: (data: Omit<Booking, 'id' | 'createdAt' | 'shopId'>) => void;
+  shops: Shop[];
+  allDesigners: Designer[];
+  defaultShopId: string;
+  onSubmit: (data: Omit<Booking, 'id' | 'createdAt'>) => void;
   onBack: () => void;
 }
 
@@ -21,14 +23,24 @@ const TIME_SLOTS = [
 
 const SERVICE_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
-export function CustomerBooking({ client, designers, onSubmit, onBack }: Props) {
+export function CustomerBooking({ client, shops, allDesigners, defaultShopId, onSubmit, onBack }: Props) {
   const today = new Date().toISOString().slice(0, 10);
+  const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [services, setServices] = useState<ServiceType[]>([]);
   const [designer, setDesigner] = useState('');
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  // 선택된 지점의 재직 중 디자이너만
+  const designers = allDesigners.filter(d => d.shopId === selectedShopId && d.status === 'active');
+
+  const handleShopChange = (shopId: string) => {
+    setSelectedShopId(shopId);
+    setDesigner(''); // 지점 바뀌면 디자이너 선택 초기화
+    setTime('');     // 시간 선택도 초기화
+  };
 
   const toggleService = (s: ServiceType) => {
     setServices(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -38,6 +50,7 @@ export function CustomerBooking({ client, designers, onSubmit, onBack }: Props) 
     e.preventDefault();
     if (!date || !time || services.length === 0) return;
     onSubmit({
+      shopId: selectedShopId,
       clientId: client.id,
       clientName: client.name,
       requestedDate: date,
@@ -58,6 +71,7 @@ export function CustomerBooking({ client, designers, onSubmit, onBack }: Props) 
         </div>
         <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>예약 신청 완료!</h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {shops.find(s => s.id === selectedShopId)?.name ?? ''}<br />
           {date} {time}에 예약 신청이 접수되었습니다.<br />
           확정 시 알려드릴게요.
         </p>
@@ -81,6 +95,39 @@ export function CustomerBooking({ client, designers, onSubmit, onBack }: Props) 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Shop / Branch */}
+        {shops.length > 1 && (
+          <div className="rounded-2xl border p-5 space-y-3" style={card}>
+            <div className="flex items-center gap-2 mb-1">
+              <MapPin size={15} className="text-rose-400" />
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>지점 선택 *</p>
+            </div>
+            <div className="space-y-2">
+              {shops.map(shop => (
+                <button
+                  key={shop.id}
+                  type="button"
+                  onClick={() => handleShopChange(shop.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${
+                    selectedShopId === shop.id
+                      ? 'bg-rose-500 border-rose-500 text-white'
+                      : ''
+                  }`}
+                  style={selectedShopId !== shop.id ? { borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'var(--bg-input)' } : {}}
+                >
+                  <p className="text-sm font-semibold">{shop.name}</p>
+                  {shop.address && (
+                    <p className={`text-xs mt-0.5 ${selectedShopId === shop.id ? 'text-white/80' : ''}`}
+                      style={selectedShopId !== shop.id ? { color: 'var(--text-muted)' } : {}}>
+                      {shop.address}
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Date */}
         <div className="rounded-2xl border p-5 space-y-3" style={card}>

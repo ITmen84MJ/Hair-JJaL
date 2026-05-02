@@ -65,9 +65,11 @@ export default function App() {
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
           <CustomerBooking
             client={myClient}
-            designers={shopDesigners}
+            shops={store.shops}
+            allDesigners={store.designers}
+            defaultShopId={shopId}
             onSubmit={data => {
-              store.addBooking({ ...data, shopId });
+              store.addBooking(data);
               store.navigate('customer-home');
             }}
             onBack={() => store.navigate('customer-home')}

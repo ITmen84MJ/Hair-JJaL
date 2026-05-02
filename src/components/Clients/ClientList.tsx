@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Phone, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
 import { Client, Consultation } from '../../types';
 import { ClientForm } from './ClientForm';
 import { format, parseISO } from 'date-fns';
@@ -14,9 +14,45 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
+function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
+  client: Client;
+  visitCount: number;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={18} className="text-red-500" />
+          </div>
+          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>고객 삭제</h3>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{client.name}</span> 고객을 삭제할까요?
+        </p>
+        {visitCount > 0 && (
+          <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: 'var(--bg-danger)', color: 'var(--text-danger)' }}>
+            상담 이력 {visitCount}건 및 관련 예약이 모두 함께 삭제됩니다.
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
+          <button onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">삭제</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ClientList({ clients, consultations, onSelectClient, onAddClient, onDeleteClient }: Props) {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
 
   const filtered = clients.filter(c =>
     c.name.includes(search) ||
@@ -51,7 +87,17 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
 
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-sm" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</div>
+          <div className="flex flex-col items-center justify-center py-14 gap-2 rounded-xl border-2 border-dashed"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+            <Search size={28} className="opacity-30" />
+            <p className="text-sm">{search ? '검색 결과가 없습니다.' : '등록된 고객이 없습니다.'}</p>
+            {!search && (
+              <button onClick={() => setShowForm(true)}
+                className="mt-1 text-xs px-4 py-1.5 bg-rose-500 text-white rounded-lg font-medium">
+                첫 고객 추가하기
+              </button>
+            )}
+          </div>
         )}
         {filtered.map(client => {
           const last = lastConsultation(client.id);
@@ -80,7 +126,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
                 <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
               </button>
               <div className="px-4 pb-3 flex justify-end">
-                <button onClick={e => { e.stopPropagation(); if (confirm(`${client.name} 고객을 삭제할까요?`)) onDeleteClient(client.id); }}
+                <button onClick={e => { e.stopPropagation(); setDeleteTarget(client); }}
                   className="text-xs flex items-center gap-1 transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}>
                   <Trash2 size={12} /> 삭제
                 </button>
@@ -91,6 +137,14 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
       </div>
 
       {showForm && <ClientForm onSave={data => { onAddClient(data); setShowForm(false); }} onClose={() => setShowForm(false)} />}
+      {deleteTarget && (
+        <DeleteClientModal
+          client={deleteTarget}
+          visitCount={visitCount(deleteTarget.id)}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() => { onDeleteClient(deleteTarget.id); setDeleteTarget(null); }}
+        />
+      )}
     </div>
   );
 }

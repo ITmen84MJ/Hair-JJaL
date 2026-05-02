@@ -73,7 +73,7 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   email: string;
-  password: string; // demo only — plain text
+  password?: string; // demo only — never persisted in session storage
   avatar?: string;
   clientId?: string;     // customer: linked client record
   designerName?: string; // designer/owner: matches stylistName in consultations

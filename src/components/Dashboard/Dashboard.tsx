@@ -1,4 +1,4 @@
-import { Users, Scissors, Calendar, TrendingUp, ChevronRight, Clock } from 'lucide-react';
+import { Users, Scissors, Calendar, TrendingUp, ChevronRight, Clock, Inbox } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation, View } from '../../types';
@@ -63,7 +63,12 @@ export function Dashboard({ clients, consultations, onNavigate }: Props) {
             </button>
           </div>
           <div>
-            {recentCons.length === 0 && <p className="p-5 text-sm text-center" style={{ color: 'var(--text-muted)' }}>상담 이력이 없습니다.</p>}
+            {recentCons.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <Inbox size={28} className="opacity-30" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>상담 이력이 없습니다.</p>
+              </div>
+            )}
             {recentCons.map(con => {
               const client = getClient(con.clientId);
               return (
@@ -92,7 +97,12 @@ export function Dashboard({ clients, consultations, onNavigate }: Props) {
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>다음 방문 예정</h2>
           </div>
           <div>
-            {upcoming.length === 0 && <p className="p-5 text-sm text-center" style={{ color: 'var(--text-muted)' }}>예정된 방문이 없습니다.</p>}
+            {upcoming.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <Calendar size={28} className="opacity-30" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>예정된 방문이 없습니다.</p>
+              </div>
+            )}
             {upcoming.map(con => {
               const client = getClient(con.clientId);
               const daysLeft = Math.ceil((parseISO(con.nextVisitDate!).getTime() - now.getTime()) / 86400000);

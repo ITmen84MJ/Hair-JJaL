@@ -7,6 +7,7 @@ interface Props {
   client: Client;
   shops: Shop[];
   allDesigners: Designer[];
+  allBookings: Booking[];
   defaultShopId: string;
   onSubmit: (data: Omit<Booking, 'id' | 'createdAt'>) => void;
   onBack: () => void;
@@ -23,7 +24,7 @@ const TIME_SLOTS = [
 
 const SERVICE_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
-export function CustomerBooking({ client, shops, allDesigners, defaultShopId, onSubmit, onBack }: Props) {
+export function CustomerBooking({ client, shops, allDesigners, allBookings, defaultShopId, onSubmit, onBack }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
   const [date, setDate] = useState('');
@@ -32,14 +33,16 @@ export function CustomerBooking({ client, shops, allDesigners, defaultShopId, on
   const [designer, setDesigner] = useState('');
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [dupWarning, setDupWarning] = useState(false);
 
   // 선택된 지점의 재직 중 디자이너만
   const designers = allDesigners.filter(d => d.shopId === selectedShopId && d.status === 'active');
 
   const handleShopChange = (shopId: string) => {
     setSelectedShopId(shopId);
-    setDesigner(''); // 지점 바뀌면 디자이너 선택 초기화
-    setTime('');     // 시간 선택도 초기화
+    setDesigner('');
+    setTime('');
+    setDupWarning(false);
   };
 
   const toggleService = (s: ServiceType) => {
@@ -49,6 +52,20 @@ export function CustomerBooking({ client, shops, allDesigners, defaultShopId, on
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !time || services.length === 0) return;
+
+    // P1-12: 같은 지점·날짜·시간·디자이너 중복 체크
+    const isDuplicate = allBookings.some(b =>
+      b.shopId === selectedShopId &&
+      b.requestedDate === date &&
+      b.requestedTime === time &&
+      b.status !== 'cancelled' &&
+      (!designer || !b.preferredDesigner || b.preferredDesigner === designer)
+    );
+    if (isDuplicate) {
+      setDupWarning(true);
+      return;
+    }
+
     onSubmit({
       shopId: selectedShopId,
       clientId: client.id,
@@ -152,19 +169,19 @@ export function CustomerBooking({ client, shops, allDesigners, defaultShopId, on
             <Clock size={15} className="text-rose-400" />
             <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>시간 선택 *</p>
           </div>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {(() => {
               const currentTime = new Date().toTimeString().slice(0, 5);
               const available = TIME_SLOTS.filter(t => date !== today || t > currentTime);
               if (available.length === 0) {
-                return <p className="col-span-4 sm:col-span-6 text-xs py-2" style={{ color: 'var(--text-muted)' }}>오늘은 예약 가능한 시간이 없습니다.</p>;
+                return <p className="col-span-3 sm:col-span-4 text-xs py-2" style={{ color: 'var(--text-muted)' }}>오늘은 예약 가능한 시간이 없습니다.</p>;
               }
               return available.map(t => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => setTime(t)}
-                  className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+                  className={`py-3 rounded-xl text-sm font-medium border transition-colors ${
                     time === t
                       ? 'bg-rose-500 text-white border-rose-500'
                       : ''
@@ -250,6 +267,13 @@ export function CustomerBooking({ client, shops, allDesigners, defaultShopId, on
           />
         </div>
 
+        {dupWarning && (
+          <div className="rounded-xl px-4 py-3 text-sm flex items-start gap-2"
+            style={{ backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
+            <span className="flex-shrink-0 font-bold">⚠</span>
+            <span>선택하신 날짜·시간에 이미 예약이 있습니다. 다른 시간을 선택해 주세요.</span>
+          </div>
+        )}
         <button
           type="submit"
           disabled={!date || !time || services.length === 0}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X } from 'lucide-react';
+import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound } from 'lucide-react';
 import { Client, Consultation, Designer, Shop } from '../../types';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   clients: Client[];
   consultations: Consultation[];
   designers: Designer[];
-  onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>) => void;
+  onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>, password: string) => void;
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
   onUpdateShop: (data: Partial<Shop>) => void;
 }
@@ -18,38 +18,77 @@ interface Props {
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 const COLORS = ['#f43f5e', '#fb923c', '#facc15', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
 
-function AddDesignerModal({ onClose, onAdd }: { onClose: () => void; onAdd: (d: Omit<Designer, 'id' | 'shopId'>) => void }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '' });
+function AddDesignerModal({ onClose, onAdd }: {
+  onClose: () => void;
+  onAdd: (d: Omit<Designer, 'id' | 'shopId'>, password: string) => void;
+}) {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '1234' });
+  const [done, setDone] = useState(false);
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }));
 
   const handle = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
-    onAdd({ ...form, status: 'active', joinedAt: new Date().toISOString().slice(0, 10) });
-    onClose();
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) return;
+    onAdd({ name: form.name, email: form.email, phone: form.phone, status: 'active', joinedAt: new Date().toISOString().slice(0, 10) }, form.password);
+    setDone(true);
   };
 
   const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
       <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
-        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>디자이너 추가</h3>
-        <form onSubmit={handle} className="space-y-3">
-          <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
-            style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-          <input required type="email" placeholder="이메일 *" value={form.email} onChange={f('email')} className={inp}
-            style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-          <input placeholder="연락처" value={form.phone} onChange={f('phone')} className={inp}
-            style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
-            <button type="submit"
-              className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold">추가</button>
-          </div>
-        </form>
+        {done ? (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Check size={18} className="text-emerald-600" />
+              </div>
+              <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>디자이너 추가 완료</h3>
+            </div>
+            <div className="rounded-xl p-4 space-y-2" style={{ backgroundColor: 'var(--bg-muted)' }}>
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>생성된 로그인 계정</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>이메일</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{form.email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>초기 비밀번호</span>
+                <span className="text-sm font-mono font-bold text-rose-500">{form.password}</span>
+              </div>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>위 계정 정보를 디자이너에게 전달해 주세요.</p>
+            <button onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold">확인</button>
+          </>
+        ) : (
+          <>
+            <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>디자이너 추가</h3>
+            <form onSubmit={handle} className="space-y-3">
+              <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
+                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+              <input required type="email" placeholder="이메일 (로그인 계정) *" value={form.email} onChange={f('email')} className={inp}
+                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+              <input placeholder="연락처" value={form.phone} onChange={f('phone')} className={inp}
+                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <KeyRound size={12} style={{ color: 'var(--text-muted)' }} />
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>초기 비밀번호 (디자이너에게 전달)</p>
+                </div>
+                <input required placeholder="초기 비밀번호 *" value={form.password} onChange={f('password')} className={inp}
+                  style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
+                <button type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold">추가</button>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
@@ -188,14 +227,18 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
 
           <div className="rounded-2xl border p-5" style={card}>
             <p className="font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>월별 매출 추이</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={monthlyData} barSize={28}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={monthlyData} barSize={24} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
-                  tickFormatter={v => v >= 10000 ? `${(v / 10000).toFixed(0)}만` : `${v}`} />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                <YAxis
+                  width={52}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  axisLine={false} tickLine={false}
+                  tickFormatter={v => v >= 10000 ? `${(v / 10000).toFixed(0)}만` : v === 0 ? '0' : `${v}`}
+                />
                 <Tooltip formatter={(v) => [`${Number(v).toLocaleString()}원`, '매출']}
-                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
                 <Bar dataKey="revenue" fill="#f43f5e" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -204,19 +247,20 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
           {pieData.length > 0 && (
             <div className="rounded-2xl border p-5" style={card}>
               <p className="font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>디자이너별 매출 비중</p>
-              <div className="flex flex-col md:flex-row items-center gap-4">
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                      {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v) => [`${Number(v).toLocaleString()}원`]}
-                      contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }} />
-                    <Legend iconType="circle" iconSize={8}
-                      formatter={(value) => <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{value}</span>} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="42%" innerRadius={48} outerRadius={76} paddingAngle={3} dataKey="value">
+                    {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip formatter={(v) => [`${Number(v).toLocaleString()}원`]}
+                    contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
+                  <Legend
+                    layout="horizontal" verticalAlign="bottom" align="center"
+                    iconType="circle" iconSize={8}
+                    formatter={(value) => <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>

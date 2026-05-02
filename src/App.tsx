@@ -18,7 +18,7 @@ import { StaffProfile } from './components/Staff/StaffProfile';
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -67,6 +67,7 @@ export default function App() {
             client={myClient}
             shops={store.shops}
             allDesigners={store.designers}
+            allBookings={store.bookings}
             defaultShopId={shopId}
             onSubmit={data => {
               store.addBooking(data);
@@ -238,7 +239,17 @@ export default function App() {
             clients={shopClients}
             consultations={shopConsultations}
             designers={shopDesigners}
-            onAddDesigner={data => store.addDesigner({ ...data, shopId })}
+            onAddDesigner={(data, password) => {
+              const designer = store.addDesigner({ ...data, shopId });
+              addDesignerAccount({
+                shopId,
+                name: designer.name,
+                email: designer.email,
+                designerName: designer.name,
+                designerId: designer.id,
+                password,
+              });
+            }}
             onUpdateDesigner={store.updateDesigner}
             onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
           />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Share2, Copy, Check, Edit2, Trash2, Calendar, User, FlaskConical, Droplets, Camera } from 'lucide-react';
+import { ArrowLeft, Share2, Copy, Check, Edit2, Trash2, Calendar, User, FlaskConical, Droplets, Camera, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation } from '../../types';
@@ -17,9 +17,44 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
+function DeleteConsultationModal({ isShared, onClose, onConfirm }: {
+  isShared: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle size={18} className="text-red-500" />
+          </div>
+          <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>상담 이력 삭제</h3>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>이 상담 이력을 삭제할까요? 삭제 후에는 복구할 수 없습니다.</p>
+        {isShared && (
+          <div className="rounded-xl px-4 py-3 text-sm flex items-start gap-2"
+            style={{ backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+            <span>현재 고객에게 공유 중인 상담입니다. 삭제하면 고객의 공유 링크가 즉시 만료됩니다.</span>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
+          <button onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">삭제</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ConsultationDetail({ consultation, client, onBack, onUpdate, onDelete, onToggleShare }: Props) {
   const [copied, setCopied] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const con = consultation;
   const shareUrl = `${window.location.origin}${window.location.pathname}?share=${con.shareToken}`;
 
@@ -40,7 +75,7 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{client.name} 고객</p>
         </div>
         <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg transition-colors hover:text-rose-500" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
-        <button onClick={() => { if (confirm('이 상담 이력을 삭제할까요?')) { onDelete(con.id); onBack(); } }} className="p-1.5 rounded-lg transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
+        <button onClick={() => setShowDeleteModal(true)} className="p-1.5 rounded-lg transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
       </div>
 
       {/* Date & Services */}
@@ -147,6 +182,13 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
 
       {showEdit && <ConsultationForm clientId={con.clientId} clientName={client.name} initial={con}
         onSave={data => { onUpdate(con.id, data); setShowEdit(false); }} onClose={() => setShowEdit(false)} />}
+      {showDeleteModal && (
+        <DeleteConsultationModal
+          isShared={con.isShared}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => { onDelete(con.id); onBack(); }}
+        />
+      )}
     </div>
   );
 }

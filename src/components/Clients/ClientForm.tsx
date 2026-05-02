@@ -1,18 +1,13 @@
 import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Client } from '../../types';
+import { inputClsSm as cls, inputStyle } from '../../styles/form';
 
 interface Props {
   initial?: Partial<Client>;
   onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
-
-const inputStyle = {
-  backgroundColor: 'var(--bg-input)',
-  borderColor: 'var(--border-input)',
-  color: 'var(--text-primary)',
-};
 
 export function ClientForm({ initial, onSave, onClose }: Props) {
   const [form, setForm] = useState({
@@ -39,7 +34,6 @@ export function ClientForm({ initial, onSave, onClose }: Props) {
     onSave({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, birthDate: form.birthDate || undefined, gender: form.gender, notes: form.notes.trim() || undefined, tags: form.tags.length ? form.tags : undefined });
   };
 
-  const cls = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
   const lbl = "block text-xs font-medium mb-1";
 
   return (

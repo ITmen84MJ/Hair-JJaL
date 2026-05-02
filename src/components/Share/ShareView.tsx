@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Scissors, Calendar, User, FlaskConical, Droplets, Camera, AlertCircle } from 'lucide-react';
 import { Client, Consultation } from '../../types';
+import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 
 interface Props {
@@ -93,13 +94,13 @@ export function ShareView({ consultation, client }: Props) {
               {con.beforePhoto && (
                 <div>
                   <p className="text-xs text-gray-400 text-center mb-1.5">Before</p>
-                  <img src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl" />
+                  <SafeImg src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl" />
                 </div>
               )}
               {con.afterPhoto && (
                 <div>
                   <p className="text-xs text-gray-400 text-center mb-1.5">After</p>
-                  <img src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl" />
+                  <SafeImg src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl" />
                 </div>
               )}
             </div>

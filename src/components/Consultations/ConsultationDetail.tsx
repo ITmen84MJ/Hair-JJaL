@@ -3,6 +3,7 @@ import { ArrowLeft, Share2, Copy, Check, Edit2, Trash2, Calendar, User, FlaskCon
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation } from '../../types';
+import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from './serviceLabels';
 import { ConsultationForm } from './ConsultationForm';
 
@@ -115,8 +116,8 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
         <div className="rounded-2xl border p-5" style={card}>
           <div className="flex items-center gap-2 mb-3"><Camera size={14} style={{ color: 'var(--text-muted)' }} /><p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Before / After</p></div>
           <div className="grid grid-cols-2 gap-3">
-            {con.beforePhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>Before</p><img src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
-            {con.afterPhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>After</p><img src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
+            {con.beforePhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>Before</p><SafeImg src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
+            {con.afterPhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>After</p><SafeImg src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
           </div>
         </div>
       )}

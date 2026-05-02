@@ -3,6 +3,7 @@ import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag } from
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation, Designer } from '../../types';
+import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { ClientForm } from './ClientForm';
 import { ConsultationForm } from '../Consultations/ConsultationForm';
@@ -196,7 +197,7 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
                     <div className="flex flex-wrap gap-1.5">
                       {con.services.map((svc, i) => <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${SERVICE_COLORS[svc.type]}`}>{SERVICE_LABELS[svc.type]}</span>)}
                     </div>
-                    {con.afterPhoto && <img src={con.afterPhoto} alt="after" className="mt-3 w-16 h-16 object-cover rounded-lg" />}
+                    {con.afterPhoto && <SafeImg src={con.afterPhoto} alt="after" className="mt-3 w-16 h-16 object-cover rounded-lg" />}
                   </div>
                 </button>
               ))}

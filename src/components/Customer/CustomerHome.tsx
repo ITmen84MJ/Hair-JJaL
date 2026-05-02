@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Scissors, Calendar, ChevronRight, Clock, CalendarPlus, CheckCircle2, XCircle, HourglassIcon } from 'lucide-react';
 import { Client, Consultation, Booking, BookingStatus } from '../../types';
+import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 
 interface Props {
@@ -160,7 +161,7 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
                 ))}
               </div>
               {con.afterPhoto && (
-                <img src={con.afterPhoto} alt="after" className="w-full h-40 object-cover rounded-xl" />
+                <SafeImg src={con.afterPhoto} alt="after" className="w-full h-40 object-cover rounded-xl" />
               )}
             </button>
           ))}

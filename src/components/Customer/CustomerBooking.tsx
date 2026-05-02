@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, CalendarDays, Clock, Scissors, MessageSquare, CheckCircle2, MapPin } from 'lucide-react';
 import { Booking, ServiceType, Designer, Client, Shop } from '../../types';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
+import { inputCls as inp, inputStyle as inpStyle } from '../../styles/form';
 
 interface Props {
   client: Client;
@@ -116,8 +117,6 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
     );
   }
 
-  const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
-  const inpStyle = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };
 
   return (
     <div className="p-5 space-y-5 max-w-lg mx-auto" style={{ backgroundColor: 'var(--bg-app)' }}>

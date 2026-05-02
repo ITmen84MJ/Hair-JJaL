@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Upload, Image } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
+import { inputCls as sharedInputCls, inputStyle } from '../../styles/form';
 
 interface Props {
   clientId: string;
@@ -41,7 +42,8 @@ function PhotoUpload({
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
-          <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl" />
+          <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
           <div className="absolute top-2 right-2 flex gap-1">
             <button type="button" onClick={() => inputRef.current?.click()}
               className="bg-white/80 dark:bg-gray-800/80 p-1.5 rounded-lg shadow text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors">
@@ -114,7 +116,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
     });
   };
 
-  const inputCls = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
+  const inputCls = sharedInputCls;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

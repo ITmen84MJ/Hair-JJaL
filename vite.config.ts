@@ -47,4 +47,16 @@ export default defineConfig({
     }),
   ],
   base: '/Hair-JJaL/',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // recharts + d3 계열을 별도 청크로 분리 — 초기 번들에서 제외
+          'vendor-charts': ['recharts'],
+          // React 코어 라이브러리
+          'vendor-react': ['react', 'react-dom'],
+        },
+      },
+    },
+  },
 })

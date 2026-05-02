@@ -100,7 +100,7 @@ export function useStore() {
   const addConsultation = useCallback((data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt'>) => {
     const consultation: Consultation = {
       ...data, id: uuidv4(),
-      shareToken: `share-${uuidv4().slice(0, 8)}`,
+      shareToken: uuidv4(),
       createdAt: new Date().toISOString(),
     };
     setConsultations(prev => [...prev, consultation]);

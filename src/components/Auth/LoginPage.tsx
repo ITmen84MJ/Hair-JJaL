@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, User, Palette, Crown, Eye, EyeOff } from 'lucide-react';
+import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser } from '../../types';
 
@@ -20,6 +20,7 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +125,22 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
               </div>
             ))}
           </div>
-          <p className="text-xs text-center mt-4" style={{ color: 'var(--text-muted)' }}>모든 데모 계정 비밀번호: <span className="font-mono font-semibold">1234</span></p>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setShowHint(v => !v)}
+              className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <HelpCircle size={12} />
+              {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
+            </button>
+            {showHint && (
+              <p className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                데모 계정 비밀번호는 모두 <span className="font-mono font-semibold">1234</span>입니다.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

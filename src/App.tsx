@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { useStore } from './hooks/useStore';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/Layout/Sidebar';
-import { Dashboard } from './components/Dashboard/Dashboard';
 import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { ConsultationDetail } from './components/Consultations/ConsultationDetail';
@@ -12,8 +12,10 @@ import { LoginPage } from './components/Auth/LoginPage';
 import { CustomerLayout } from './components/Customer/CustomerLayout';
 import { CustomerBooking } from './components/Customer/CustomerBooking';
 import { BookingList } from './components/Bookings/BookingList';
-import { OwnerDashboard } from './components/Owner/OwnerDashboard';
 import { StaffProfile } from './components/Staff/StaffProfile';
+// P3-24: recharts 의존 컴포넌트는 lazy 로딩으로 초기 번들에서 분리
+const Dashboard     = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
+const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').then(m => ({ default: m.OwnerDashboard })));
 
 export default function App() {
   const store = useStore();
@@ -31,12 +33,12 @@ export default function App() {
   if (store.currentView === 'share') {
     const con = store.consultations.find(c => c.shareToken === store.shareToken && c.isShared) ?? null;
     const client = con ? store.clients.find(c => c.id === con.clientId) ?? null : null;
-    return <ShareView consultation={con} client={client} />;
+    return <ErrorBoundary><ShareView consultation={con} client={client} /></ErrorBoundary>;
   }
 
   // ── Not logged in ──
   if (!user) {
-    return <LoginPage onLogin={login} onLoginAs={loginAs} />;
+    return <ErrorBoundary><LoginPage onLogin={login} onLoginAs={loginAs} /></ErrorBoundary>;
   }
 
   // ── 지점(shop)별 데이터 격리 ──
@@ -62,6 +64,7 @@ export default function App() {
     // Booking form
     if (store.currentView === 'customer-booking' && myClient) {
       return (
+        <ErrorBoundary>
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
           <CustomerBooking
             client={myClient}
@@ -76,10 +79,12 @@ export default function App() {
             onBack={() => store.navigate('customer-home')}
           />
         </div>
+        </ErrorBoundary>
       );
     }
 
     return (
+      <ErrorBoundary>
       <CustomerLayout
         user={user}
         client={myClient}
@@ -96,6 +101,7 @@ export default function App() {
         onNewBooking={() => store.navigate('customer-booking')}
         onUpdateClient={(id, data) => store.updateClient(id, data)}
       />
+      </ErrorBoundary>
     );
   }
 
@@ -149,6 +155,7 @@ export default function App() {
   const mobileTitle = VIEW_TITLES[store.currentView];
 
   return (
+    <ErrorBoundary>
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar
         currentView={store.currentView}
@@ -185,11 +192,13 @@ export default function App() {
         )}
 
         {store.currentView === 'dashboard' && (
-          <Dashboard
-            clients={visibleClients}
-            consultations={visibleConsultations}
-            onNavigate={store.navigate}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <Dashboard
+              clients={visibleClients}
+              consultations={visibleConsultations}
+              onNavigate={store.navigate}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'clients' && (
@@ -234,25 +243,27 @@ export default function App() {
         )}
 
         {store.currentView === 'owner-staff' && user.role === 'owner' && (
-          <OwnerDashboard
-            shop={myShop}
-            clients={shopClients}
-            consultations={shopConsultations}
-            designers={shopDesigners}
-            onAddDesigner={(data, password) => {
-              const designer = store.addDesigner({ ...data, shopId });
-              addDesignerAccount({
-                shopId,
-                name: designer.name,
-                email: designer.email,
-                designerName: designer.name,
-                designerId: designer.id,
-                password,
-              });
-            }}
-            onUpdateDesigner={store.updateDesigner}
-            onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <OwnerDashboard
+              shop={myShop}
+              clients={shopClients}
+              consultations={shopConsultations}
+              designers={shopDesigners}
+              onAddDesigner={(data, password) => {
+                const designer = store.addDesigner({ ...data, shopId });
+                addDesignerAccount({
+                  shopId,
+                  name: designer.name,
+                  email: designer.email,
+                  designerName: designer.name,
+                  designerId: designer.id,
+                  password,
+                });
+              }}
+              onUpdateDesigner={store.updateDesigner}
+              onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'profile' && (
@@ -271,5 +282,6 @@ export default function App() {
 
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

@@ -20,7 +20,7 @@ const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').th
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, updateName } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -277,6 +277,7 @@ export default function App() {
             shopBookings={shopBookings}
             onUpdateDesigner={store.updateDesigner}
             onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
+            onUpdateName={updateName}
           />
         )}
 

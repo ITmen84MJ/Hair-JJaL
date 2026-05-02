@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
-  Users, FileText, TrendingUp, Crown, Scissors,
+  Users, FileText, TrendingUp, Crown, Scissors, User,
 } from 'lucide-react';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -16,7 +16,8 @@ interface Props {
   shopDesigners: Designer[];
   shopBookings: Booking[];
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
-  onUpdateShop?: (data: Partial<Shop>) => void; // owner only
+  onUpdateShop?: (data: Partial<Shop>) => void;   // owner only
+  onUpdateName?: (name: string) => void;           // 세션 이름 동기화
 }
 
 const card: React.CSSProperties = {
@@ -30,12 +31,13 @@ const inp = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus
 export function StaffProfile({
   user, designer, shop,
   myConsultations, shopConsultations, shopDesigners, shopBookings,
-  onUpdateDesigner, onUpdateShop,
+  onUpdateDesigner, onUpdateShop, onUpdateName,
 }: Props) {
   const isOwner = user.role === 'owner';
 
   /* ── 편집 상태 ─ 개인 정보 ── */
   const [editing, setEditing] = useState(false);
+  const [draftName,  setDraftName]  = useState(user.name);
   const [draftPhone, setDraftPhone] = useState(designer?.phone ?? '');
   const [draftEmail, setDraftEmail] = useState(designer?.email ?? user.email);
 
@@ -58,12 +60,21 @@ export function StaffProfile({
 
   /* ── 저장 ── */
   const saveProfile = () => {
+    const trimmedName = draftName.trim();
     if (designer) {
-      onUpdateDesigner(designer.id, { phone: draftPhone, email: draftEmail });
+      onUpdateDesigner(designer.id, {
+        name: trimmedName || designer.name,
+        phone: draftPhone,
+        email: draftEmail,
+      });
+    }
+    if (trimmedName && trimmedName !== user.name) {
+      onUpdateName?.(trimmedName);
     }
     setEditing(false);
   };
   const cancelProfile = () => {
+    setDraftName(user.name);
     setDraftPhone(designer?.phone ?? '');
     setDraftEmail(designer?.email ?? user.email);
     setEditing(false);
@@ -182,6 +193,25 @@ export function StaffProfile({
         </div>
 
         <div className="space-y-3">
+          {/* 이름 */}
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'var(--bg-hover)' }}>
+              <User size={14} style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>이름</p>
+              {editing ? (
+                <input value={draftName} onChange={e => setDraftName(e.target.value)}
+                  placeholder="이름"
+                  className={inp}
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+              ) : (
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
+              )}
+            </div>
+          </div>
+
           {/* 이메일 */}
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"

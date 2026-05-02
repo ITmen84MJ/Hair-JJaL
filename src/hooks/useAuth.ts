@@ -74,10 +74,20 @@ export function useAuth() {
     localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, newUser]));
   }, []);
 
+  // 본인 이름 변경 — 세션 및 localStorage 동기화
+  const updateName = useCallback((name: string) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, name };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
     setUser(null);
   }, []);
 
-  return { user, login, loginAs, logout, addDesignerAccount };
+  return { user, login, loginAs, logout, addDesignerAccount, updateName };
 }

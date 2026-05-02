@@ -31,10 +31,16 @@ function generateTimeSlots(openTime = '10:00', closeTime = '19:00', interval = 3
 
 const SERVICE_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
+const PREFILL_KEY = 'hairjjal_booking_prefill_date';
+
 export function CustomerBooking({ client, shops, allDesigners, allBookings, defaultShopId, onSubmit, onBack }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState(() => {
+    const prefill = sessionStorage.getItem(PREFILL_KEY) ?? '';
+    if (prefill) sessionStorage.removeItem(PREFILL_KEY);
+    return prefill >= today ? prefill : '';
+  });
   const [time, setTime] = useState('');
   const [services, setServices] = useState<ServiceType[]>([]);
   const [designer, setDesigner] = useState('');

@@ -8,11 +8,12 @@ import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 interface Props {
   consultation: Consultation;
   onBack: () => void;
+  onBookNextVisit?: (date: string) => void;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
-export function CustomerConsultationView({ consultation: con, onBack }: Props) {
+export function CustomerConsultationView({ consultation: con, onBack, onBookNextVisit }: Props) {
   const totalPrice = con.services.reduce((s, svc) => s + (svc.price ?? 0), 0);
 
   return (
@@ -94,10 +95,19 @@ export function CustomerConsultationView({ consultation: con, onBack }: Props) {
 
       {/* Next visit */}
       {con.nextVisitDate && (
-        <div className="rounded-2xl p-4 bg-rose-50 border border-rose-100">
-          <p className="text-xs font-semibold text-rose-500 mb-1">다음 방문 권장일</p>
-          <p className="text-sm font-bold text-rose-800">{format(parseISO(con.nextVisitDate), 'yyyy년 M월 d일', { locale: ko })}</p>
-          {con.nextVisitNote && <p className="text-sm text-rose-600 mt-0.5">{con.nextVisitNote}</p>}
+        <div className="rounded-2xl p-4 border" style={{ backgroundColor: 'var(--bg-warning)', borderColor: 'var(--border-warning)' }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-warning)' }}>다음 방문 권장일</p>
+          <p className="text-sm font-bold mb-1" style={{ color: 'var(--text-warning-2)' }}>
+            {format(parseISO(con.nextVisitDate), 'yyyy년 M월 d일', { locale: ko })}
+          </p>
+          {con.nextVisitNote && <p className="text-sm mb-2" style={{ color: 'var(--text-warning)' }}>{con.nextVisitNote}</p>}
+          {onBookNextVisit && con.nextVisitDate >= new Date().toISOString().slice(0, 10) && (
+            <button
+              onClick={() => onBookNextVisit(con.nextVisitDate!)}
+              className="text-xs px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors">
+              이 날짜로 예약하기
+            </button>
+          )}
         </div>
       )}
     </div>

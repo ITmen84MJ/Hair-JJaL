@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import { Client, Consultation } from '../../types';
 import { ClientForm } from './ClientForm';
+import { Modal } from '../common/Modal';
 import { format, parseISO } from 'date-fns';
 
 interface Props {
@@ -21,8 +22,8 @@ function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
             <AlertTriangle size={18} className="text-red-500" />
@@ -45,7 +46,7 @@ function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
             className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">삭제</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

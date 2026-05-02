@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
@@ -6,6 +6,7 @@ import { VoiceNoteButton } from './VoiceNoteButton';
 import { inputCls as sharedInputCls } from '../../styles/form';
 import { compressImage } from '../../utils/imageCompress';
 import { useFormulaTemplates } from '../../hooks/useFormulaTemplates';
+import { Modal } from '../common/Modal';
 
 interface Props {
   clientId: string;
@@ -78,6 +79,8 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
   const { templates, addTemplate, removeTemplate } = useFormulaTemplates();
   const [showColorTpl, setShowColorTpl] = useState(false);
   const [showPermTpl,  setShowPermTpl]  = useState(false);
+  const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
+  const isDirty = useRef(false);
 
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
@@ -95,7 +98,10 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
     isShared: initial?.isShared ?? false,
   });
 
-  const setField = (key: string, val: unknown) => setForm(f => ({ ...f, [key]: val }));
+  const setField = (key: string, val: unknown) => {
+    isDirty.current = true;
+    setForm(f => ({ ...f, [key]: val }));
+  };
 
   const updateService = (i: number, key: keyof Service, val: string | number) => {
     const updated = form.services.map((s, idx) =>
@@ -107,8 +113,24 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
   const addService = () => setField('services', [...form.services, { ...EMPTY_SERVICE }]);
   const removeService = (i: number) => setField('services', form.services.filter((_, idx) => idx !== i));
 
+  // beforeunload 이벤트로 브라우저 닫기/새로고침 방어
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty.current) { e.preventDefault(); }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
+  // 닫기 버튼 처리 — dirty면 확인 모달
+  const handleClose = () => {
+    if (isDirty.current) { setShowDirtyConfirm(true); }
+    else { onClose(); }
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    isDirty.current = false;
     onSave({
       clientId,
       date: form.date,
@@ -130,15 +152,31 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
   const inputCls = sharedInputCls;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div>
-            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{initial ? '상담 수정' : '새 상담 추가'}</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{clientName} 고객</p>
+    <>
+    {/* 이탈 확인 다이얼로그 */}
+    {showDirtyConfirm && (
+      <Modal onClose={() => setShowDirtyConfirm(false)}>
+        <div className="p-6 space-y-4">
+          <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>작성 중인 내용이 있습니다</h3>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>닫으면 입력한 내용이 모두 사라집니다. 그래도 닫으시겠어요?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowDirtyConfirm(false)}
+              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
+            <button onClick={() => { isDirty.current = false; onClose(); }}
+              className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
           </div>
-          <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
         </div>
+      </Modal>
+    )}
+    <Modal onClose={handleClose} maxWidth="max-w-2xl">
+      <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10 rounded-t-2xl" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        <div>
+          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{initial ? '상담 수정' : '새 상담 추가'}</h2>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{clientName} 고객</p>
+        </div>
+        <button onClick={handleClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+      </div>
         <form onSubmit={submit} className="p-6 space-y-5">
           {/* P2-22: 이전 방문 컨텍스트 */}
           {!initial && lastConsultation && (
@@ -380,8 +418,9 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg py-2.5 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <button type="button" onClick={handleClose}
+              className="flex-1 border rounded-lg py-2.5 text-sm font-medium transition-colors"
+              style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>
               취소
             </button>
             <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
@@ -389,7 +428,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
+    </>
   );
 }

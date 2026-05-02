@@ -12,6 +12,7 @@ interface Props {
   client: Client | null;
   consultations: Consultation[];
   bookings: Booking[];
+  shop?: import('../../types').Shop | null;
   shopName?: string;
   currentView: View;
   selectedConsultationId: string | null;
@@ -84,7 +85,7 @@ function ProfileEdit({ client, onSave, onCancel }: {
 const SESSION_TAB_KEY = 'hairjjal_customer_tab';
 
 export function CustomerLayout({
-  user, client, consultations, bookings, shopName,
+  user, client, consultations, bookings, shop, shopName,
   currentView, selectedConsultationId,
   isDark, onToggleTheme, onLogout, onNavigate,
   onSelectConsultation, onNewBooking, onUpdateClient, onCancelBooking,
@@ -114,6 +115,10 @@ export function CustomerLayout({
         <CustomerConsultationView
           consultation={con}
           onBack={() => onNavigate('customer-home')}
+          onBookNextVisit={date => {
+            sessionStorage.setItem('hairjjal_booking_prefill_date', date);
+            onNewBooking();
+          }}
         />
       </div>
     );
@@ -385,6 +390,7 @@ export function CustomerLayout({
             client={client}
             consultations={consultations}
             bookings={bookings}
+            shop={shop}
             onSelectConsultation={onSelectConsultation}
             onNewBooking={onNewBooking}
           />

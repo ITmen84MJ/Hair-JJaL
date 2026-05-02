@@ -3,6 +3,7 @@ import { useStore } from './hooks/useStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
+import { ToastContainer } from './components/common/ToastContainer';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
@@ -90,6 +91,7 @@ export default function App() {
         client={myClient}
         consultations={myConsultations}
         bookings={myBookings}
+        shop={myShop}
         shopName={myShop?.name}
         currentView={store.currentView}
         selectedConsultationId={store.selectedConsultationId}
@@ -157,6 +159,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+    <ToastContainer />
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar
         currentView={store.currentView}

@@ -4,6 +4,7 @@ import { format, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound } from 'lucide-react';
 import { Client, Consultation, Designer, Shop } from '../../types';
+import { Modal } from '../common/Modal';
 
 interface Props {
   shop: Shop | null;
@@ -36,8 +37,8 @@ function AddDesignerModal({ onClose, onAdd }: {
 
   const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         {done ? (
           <>
             <div className="flex items-center gap-2">
@@ -90,7 +91,7 @@ function AddDesignerModal({ onClose, onAdd }: {
           </>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -101,8 +102,8 @@ function LeaveModal({ designer, onClose, onConfirm }: {
 }) {
   const [reason, setReason] = useState('이직');
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{designer.name} 퇴직 처리</h3>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           퇴직 처리 시 해당 디자이너는 비활성화됩니다. 기존 시술 이력은 보존됩니다.
@@ -127,7 +128,7 @@ function LeaveModal({ designer, onClose, onConfirm }: {
             className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">퇴직 처리</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

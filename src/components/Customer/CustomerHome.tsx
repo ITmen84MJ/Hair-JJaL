@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Scissors, Calendar, ChevronRight, Clock, CalendarPlus, CheckCircle2, XCircle, HourglassIcon } from 'lucide-react';
-import { Client, Consultation, Booking, BookingStatus } from '../../types';
+import { Scissors, Calendar, ChevronRight, Clock, CalendarPlus, CheckCircle2, XCircle, HourglassIcon, MapPin, Phone as PhoneIcon, Store } from 'lucide-react';
+import { Client, Consultation, Booking, BookingStatus, Shop } from '../../types';
 import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 
@@ -9,6 +9,7 @@ interface Props {
   client: Client | null;
   consultations: Consultation[];
   bookings: Booking[];
+  shop?: Shop | null;
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
 }
@@ -21,7 +22,7 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.Element
   cancelled: { label: '취소됨', Icon: XCircle,       bg: 'var(--bg-neutral)', text: 'var(--text-neutral)' },
 };
 
-export function CustomerHome({ client, consultations, bookings, onSelectConsultation, onNewBooking }: Props) {
+export function CustomerHome({ client, consultations, bookings, shop, onSelectConsultation, onNewBooking }: Props) {
   if (!client) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -129,14 +130,52 @@ export function CustomerHome({ client, consultations, bookings, onSelectConsulta
         </div>
       )}
 
+      {/* Shop info card */}
+      {shop && (shop.address || shop.phone || shop.openTime) && (
+        <div className="rounded-2xl border p-4 space-y-2" style={card}>
+          <div className="flex items-center gap-2 mb-1">
+            <Store size={14} className="text-rose-400 flex-shrink-0" />
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{shop.name}</p>
+          </div>
+          {shop.phone && (
+            <a href={`tel:${shop.phone}`}
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}>
+              <PhoneIcon size={13} className="text-rose-300 flex-shrink-0" />
+              <span>{shop.phone}</span>
+            </a>
+          )}
+          {shop.address && (
+            <a href={`https://map.kakao.com/?q=${encodeURIComponent(shop.address)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}>
+              <MapPin size={13} className="text-rose-300 flex-shrink-0" />
+              <span className="underline underline-offset-2">{shop.address}</span>
+            </a>
+          )}
+          {(shop.openTime || shop.closeTime) && (
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <Clock size={13} className="text-rose-300 flex-shrink-0" />
+              <span>{shop.openTime ?? '?'} – {shop.closeTime ?? '?'}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Consultation history */}
       <div>
         <h2 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <Scissors size={16} className="text-rose-400" /> 시술 이력
         </h2>
         {sorted.length === 0 && (
-          <div className="rounded-xl py-12 text-center text-sm border-2 border-dashed" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
-            아직 시술 이력이 없습니다.
+          <div className="rounded-xl py-12 text-center border-2 border-dashed space-y-3" style={{ borderColor: 'var(--border)' }}>
+            <Scissors size={32} className="mx-auto text-rose-200" />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>아직 시술 이력이 없습니다.</p>
+            <button onClick={onNewBooking}
+              className="text-xs px-4 py-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-medium transition-colors">
+              예약하러 가기
+            </button>
           </div>
         )}
         <div className="space-y-3">

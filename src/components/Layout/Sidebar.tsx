@@ -1,6 +1,8 @@
-import React from 'react';
-import { LayoutDashboard, Users, Sun, Moon, LogOut, Crown, CalendarDays, UserCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { LayoutDashboard, Users, Sun, Moon, LogOut, Crown, CalendarDays, UserCircle, Smartphone } from 'lucide-react';
 import { View, AuthUser, ROLE_LABELS } from '../../types';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { Modal } from '../common/Modal';
 
 interface Props {
   currentView: View;
@@ -37,6 +39,8 @@ const ROLE_BADGE_STYLE: Record<string, React.CSSProperties> = {
 
 export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, shopName, onLogout, pendingBookings = 0 }: Props) {
   const items = NAV_ITEMS[user.role] ?? NAV_ITEMS.designer;
+  const { canInstall, isIOS, install } = usePWAInstall();
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   const isActive = (view: View) =>
     currentView === view ||
@@ -103,6 +107,17 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
 
         {/* Footer */}
         <div className="px-4 py-4 border-t space-y-1" style={{ borderColor: 'var(--border)' }}>
+          {canInstall && (
+            <button onClick={isIOS ? () => setShowIOSGuide(true) : install}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              aria-label="홈 화면에 추가"
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.backgroundColor = '')}>
+              <Smartphone size={16} />
+              홈 화면에 추가
+            </button>
+          )}
           <button onClick={onToggleTheme}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
             style={{ color: 'var(--text-secondary)' }}
@@ -157,6 +172,35 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
           <span className="text-[10px]">로그아웃</span>
         </button>
       </nav>
+
+      {/* iOS PWA 설치 안내 모달 */}
+      {showIOSGuide && (
+        <Modal onClose={() => setShowIOSGuide(false)}>
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+                <Smartphone size={18} style={{ color: 'var(--text-icon-rose)' }} />
+              </div>
+              <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>홈 화면에 추가하기</h3>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Safari에서 아래 단계를 따라 앱처럼 설치하세요.</p>
+            <ol className="space-y-3">
+              {[
+                '하단 툴바의 <b>공유 버튼</b> (□↑)을 탭합니다.',
+                '스크롤하여 <b>"홈 화면에 추가"</b>를 선택합니다.',
+                '이름을 확인하고 오른쪽 상단 <b>"추가"</b>를 탭합니다.',
+              ].map((step, i) => (
+                <li key={i} className="flex gap-3 text-sm items-start">
+                  <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center flex-shrink-0 font-bold mt-0.5">{i + 1}</span>
+                  <span style={{ color: 'var(--text-secondary)' }} dangerouslySetInnerHTML={{ __html: step }} />
+                </li>
+              ))}
+            </ol>
+            <button onClick={() => setShowIOSGuide(false)}
+              className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold">확인</button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

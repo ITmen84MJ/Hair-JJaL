@@ -33,6 +33,18 @@ const SERVICE_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'strai
 
 const PREFILL_KEY = 'hairjjal_booking_prefill_date';
 
+/** 선택한 날짜에 디자이너가 근무 가능한지 확인 */
+function isDesignerAvailable(d: Designer, selectedDate: string): boolean {
+  if (!selectedDate) return true;
+  if (d.dayOff?.includes(selectedDate)) return false;
+  if (d.workDays && d.workDays.length < 7) {
+    // new Date(date + 'T12:00') prevents timezone-shift to previous day
+    const dow = new Date(selectedDate + 'T12:00:00').getDay();
+    if (!d.workDays.includes(dow)) return false;
+  }
+  return true;
+}
+
 export function CustomerBooking({ client, shops, allDesigners, allBookings, defaultShopId, onSubmit, onBack }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
@@ -244,31 +256,62 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
 
         {/* Designer preference */}
         <div className="rounded-2xl border p-5" style={card}>
-          <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>담당 디자이너 <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(선택)</span></p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setDesigner('')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                designer === '' ? 'bg-rose-500 text-white border-rose-500' : ''
-              }`}
-              style={designer !== '' ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}
-            >
+          <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
+            담당 디자이너 <span className="font-normal text-xs" style={{ color: 'var(--text-muted)' }}>(선택)</span>
+          </p>
+          <div className="space-y-2">
+            {/* "No preference" */}
+            <button type="button" onClick={() => setDesigner('')}
+              className={`w-full px-4 py-3 rounded-xl text-sm font-medium border text-left transition-colors ${designer === '' ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+              style={designer !== '' ? { borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-input)' } : {}}>
               상관없음
             </button>
-            {designers.filter(d => d.status === 'active').map(d => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDesigner(d.name)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  designer === d.name ? 'bg-rose-500 text-white border-rose-500' : ''
-                }`}
-                style={designer !== d.name ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}
-              >
-                {d.name}
-              </button>
-            ))}
+            {designers.map(d => {
+              const available = isDesignerAvailable(d, date);
+              const isSelected = designer === d.name;
+              return (
+                <button key={d.id} type="button"
+                  onClick={() => { if (available) setDesigner(d.name); }}
+                  disabled={!available}
+                  className={`w-full px-4 py-3 rounded-xl border text-left transition-colors ${isSelected ? 'bg-rose-500 border-rose-500' : ''} ${!available ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  style={!isSelected ? { borderColor: 'var(--border)', backgroundColor: 'var(--bg-input)' } : {}}>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold ${isSelected ? 'bg-white/20 text-white' : ''}`}
+                      style={!isSelected ? { backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' } : {}}>
+                      {d.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-sm font-semibold ${isSelected ? 'text-white' : ''}`}
+                          style={!isSelected ? { color: 'var(--text-primary)' } : {}}>
+                          {d.name}
+                        </span>
+                        {!available && date && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'var(--bg-neutral)', color: 'var(--text-neutral)' }}>이날 휴무</span>
+                        )}
+                      </div>
+                      {d.bio && (
+                        <p className={`text-xs mt-0.5 truncate ${isSelected ? 'text-white/80' : ''}`}
+                          style={!isSelected ? { color: 'var(--text-muted)' } : {}}>
+                          {d.bio}
+                        </p>
+                      )}
+                      {d.specialties && d.specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {d.specialties.slice(0, 3).map(s => (
+                            <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : ''}`}
+                              style={!isSelected ? { backgroundColor: 'var(--bg-muted)', color: 'var(--text-muted)' } : {}}>
+                              {SERVICE_LABELS[s]}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

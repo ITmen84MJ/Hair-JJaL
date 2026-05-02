@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound } from 'lucide-react';
-import { Client, Consultation, Designer, Shop, ServiceType } from '../../types';
+import { Client, Consultation, Designer, DesignerRole, Shop, ServiceType } from '../../types';
 import { Modal } from '../common/Modal';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 
@@ -133,6 +133,146 @@ function LeaveModal({ designer, onClose, onConfirm }: {
   );
 }
 
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+const SVC_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
+
+function DesignerEditModal({ designer, onClose, onSave }: {
+  designer: Designer;
+  onClose: () => void;
+  onSave: (data: Partial<Designer>) => void;
+}) {
+  const [name, setName] = useState(designer.name);
+  const [email, setEmail] = useState(designer.email);
+  const [phone, setPhone] = useState(designer.phone ?? '');
+  const [role, setRole] = useState<DesignerRole>(designer.role ?? 'staff');
+  const [bio, setBio] = useState(designer.bio ?? '');
+  const [specialties, setSpecialties] = useState<ServiceType[]>(designer.specialties ?? []);
+  const [workDays, setWorkDays] = useState<number[]>(designer.workDays ?? [0, 1, 2, 3, 4, 5, 6]);
+  const [dayOff, setDayOff] = useState<string[]>(designer.dayOff ?? []);
+  const [newDayOff, setNewDayOff] = useState('');
+
+  const toggleSpecialty = (s: ServiceType) =>
+    setSpecialties(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleWorkDay = (d: number) =>
+    setWorkDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a, b) => a - b));
+  const addDayOff = () => {
+    if (newDayOff && !dayOff.includes(newDayOff)) {
+      setDayOff(prev => [...prev, newDayOff].sort());
+      setNewDayOff('');
+    }
+  };
+
+  const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
+  const inpStyle = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };
+  const sectionLabel = "text-xs font-semibold uppercase tracking-wide mb-2 block";
+
+  return (
+    <Modal onClose={onClose} maxWidth="max-w-lg">
+      <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{designer.name} 정보 수정</h3>
+
+        {/* Basic info */}
+        <div className="space-y-2.5">
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>기본 정보</span>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="이름 *" className={inp} style={inpStyle} />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="이메일 *" className={inp} style={inpStyle} />
+          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="연락처" className={inp} style={inpStyle} />
+        </div>
+
+        {/* Role */}
+        <div>
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>권한</span>
+          <div className="flex gap-2">
+            {(['staff', 'manager'] as DesignerRole[]).map(r => (
+              <button key={r} type="button" onClick={() => setRole(r)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${role === r ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+                style={role !== r ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                {r === 'staff' ? '스태프' : '매니저'}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>매니저는 전체 디자이너 매출을 열람할 수 있습니다.</p>
+        </div>
+
+        {/* Bio */}
+        <div>
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>한 줄 소개</span>
+          <textarea value={bio} onChange={e => setBio(e.target.value)} rows={2}
+            placeholder="고객에게 보여질 짧은 소개를 입력하세요."
+            className={`${inp} resize-none`} style={inpStyle} />
+        </div>
+
+        {/* Specialties */}
+        <div>
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>전문 시술</span>
+          <div className="flex flex-wrap gap-2">
+            {SVC_OPTIONS.map(s => (
+              <button key={s} type="button" onClick={() => toggleSpecialty(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${specialties.includes(s) ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+                style={!specialties.includes(s) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                {SERVICE_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Work days */}
+        <div>
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>근무 요일</span>
+          <div className="flex gap-1.5">
+            {DAY_LABELS.map((label, idx) => (
+              <button key={idx} type="button" onClick={() => toggleWorkDay(idx)}
+                aria-label={`${label}요일 ${workDays.includes(idx) ? '근무' : '휴무'}`}
+                className={`w-9 h-9 rounded-full text-xs font-bold border transition-colors ${workDays.includes(idx) ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+                style={!workDays.includes(idx) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Day off */}
+        <div>
+          <span className={sectionLabel} style={{ color: 'var(--text-muted)' }}>특정 휴무일</span>
+          <div className="flex gap-2 mb-2">
+            <input type="date" value={newDayOff} onChange={e => setNewDayOff(e.target.value)}
+              className="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+              style={inpStyle} />
+            <button type="button" onClick={addDayOff}
+              className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium">추가</button>
+          </div>
+          {dayOff.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {dayOff.map(d => (
+                <span key={d} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs"
+                  style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                  {d}
+                  <button type="button" onClick={() => setDayOff(prev => prev.filter(x => x !== d))}
+                    aria-label={`${d} 삭제`} style={{ color: 'var(--text-muted)' }}>
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
+          <button type="button" disabled={!name.trim()}
+            onClick={() => {
+              onSave({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined, role, bio: bio.trim() || undefined, specialties: specialties.length ? specialties : undefined, workDays, dayOff });
+              onClose();
+            }}
+            className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white text-sm font-semibold">저장</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // 기간 옵션
 type PeriodKey = 'this_month' | 'last_month' | '3months' | '6months' | 'all';
 const PERIOD_OPTIONS: { id: PeriodKey; label: string }[] = [
@@ -159,6 +299,7 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
   const [tab, setTab] = useState<'stats' | 'staff' | 'shop'>('stats');
   const [showAdd, setShowAdd] = useState(false);
   const [leavingDesigner, setLeavingDesigner] = useState<Designer | null>(null);
+  const [editingDesigner, setEditingDesigner] = useState<Designer | null>(null);
   const [editingShop, setEditingShop] = useState(false);
   const [periodKey, setPeriodKey] = useState<PeriodKey>('6months');
   const [shopForm, setShopForm] = useState({
@@ -438,7 +579,30 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{d.consultationCount}건</p>
                   </div>
                 </div>
+                {/* bio / specialties */}
+                {(d.bio || (d.specialties && d.specialties.length > 0)) && (
+                  <div className="mt-2 pt-2 border-t space-y-1" style={{ borderColor: 'var(--border)' }}>
+                    {d.bio && <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{d.bio}</p>}
+                    {d.specialties && d.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {d.specialties.map(s => (
+                          <span key={s} className="text-[10px] px-1.5 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' }}>
+                            {SERVICE_LABELS[s]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+                  <button onClick={() => setEditingDesigner(d)}
+                    className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.backgroundColor = '')}>
+                    <Edit2 size={12} /> 정보 수정
+                  </button>
                   {d.status === 'active' ? (
                     <button onClick={() => setLeavingDesigner(d)}
                       className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border transition-colors"
@@ -563,6 +727,13 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
 
       {showAdd && <AddDesignerModal onClose={() => setShowAdd(false)} onAdd={onAddDesigner} />}
       {leavingDesigner && <LeaveModal designer={leavingDesigner} onClose={() => setLeavingDesigner(null)} onConfirm={handleLeave} />}
+      {editingDesigner && (
+        <DesignerEditModal
+          designer={editingDesigner}
+          onClose={() => setEditingDesigner(null)}
+          onSave={data => onUpdateDesigner(editingDesigner.id, data)}
+        />
+      )}
     </div>
   );
 }

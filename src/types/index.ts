@@ -83,6 +83,8 @@ export interface AuthUser {
   designerId?: string;   // designer/owner: links to Designer.id
 }
 
+export type DesignerRole = 'staff' | 'manager';
+
 export interface Designer {
   id: string;
   shopId: string;    // 소속 지점
@@ -93,6 +95,15 @@ export interface Designer {
   joinedAt: string;
   leftAt?: string;
   leftReason?: string;
+  // 3-2: 권한 세분화
+  role?: DesignerRole;           // 기본값 'staff'
+  // 1-2: 프로필 카드
+  bio?: string;                  // 한 줄 소개
+  specialties?: ServiceType[];   // 전문 시술
+  avatar?: string;               // base64 또는 URL
+  // 3-4: 근무 스케줄
+  workDays?: number[];           // 0=일 ~ 6=토 (없으면 모든 요일)
+  dayOff?: string[];             // YYYY-MM-DD 특정 휴무일
 }
 
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';

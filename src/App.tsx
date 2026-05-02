@@ -14,6 +14,7 @@ import { CustomerLayout } from './components/Customer/CustomerLayout';
 import { CustomerBooking } from './components/Customer/CustomerBooking';
 import { BookingList } from './components/Bookings/BookingList';
 import { StaffProfile } from './components/Staff/StaffProfile';
+import { OnboardingTour } from './components/common/OnboardingTour';
 // P3-24: recharts 의존 컴포넌트는 lazy 로딩으로 초기 번들에서 분리
 const Dashboard     = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
 const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').then(m => ({ default: m.OwnerDashboard })));
@@ -41,6 +42,9 @@ export default function App() {
   if (!user) {
     return <ErrorBoundary><LoginPage onLogin={login} onLoginAs={loginAs} /></ErrorBoundary>;
   }
+
+  // ── 온보딩 투어 (첫 로그인 시 1회) ──
+  // rendered at z-[70] so it appears above everything
 
   // ── 지점(shop)별 데이터 격리 ──
   const shopId = user.shopId;
@@ -86,6 +90,7 @@ export default function App() {
 
     return (
       <ErrorBoundary>
+      <OnboardingTour role={user.role} />
       <CustomerLayout
         user={user}
         client={myClient}
@@ -159,6 +164,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+    <OnboardingTour role={user.role} />
     <ToastContainer />
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Share2, Copy, Check, Edit2, Trash2, Calendar, User, FlaskConical, Droplets, Camera, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Share2, Copy, Check, Edit2, Trash2, Calendar, User, FlaskConical, Droplets, Camera, AlertTriangle, Printer } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation } from '../../types';
@@ -75,8 +75,9 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>상담 상세</h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{client.name} 고객</p>
         </div>
-        <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg transition-colors hover:text-rose-500" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
-        <button onClick={() => setShowDeleteModal(true)} className="p-1.5 rounded-lg transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
+        <button onClick={() => window.print()} className="p-1.5 rounded-lg transition-colors print:hidden" style={{ color: 'var(--text-muted)' }} aria-label="인쇄"><Printer size={16} /></button>
+        <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg transition-colors hover:text-rose-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
+        <button onClick={() => setShowDeleteModal(true)} className="p-1.5 rounded-lg transition-colors hover:text-red-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
       </div>
 
       {/* Date & Services */}

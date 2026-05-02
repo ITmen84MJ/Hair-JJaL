@@ -1,0 +1,63 @@
+/* ─────────────────────────────────────────────
+   @media print  —  상담 이력 인쇄용 스타일
+   ───────────────────────────────────────────── */
+@media print {
+  /* 사이드바 / 하단 탭바 숨김 */
+  aside,
+  nav,
+  header {
+    display: none !important;
+  }
+
+  /* 인쇄용 레이아웃 */
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 12pt;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 카드 테두리 */
+  [class*="rounded-2xl"],
+  [class*="rounded-xl"] {
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* 버튼 전부 숨김 */
+  button {
+    display: none !important;
+  }
+
+  /* 공유 섹션은 인쇄 불필요 */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* CSS 변수 대체 (white bg 환경) */
+  :root {
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6b7280;
+    --bg-card: #ffffff;
+    --bg-muted: #f9fafb;
+    --border: #e5e7eb;
+  }
+
+  /* 사진 크기 제한 */
+  img {
+    max-width: 200px !important;
+    height: auto !important;
+  }
+
+  /* 페이지 여백 */
+  @page {
+    margin: 15mm 12mm;
+  }
+}

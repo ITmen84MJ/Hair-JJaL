@@ -3,6 +3,7 @@ import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Pho
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Client, Consultation, Booking, View } from '../../types';
+import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 import { CustomerHome } from './CustomerHome';
 import { CustomerConsultationView } from './CustomerConsultationView';
 
@@ -156,7 +157,7 @@ export function CustomerLayout({
                 {b.serviceTypes.map(s => (
                   <span key={s} className="text-xs px-1.5 py-0.5 rounded-full"
                     style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                    {s}
+                    {SERVICE_LABELS[s] ?? s}
                   </span>
                 ))}
               </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2 } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Client, Consultation } from '../../types';
+import { Client, Consultation, Designer } from '../../types';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { ClientForm } from './ClientForm';
 import { ConsultationForm } from '../Consultations/ConsultationForm';
@@ -11,6 +11,7 @@ import { ClientStats } from './ClientStats';
 interface Props {
   client: Client;
   consultations: Consultation[];
+  designers: Designer[];
   onBack: () => void;
   onUpdateClient: (id: string, data: Partial<Client>) => void;
   onAddConsultation: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
@@ -19,7 +20,7 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
-export function ClientDetail({ client, consultations, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
+export function ClientDetail({ client, consultations, designers, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
   const [showEditClient, setShowEditClient] = useState(false);
   const [showAddCon, setShowAddCon] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
@@ -139,7 +140,7 @@ export function ClientDetail({ client, consultations, onBack, onUpdateClient, on
       )}
 
       {showEditClient && <ClientForm initial={client} onSave={data => { onUpdateClient(client.id, data); setShowEditClient(false); }} onClose={() => setShowEditClient(false)} />}
-      {showAddCon && <ConsultationForm clientId={client.id} clientName={client.name} onSave={data => { onAddConsultation(data); setShowAddCon(false); }} onClose={() => setShowAddCon(false)} />}
+      {showAddCon && <ConsultationForm clientId={client.id} clientName={client.name} designers={designers} onSave={data => { onAddConsultation(data); setShowAddCon(false); }} onClose={() => setShowAddCon(false)} />}
     </div>
   );
 }

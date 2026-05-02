@@ -93,6 +93,7 @@ export function useStore() {
   const deleteClient = useCallback((id: string) => {
     setClients(prev => prev.filter(c => c.id !== id));
     setConsultations(prev => prev.filter(c => c.clientId !== id));
+    setBookings(prev => prev.filter(b => b.clientId !== id));
   }, []);
 
   // ── Consultations ──────────────────────────────────────────────

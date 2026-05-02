@@ -26,6 +26,26 @@ const TABS: { id: BookingStatus | 'all'; label: string }[] = [
   { id: 'cancelled', label: '취소' },
 ];
 
+function ConfirmModal({ clientName, onClose, onConfirm }: { clientName: string; onClose: () => void; onConfirm: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+        <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>예약 확정</h3>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{clientName}</span> 고객의 예약을 확정하시겠습니까?
+        </p>
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>돌아가기</button>
+          <button onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold">확정</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CancelModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (reason: string) => void }) {
   const [reason, setReason] = useState('');
   return (
@@ -55,6 +75,7 @@ function CancelModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
 export function BookingList({ bookings, user, onUpdate }: Props) {
   const [tab, setTab] = useState<BookingStatus | 'all'>('pending');
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   // Designer sees only bookings for their name (or no preference)
@@ -67,6 +88,7 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
 
   const confirm = (id: string) => {
     onUpdate(id, { status: 'confirmed', confirmedBy: user.designerName ?? user.name });
+    setConfirmTarget(null);
   };
   const cancel = (id: string, reason: string) => {
     onUpdate(id, { status: 'cancelled', cancelReason: reason || undefined });
@@ -184,7 +206,7 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                     {b.status === 'pending' && (
                       <div className="flex gap-2 pt-1">
                         <button
-                          onClick={() => confirm(b.id)}
+                          onClick={() => setConfirmTarget(b.id)}
                           className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
                         >
                           <CheckCircle2 size={14} /> 예약 확정
@@ -218,6 +240,17 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
           })}
         </div>
       )}
+
+      {confirmTarget && (() => {
+        const b = sorted.find(x => x.id === confirmTarget);
+        return b ? (
+          <ConfirmModal
+            clientName={b.clientName}
+            onClose={() => setConfirmTarget(null)}
+            onConfirm={() => confirm(confirmTarget)}
+          />
+        ) : null;
+      })()}
 
       {cancelTarget && (
         <CancelModal

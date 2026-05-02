@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Plus, Trash2, Upload, Image } from 'lucide-react';
-import { Consultation, Service, ServiceType } from '../../types';
+import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
 
@@ -8,6 +8,7 @@ interface Props {
   clientId: string;
   clientName: string;
   initial?: Partial<Consultation>;
+  designers?: Designer[];
   onSave: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
@@ -62,7 +63,7 @@ function PhotoUpload({
   );
 }
 
-export function ConsultationForm({ clientId, clientName, initial, onSave, onClose }: Props) {
+export function ConsultationForm({ clientId, clientName, initial, designers, onSave, onClose }: Props) {
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
     stylistName: initial?.stylistName ?? '',
@@ -131,7 +132,22 @@ export function ConsultationForm({ clientId, clientName, initial, onSave, onClos
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">담당 스타일리스트 *</label>
-              <input required value={form.stylistName} onChange={e => setField('stylistName', e.target.value)} className={inputCls} placeholder="스타일리스트 이름" />
+              {designers && designers.length > 0 ? (
+                <select
+                  required
+                  value={form.stylistName}
+                  onChange={e => setField('stylistName', e.target.value)}
+                  className={inputCls}
+                  style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', borderColor: 'var(--border-input)' }}
+                >
+                  <option value="">선택하세요</option>
+                  {designers.filter(d => d.status === 'active').map(d => (
+                    <option key={d.id} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input required value={form.stylistName} onChange={e => setField('stylistName', e.target.value)} className={inputCls} placeholder="스타일리스트 이름" />
+              )}
             </div>
           </div>
 

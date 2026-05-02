@@ -203,6 +203,7 @@ export default function App() {
           <ClientDetail
             client={selectedClient}
             consultations={clientConsultations}
+            designers={shopDesigners}
             onBack={() => store.navigate('clients')}
             onUpdateClient={store.updateClient}
             onAddConsultation={data => store.addConsultation({ ...data, shopId })}

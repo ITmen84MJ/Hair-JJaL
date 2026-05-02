@@ -106,21 +106,28 @@ export function CustomerBooking({ client, designers, onSubmit, onBack }: Props) 
             <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>시간 선택 *</p>
           </div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {TIME_SLOTS.map(t => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTime(t)}
-                className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
-                  time === t
-                    ? 'bg-rose-500 text-white border-rose-500'
-                    : ''
-                }`}
-                style={time !== t ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}
-              >
-                {t}
-              </button>
-            ))}
+            {(() => {
+              const currentTime = new Date().toTimeString().slice(0, 5);
+              const available = TIME_SLOTS.filter(t => date !== today || t > currentTime);
+              if (available.length === 0) {
+                return <p className="col-span-4 sm:col-span-6 text-xs py-2" style={{ color: 'var(--text-muted)' }}>오늘은 예약 가능한 시간이 없습니다.</p>;
+              }
+              return available.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTime(t)}
+                  className={`py-2 rounded-xl text-xs font-medium border transition-colors ${
+                    time === t
+                      ? 'bg-rose-500 text-white border-rose-500'
+                      : ''
+                  }`}
+                  style={time !== t ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}
+                >
+                  {t}
+                </button>
+              ));
+            })()}
           </div>
         </div>
 

@@ -8,7 +8,7 @@ interface Props {
   clients: Client[];
   consultations: Consultation[];
   onSelectClient: (id: string) => void;
-  onAddClient: (data: Omit<Client, 'id' | 'createdAt'>) => void;
+  onAddClient: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onDeleteClient: (id: string) => void;
 }
 

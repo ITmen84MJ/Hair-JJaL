@@ -13,7 +13,7 @@ interface Props {
   consultations: Consultation[];
   onBack: () => void;
   onUpdateClient: (id: string, data: Partial<Client>) => void;
-  onAddConsultation: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt'>) => void;
+  onAddConsultation: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
   onSelectConsultation: (id: string) => void;
 }
 

@@ -6,7 +6,7 @@ import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 interface Props {
   client: Client;
   designers: Designer[];
-  onSubmit: (data: Omit<Booking, 'id' | 'createdAt'>) => void;
+  onSubmit: (data: Omit<Booking, 'id' | 'createdAt' | 'shopId'>) => void;
   onBack: () => void;
 }
 

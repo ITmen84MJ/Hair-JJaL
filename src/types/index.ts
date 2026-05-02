@@ -1,5 +1,15 @@
+/** 미용실 지점 */
+export interface Shop {
+  id: string;
+  name: string;      // 지점명 (예: 헤어 짤 강남점)
+  address?: string;
+  phone?: string;
+  createdAt: string;
+}
+
 export interface Client {
   id: string;
+  shopId: string;    // 소속 지점
   name: string;
   phone: string;
   email?: string;
@@ -30,6 +40,7 @@ export interface Service {
 
 export interface Consultation {
   id: string;
+  shopId: string;    // 소속 지점
   clientId: string;
   date: string;
   stylistName: string;
@@ -58,6 +69,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export interface AuthUser {
   id: string;
+  shopId: string;        // 소속 지점
   name: string;
   role: UserRole;
   email: string;
@@ -69,6 +81,7 @@ export interface AuthUser {
 
 export interface Designer {
   id: string;
+  shopId: string;    // 소속 지점
   name: string;
   email: string;
   phone?: string;
@@ -82,6 +95,7 @@ export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
 export interface Booking {
   id: string;
+  shopId: string;    // 소속 지점
   clientId: string;
   clientName: string;
   requestedDate: string;   // YYYY-MM-DD
@@ -110,6 +124,7 @@ export type View =
 export interface AppState {
   clients: Client[];
   consultations: Consultation[];
+  shops: Shop[];
   currentView: View;
   selectedClientId: string | null;
   selectedConsultationId: string | null;

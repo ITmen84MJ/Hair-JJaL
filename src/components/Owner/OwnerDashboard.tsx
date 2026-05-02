@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { format, parseISO, startOfMonth, subMonths } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown } from 'lucide-react';
-import { Client, Consultation, Designer } from '../../types';
+import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X } from 'lucide-react';
+import { Client, Consultation, Designer, Shop } from '../../types';
 
 interface Props {
+  shop: Shop | null;
   clients: Client[];
   consultations: Consultation[];
   designers: Designer[];
-  onAddDesigner: (data: Omit<Designer, 'id'>) => void;
+  onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>) => void;
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
+  onUpdateShop: (data: Partial<Shop>) => void;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 const COLORS = ['#f43f5e', '#fb923c', '#facc15', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
 
-function AddDesignerModal({ onClose, onAdd }: { onClose: () => void; onAdd: (d: Omit<Designer, 'id'>) => void }) {
+function AddDesignerModal({ onClose, onAdd }: { onClose: () => void; onAdd: (d: Omit<Designer, 'id' | 'shopId'>) => void }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }));
@@ -90,10 +92,12 @@ function LeaveModal({ designer, onClose, onConfirm }: {
   );
 }
 
-export function OwnerDashboard({ clients, consultations, designers, onAddDesigner, onUpdateDesigner }: Props) {
-  const [tab, setTab] = useState<'stats' | 'staff'>('stats');
+export function OwnerDashboard({ shop, clients, consultations, designers, onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
+  const [tab, setTab] = useState<'stats' | 'staff' | 'shop'>('stats');
   const [showAdd, setShowAdd] = useState(false);
   const [leavingDesigner, setLeavingDesigner] = useState<Designer | null>(null);
+  const [editingShop, setEditingShop] = useState(false);
+  const [shopForm, setShopForm] = useState({ name: shop?.name ?? '', address: shop?.address ?? '', phone: shop?.phone ?? '' });
 
   // ── Overall stats ──
   const totalRevenue = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
@@ -163,9 +167,9 @@ export function OwnerDashboard({ clients, consultations, designers, onAddDesigne
 
       {/* Tab */}
       <div className="flex gap-1 p-1 rounded-xl w-fit" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        {([['stats', '전체 통계'], ['staff', '직원 관리']] as const).map(([id, label]) => (
+        {([['stats', '전체 통계'], ['staff', '직원 관리'], ['shop', '지점 정보']] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-rose-500 text-white shadow-sm' : ''}`}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === id ? 'bg-rose-500 text-white shadow-sm' : ''}`}
             style={tab !== id ? { color: 'var(--text-secondary)' } : {}}>
             {label}
           </button>
@@ -303,6 +307,69 @@ export function OwnerDashboard({ clients, consultations, designers, onAddDesigne
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── SHOP TAB ── */}
+      {tab === 'shop' && shop && (
+        <div className="rounded-2xl border p-5 space-y-4" style={card}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Store size={16} style={{ color: 'var(--text-muted)' }} />
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>지점 정보</h3>
+            </div>
+            {!editingShop ? (
+              <button onClick={() => { setShopForm({ name: shop.name, address: shop.address ?? '', phone: shop.phone ?? '' }); setEditingShop(true); }}
+                className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                <Edit2 size={15} />
+              </button>
+            ) : (
+              <div className="flex gap-1.5">
+                <button onClick={() => { onUpdateShop(shopForm); setEditingShop(false); }}
+                  className="p-1.5 rounded-lg bg-rose-500 text-white"><Check size={14} /></button>
+                <button onClick={() => setEditingShop(false)}
+                  className="p-1.5 rounded-lg border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}><X size={14} /></button>
+              </div>
+            )}
+          </div>
+          {editingShop ? (
+            <div className="space-y-3">
+              {[['지점명 *', 'name'], ['주소', 'address'], ['전화번호', 'phone']].map(([label, key]) => (
+                <div key={key}>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  <input
+                    value={shopForm[key as keyof typeof shopForm]}
+                    onChange={e => setShopForm(f => ({ ...f, [key]: e.target.value }))}
+                    className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>지점명</p>
+                <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{shop.name}</p>
+              </div>
+              {shop.address && (
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>주소</p>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{shop.address}</p>
+                </div>
+              )}
+              {shop.phone && (
+                <div>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>전화번호</p>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{shop.phone}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>개점일</p>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{shop.createdAt.slice(0, 10)}</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

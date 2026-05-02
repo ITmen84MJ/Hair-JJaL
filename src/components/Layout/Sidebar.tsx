@@ -8,6 +8,7 @@ interface Props {
   isDark: boolean;
   onToggleTheme: () => void;
   user: AuthUser;
+  shopName?: string;
   onLogout: () => void;
   pendingBookings?: number;
 }
@@ -32,7 +33,7 @@ const ROLE_BADGE_STYLE: Record<string, React.CSSProperties> = {
   customer: { backgroundColor: 'var(--role-customer-bg)', color: 'var(--role-customer-text)' },
 };
 
-export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, onLogout, pendingBookings = 0 }: Props) {
+export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, shopName, onLogout, pendingBookings = 0 }: Props) {
   const items = NAV_ITEMS[user.role] ?? NAV_ITEMS.designer;
 
   const isActive = (view: View) =>
@@ -52,7 +53,9 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
               <span className="text-white font-black text-sm">J</span>
             </div>
             <div>
-              <p className="font-bold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>Hair JJaL</p>
+              <p className="font-bold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>
+                {shopName ?? 'Hair JJaL'}
+              </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>헤어 상담 이력 관리</p>
             </div>
           </div>

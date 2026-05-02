@@ -4,7 +4,7 @@ import { Client } from '../../types';
 
 interface Props {
   initial?: Partial<Client>;
-  onSave: (data: Omit<Client, 'id' | 'createdAt'>) => void;
+  onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
 

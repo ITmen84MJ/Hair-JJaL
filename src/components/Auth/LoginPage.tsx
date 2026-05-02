@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Scissors, User, Palette, Crown, Eye, EyeOff } from 'lucide-react';
-import { demoUsers } from '../../data/mockData';
+import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser } from '../../types';
 
 interface Props {
@@ -33,8 +33,11 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
 
   const inp = "w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 transition-all";
 
-  const grouped: Record<string, AuthUser[]> = {};
-  demoUsers.forEach(u => { (grouped[u.role] = grouped[u.role] || []).push(u); });
+  const shopName = (shopId: string) => mockShops.find(s => s.id === shopId)?.name ?? '';
+
+  // Group by shop first, then by role within each shop
+  const byShop: Record<string, AuthUser[]> = {};
+  demoUsers.forEach(u => { (byShop[u.shopId] = byShop[u.shopId] || []).push(u); });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #fff1f2 0%, #fef9f0 50%, #fff 100%)' }}>
@@ -81,16 +84,21 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
         {/* Demo accounts */}
         <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">데모 계정으로 체험하기</p>
-          <div className="space-y-3">
-            {(Object.entries(grouped) as [keyof typeof roleInfo, AuthUser[]][]).map(([role, users]) => {
-              const { label, Icon, color, desc } = roleInfo[role];
-              return (
-                <div key={role}>
-                  <div className={`flex items-center gap-2 text-xs font-medium px-2 py-1 rounded-lg border w-fit mb-2 ${color}`}>
-                    <Icon size={11} /> {label}
-                  </div>
-                  <div className="space-y-1.5 pl-1">
-                    {users.map(u => (
+          <div className="space-y-4">
+            {Object.entries(byShop).map(([sid, users]) => (
+              <div key={sid}>
+                {/* 지점 구분 헤더 */}
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+                  <span className="text-xs font-bold px-2" style={{ color: 'var(--text-muted)' }}>
+                    {shopName(sid)}
+                  </span>
+                  <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+                </div>
+                <div className="space-y-1.5">
+                  {users.map(u => {
+                    const { label, Icon, color, desc } = roleInfo[u.role as keyof typeof roleInfo];
+                    return (
                       <button key={u.id} onClick={() => onLoginAs(u.id)}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left hover:shadow-sm transition-all group"
                         style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
@@ -101,15 +109,20 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{desc}</p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <span className={`inline-flex items-center gap-0.5 mr-1.5 ${color.split(' ')[1]}`}>
+                              <Icon size={9} /> {label}
+                            </span>
+                            · {desc}
+                          </p>
                         </div>
                         <span className="text-xs text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">입장 →</span>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
           <p className="text-xs text-center mt-4" style={{ color: 'var(--text-muted)' }}>모든 데모 계정 비밀번호: <span className="font-mono font-semibold">1234</span></p>
         </div>

@@ -9,8 +9,7 @@ import { ClientDetail } from './components/Clients/ClientDetail';
 import { ConsultationDetail } from './components/Consultations/ConsultationDetail';
 import { ShareView } from './components/Share/ShareView';
 import { LoginPage } from './components/Auth/LoginPage';
-import { CustomerHome } from './components/Customer/CustomerHome';
-import { CustomerConsultationView } from './components/Customer/CustomerConsultationView';
+import { CustomerLayout } from './components/Customer/CustomerLayout';
 import { CustomerBooking } from './components/Customer/CustomerBooking';
 import { BookingList } from './components/Bookings/BookingList';
 import { OwnerDashboard } from './components/Owner/OwnerDashboard';
@@ -39,27 +38,25 @@ export default function App() {
     return <LoginPage onLogin={login} onLoginAs={loginAs} />;
   }
 
+  // ── 지점(shop)별 데이터 격리 ──
+  const shopId = user.shopId;
+  const shopClients       = store.clients.filter(c  => c.shopId  === shopId);
+  const shopConsultations = store.consultations.filter(c => c.shopId === shopId);
+  const shopDesigners     = store.designers.filter(d => d.shopId  === shopId);
+  const shopBookings      = store.bookings.filter(b  => b.shopId  === shopId);
+  const myShop            = store.shops.find(s => s.id === shopId) ?? null;
+
   // ── CUSTOMER view ──
   if (user.role === 'customer') {
     const myClient = user.clientId
-      ? store.clients.find(c => c.id === user.clientId) ?? null
+      ? shopClients.find(c => c.id === user.clientId) ?? null
       : null;
     const myConsultations = myClient
-      ? store.consultations.filter(c => c.clientId === myClient.id)
+      ? shopConsultations.filter(c => c.clientId === myClient.id)
       : [];
     const myBookings = myClient
-      ? store.bookings.filter(b => b.clientId === myClient.id)
+      ? shopBookings.filter(b => b.clientId === myClient.id)
       : [];
-
-    // Consultation detail
-    if (store.currentView === 'customer-consultation' && store.selectedConsultationId) {
-      const con = store.consultations.find(c => c.id === store.selectedConsultationId) ?? null;
-      if (con) return (
-        <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
-          <CustomerConsultationView consultation={con} onBack={() => store.navigate('customer-home')} />
-        </div>
-      );
-    }
 
     // Booking form
     if (store.currentView === 'customer-booking' && myClient) {
@@ -67,9 +64,9 @@ export default function App() {
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
           <CustomerBooking
             client={myClient}
-            designers={store.designers}
+            designers={shopDesigners}
             onSubmit={data => {
-              store.addBooking(data);
+              store.addBooking({ ...data, shopId });
               store.navigate('customer-home');
             }}
             onBack={() => store.navigate('customer-home')}
@@ -79,69 +76,56 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
-        {/* Minimal top bar for customer */}
-        <header className="sticky top-0 z-10 border-b px-5 py-3 flex items-center justify-between"
-          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-black text-xs">J</span>
-            </div>
-            <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Hair JJaL</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={toggle} className="p-2 rounded-lg text-sm" style={{ color: 'var(--text-muted)' }}>
-              {isDark ? '☀️' : '🌙'}
-            </button>
-            <button onClick={logout}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-              로그아웃
-            </button>
-          </div>
-        </header>
-        <CustomerHome
-          client={myClient}
-          consultations={myConsultations}
-          bookings={myBookings}
-          onSelectConsultation={id => store.navigate('customer-consultation', undefined, id)}
-          onNewBooking={() => store.navigate('customer-booking')}
-        />
-      </div>
+      <CustomerLayout
+        user={user}
+        client={myClient}
+        consultations={myConsultations}
+        bookings={myBookings}
+        shopName={myShop?.name}
+        currentView={store.currentView}
+        selectedConsultationId={store.selectedConsultationId}
+        isDark={isDark}
+        onToggleTheme={toggle}
+        onLogout={logout}
+        onNavigate={store.navigate}
+        onSelectConsultation={id => store.navigate('customer-consultation', undefined, id)}
+        onNewBooking={() => store.navigate('customer-booking')}
+        onUpdateClient={(id, data) => store.updateClient(id, data)}
+      />
     );
   }
 
   // ── DESIGNER / OWNER layout with Sidebar ──
   const isDesigner = user.role === 'designer';
 
-  // Designer only sees their own clients/consultations
+  // Designer only sees their own clients/consultations (within the shop)
   const visibleConsultations = isDesigner && user.designerName
-    ? store.consultations.filter(c => c.stylistName === user.designerName)
-    : store.consultations;
+    ? shopConsultations.filter(c => c.stylistName === user.designerName)
+    : shopConsultations;
 
   const visibleClientIds = new Set(visibleConsultations.map(c => c.clientId));
-  // Clients with no consultations at all are treated as "new/unassigned" — visible to all designers
-  const clientsWithAnyCon = new Set(store.consultations.map(c => c.clientId));
+  // Clients with no consultations yet are visible to all designers in the shop
+  const clientsWithAnyCon = new Set(shopConsultations.map(c => c.clientId));
   const visibleClients = isDesigner
-    ? store.clients.filter(c => visibleClientIds.has(c.id) || !clientsWithAnyCon.has(c.id))
-    : store.clients;
+    ? shopClients.filter(c => visibleClientIds.has(c.id) || !clientsWithAnyCon.has(c.id))
+    : shopClients;
 
   const selectedClient = store.selectedClientId
     ? visibleClients.find(c => c.id === store.selectedClientId) ?? null
     : null;
 
   const selectedConsultation = store.selectedConsultationId
-    ? store.consultations.find(c => c.id === store.selectedConsultationId) ?? null
+    ? shopConsultations.find(c => c.id === store.selectedConsultationId) ?? null
     : null;
 
   const clientConsultations = selectedClient
-    ? store.consultations.filter(c => c.clientId === selectedClient.id)
+    ? shopConsultations.filter(c => c.clientId === selectedClient.id)
     : [];
 
   // Pending booking count for sidebar badge
   const pendingBookings = isDesigner && user.designerName
-    ? store.bookings.filter(b => b.status === 'pending' && (!b.preferredDesigner || b.preferredDesigner === user.designerName)).length
-    : store.bookings.filter(b => b.status === 'pending').length;
+    ? shopBookings.filter(b => b.status === 'pending' && (!b.preferredDesigner || b.preferredDesigner === user.designerName)).length
+    : shopBookings.filter(b => b.status === 'pending').length;
 
   // 모바일 상단 헤더용 뷰 제목
   const VIEW_TITLES: Partial<Record<typeof store.currentView, string>> = {
@@ -157,6 +141,7 @@ export default function App() {
         isDark={isDark}
         onToggleTheme={toggle}
         user={user}
+        shopName={myShop?.name}
         onLogout={logout}
         pendingBookings={pendingBookings}
       />
@@ -170,11 +155,14 @@ export default function App() {
               <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-black text-xs">J</span>
               </div>
-              <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{mobileTitle}</span>
+              <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                {myShop?.name ?? 'Hair JJaL'}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
-                <span className="text-rose-600 font-bold text-xs">{user.name.charAt(0)}</span>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+                <span className="font-bold text-xs" style={{ color: 'var(--text-icon-rose)' }}>{user.name.charAt(0)}</span>
               </div>
               <span>{user.name}</span>
             </div>
@@ -194,7 +182,7 @@ export default function App() {
             clients={visibleClients}
             consultations={visibleConsultations}
             onSelectClient={id => store.navigate('client-detail', id)}
-            onAddClient={store.addClient}
+            onAddClient={data => store.addClient({ ...data, shopId })}
             onDeleteClient={store.deleteClient}
           />
         )}
@@ -205,7 +193,7 @@ export default function App() {
             consultations={clientConsultations}
             onBack={() => store.navigate('clients')}
             onUpdateClient={store.updateClient}
-            onAddConsultation={store.addConsultation}
+            onAddConsultation={data => store.addConsultation({ ...data, shopId })}
             onSelectConsultation={id => store.navigate('consultation-detail', selectedClient.id, id)}
           />
         )}
@@ -223,7 +211,7 @@ export default function App() {
 
         {store.currentView === 'bookings' && (
           <BookingList
-            bookings={store.bookings}
+            bookings={shopBookings}
             user={user}
             onUpdate={store.updateBooking}
           />
@@ -231,11 +219,13 @@ export default function App() {
 
         {store.currentView === 'owner-staff' && user.role === 'owner' && (
           <OwnerDashboard
-            clients={store.clients}
-            consultations={store.consultations}
-            designers={store.designers}
-            onAddDesigner={store.addDesigner}
+            shop={myShop}
+            clients={shopClients}
+            consultations={shopConsultations}
+            designers={shopDesigners}
+            onAddDesigner={data => store.addDesigner({ ...data, shopId })}
             onUpdateDesigner={store.updateDesigner}
+            onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
           />
         )}
 

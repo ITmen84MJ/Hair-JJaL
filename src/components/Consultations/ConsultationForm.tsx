@@ -8,7 +8,7 @@ interface Props {
   clientId: string;
   clientName: string;
   initial?: Partial<Consultation>;
-  onSave: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt'>) => void;
+  onSave: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Client, Consultation, Designer, Booking, View, AppState } from '../types';
-import { mockClients, mockConsultations, mockDesigners, mockBookings } from '../data/mockData';
+import { Client, Consultation, Designer, Booking, Shop, View, AppState } from '../types';
+import { mockClients, mockConsultations, mockDesigners, mockBookings, mockShops } from '../data/mockData';
 import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'hairlog_data';
@@ -10,33 +10,42 @@ function loadFromStorage(): {
   consultations: Consultation[];
   designers: Designer[];
   bookings: Booking[];
+  shops: Shop[];
 } {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const p = JSON.parse(raw);
       return {
-        clients: p.clients ?? mockClients,
+        clients:       p.clients       ?? mockClients,
         consultations: p.consultations ?? mockConsultations,
-        designers: p.designers ?? mockDesigners,
-        bookings: p.bookings ?? mockBookings,
+        designers:     p.designers     ?? mockDesigners,
+        bookings:      p.bookings      ?? mockBookings,
+        shops:         p.shops         ?? mockShops,
       };
     }
   } catch {}
-  return { clients: mockClients, consultations: mockConsultations, designers: mockDesigners, bookings: mockBookings };
+  return {
+    clients: mockClients, consultations: mockConsultations,
+    designers: mockDesigners, bookings: mockBookings, shops: mockShops,
+  };
 }
 
-function save(clients: Client[], consultations: Consultation[], designers: Designer[], bookings: Booking[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, consultations, designers, bookings }));
+function save(
+  clients: Client[], consultations: Consultation[],
+  designers: Designer[], bookings: Booking[], shops: Shop[],
+) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients, consultations, designers, bookings, shops }));
 }
 
 export function useStore() {
-  const initial = loadFromStorage();
-  const [clients, setClients] = useState<Client[]>(initial.clients);
-  const [consultations, setConsultations] = useState<Consultation[]>(initial.consultations);
-  const [designers, setDesigners] = useState<Designer[]>(initial.designers);
-  const [bookings, setBookings] = useState<Booking[]>(initial.bookings);
-  const [state, setState] = useState<Omit<AppState, 'clients' | 'consultations'>>({
+  const [clients,       setClients]       = useState<Client[]>      (() => loadFromStorage().clients);
+  const [consultations, setConsultations] = useState<Consultation[]>(() => loadFromStorage().consultations);
+  const [designers,     setDesigners]     = useState<Designer[]>    (() => loadFromStorage().designers);
+  const [bookings,      setBookings]      = useState<Booking[]>     (() => loadFromStorage().bookings);
+  const [shops,         setShops]         = useState<Shop[]>        (() => loadFromStorage().shops);
+
+  const [state, setState] = useState<Omit<AppState, 'clients' | 'consultations' | 'shops'>>({
     currentView: 'dashboard',
     selectedClientId: null,
     selectedConsultationId: null,
@@ -47,85 +56,137 @@ export function useStore() {
     setState(s => ({
       ...s,
       currentView: view,
-      selectedClientId: clientId ?? s.selectedClientId,
+      selectedClientId:      clientId      ?? s.selectedClientId,
       selectedConsultationId: consultationId ?? null,
       shareToken: token ?? null,
     }));
   }, []);
 
-  // ── Clients ──
+  // ── Clients ──────────────────────────────────────────────────
   const addClient = useCallback((data: Omit<Client, 'id' | 'createdAt'>) => {
     const client: Client = { ...data, id: uuidv4(), createdAt: new Date().toISOString() };
-    setClients(prev => { const next = [...prev, client]; save(next, consultations, designers, bookings); return next; });
+    setClients(prev => {
+      const next = [...prev, client];
+      setConsultations(cons => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(next, cons, des, bks, shs); return shs; }); return bks; }); return des; }); return cons; });
+      return next;
+    });
     return client;
-  }, [consultations, designers, bookings]);
+  }, []);
 
   const updateClient = useCallback((id: string, data: Partial<Client>) => {
-    setClients(prev => { const next = prev.map(c => c.id === id ? { ...c, ...data } : c); save(next, consultations, designers, bookings); return next; });
-  }, [consultations, designers, bookings]);
+    setClients(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, ...data } : c);
+      setConsultations(cons => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(next, cons, des, bks, shs); return shs; }); return bks; }); return des; }); return cons; });
+      return next;
+    });
+  }, []);
 
   const deleteClient = useCallback((id: string) => {
     setClients(prev => {
       const next = prev.filter(c => c.id !== id);
-      const nextCons = consultations.filter(c => c.clientId !== id);
-      save(next, nextCons, designers, bookings);
-      setConsultations(nextCons);
+      setConsultations(cons => {
+        const nextCons = cons.filter(c => c.clientId !== id);
+        setDesigners(des => { setBookings(bks => { setShops(shs => { save(next, nextCons, des, bks, shs); return shs; }); return bks; }); return des; });
+        return nextCons;
+      });
       return next;
     });
-  }, [consultations, designers, bookings]);
+  }, []);
 
-  // ── Consultations ──
+  // ── Consultations ─────────────────────────────────────────────
   const addConsultation = useCallback((data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt'>) => {
     const consultation: Consultation = {
       ...data, id: uuidv4(),
       shareToken: `share-${uuidv4().slice(0, 8)}`,
       createdAt: new Date().toISOString(),
     };
-    setConsultations(prev => { const next = [...prev, consultation]; save(clients, next, designers, bookings); return next; });
+    setConsultations(prev => {
+      const next = [...prev, consultation];
+      setClients(cls => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(cls, next, des, bks, shs); return shs; }); return bks; }); return des; }); return cls; });
+      return next;
+    });
     return consultation;
-  }, [clients, designers, bookings]);
+  }, []);
 
   const updateConsultation = useCallback((id: string, data: Partial<Consultation>) => {
-    setConsultations(prev => { const next = prev.map(c => c.id === id ? { ...c, ...data } : c); save(clients, next, designers, bookings); return next; });
-  }, [clients, designers, bookings]);
+    setConsultations(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, ...data } : c);
+      setClients(cls => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(cls, next, des, bks, shs); return shs; }); return bks; }); return des; }); return cls; });
+      return next;
+    });
+  }, []);
 
   const deleteConsultation = useCallback((id: string) => {
-    setConsultations(prev => { const next = prev.filter(c => c.id !== id); save(clients, next, designers, bookings); return next; });
-  }, [clients, designers, bookings]);
+    setConsultations(prev => {
+      const next = prev.filter(c => c.id !== id);
+      setClients(cls => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(cls, next, des, bks, shs); return shs; }); return bks; }); return des; }); return cls; });
+      return next;
+    });
+  }, []);
 
   const toggleShare = useCallback((id: string) => {
-    setConsultations(prev => { const next = prev.map(c => c.id === id ? { ...c, isShared: !c.isShared } : c); save(clients, next, designers, bookings); return next; });
-  }, [clients, designers, bookings]);
+    setConsultations(prev => {
+      const next = prev.map(c => c.id === id ? { ...c, isShared: !c.isShared } : c);
+      setClients(cls => { setDesigners(des => { setBookings(bks => { setShops(shs => { save(cls, next, des, bks, shs); return shs; }); return bks; }); return des; }); return cls; });
+      return next;
+    });
+  }, []);
 
-  // ── Designers ──
+  // ── Designers ─────────────────────────────────────────────────
   const addDesigner = useCallback((data: Omit<Designer, 'id'>) => {
     const designer: Designer = { ...data, id: uuidv4() };
-    setDesigners(prev => { const next = [...prev, designer]; save(clients, consultations, next, bookings); return next; });
+    setDesigners(prev => {
+      const next = [...prev, designer];
+      setClients(cls => { setConsultations(cons => { setBookings(bks => { setShops(shs => { save(cls, cons, next, bks, shs); return shs; }); return bks; }); return cons; }); return cls; });
+      return next;
+    });
     return designer;
-  }, [clients, consultations, bookings]);
+  }, []);
 
   const updateDesigner = useCallback((id: string, data: Partial<Designer>) => {
-    setDesigners(prev => { const next = prev.map(d => d.id === id ? { ...d, ...data } : d); save(clients, consultations, next, bookings); return next; });
-  }, [clients, consultations, bookings]);
+    setDesigners(prev => {
+      const next = prev.map(d => d.id === id ? { ...d, ...data } : d);
+      setClients(cls => { setConsultations(cons => { setBookings(bks => { setShops(shs => { save(cls, cons, next, bks, shs); return shs; }); return bks; }); return cons; }); return cls; });
+      return next;
+    });
+  }, []);
 
-  // ── Bookings ──
+  // ── Bookings ──────────────────────────────────────────────────
   const addBooking = useCallback((data: Omit<Booking, 'id' | 'createdAt'>) => {
     const booking: Booking = { ...data, id: uuidv4(), createdAt: new Date().toISOString() };
-    setBookings(prev => { const next = [...prev, booking]; save(clients, consultations, designers, next); return next; });
+    setBookings(prev => {
+      const next = [...prev, booking];
+      setClients(cls => { setConsultations(cons => { setDesigners(des => { setShops(shs => { save(cls, cons, des, next, shs); return shs; }); return des; }); return cons; }); return cls; });
+      return next;
+    });
     return booking;
-  }, [clients, consultations, designers]);
+  }, []);
 
   const updateBooking = useCallback((id: string, data: Partial<Booking>) => {
-    setBookings(prev => { const next = prev.map(b => b.id === id ? { ...b, ...data } : b); save(clients, consultations, designers, next); return next; });
-  }, [clients, consultations, designers]);
+    setBookings(prev => {
+      const next = prev.map(b => b.id === id ? { ...b, ...data } : b);
+      setClients(cls => { setConsultations(cons => { setDesigners(des => { setShops(shs => { save(cls, cons, des, next, shs); return shs; }); return des; }); return cons; }); return cls; });
+      return next;
+    });
+  }, []);
+
+  // ── Shops ─────────────────────────────────────────────────────
+  const updateShop = useCallback((id: string, data: Partial<Shop>) => {
+    setShops(prev => {
+      const next = prev.map(s => s.id === id ? { ...s, ...data } : s);
+      setClients(cls => { setConsultations(cons => { setDesigners(des => { setBookings(bks => { save(cls, cons, des, bks, next); return bks; }); return des; }); return cons; }); return cls; });
+      return next;
+    });
+  }, []);
 
   return {
-    clients, consultations, designers, bookings,
+    clients, consultations, designers, bookings, shops,
     ...state,
     navigate,
     addClient, updateClient, deleteClient,
     addConsultation, updateConsultation, deleteConsultation, toggleShare,
     addDesigner, updateDesigner,
     addBooking, updateBooking,
+    updateShop,
   };
 }

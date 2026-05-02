@@ -2,9 +2,10 @@ import { useState, useRef } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
-  Download, Upload, HardDrive,
+  Download, Upload, HardDrive, Table2,
 } from 'lucide-react';
 import { exportData, importData, getStorageUsage } from '../../utils/backup';
+import { exportClientsCSV, exportConsultationsCSV } from '../../utils/csv';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Designer, Shop, Consultation, Booking, ROLE_LABELS } from '../../types';
@@ -15,6 +16,7 @@ interface Props {
   shop: Shop | null;
   myConsultations: Consultation[]; // 본인 담당 시술 이력
   shopConsultations: Consultation[];
+  shopClients: import('../../types').Client[];
   shopDesigners: Designer[];
   shopBookings: Booking[];
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
@@ -32,7 +34,7 @@ const inp = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus
 
 export function StaffProfile({
   user, designer, shop,
-  myConsultations, shopConsultations, shopDesigners, shopBookings,
+  myConsultations, shopConsultations, shopClients, shopDesigners, shopBookings,
   onUpdateDesigner, onUpdateShop, onUpdateName,
 }: Props) {
   const isOwner = user.role === 'owner';
@@ -386,7 +388,7 @@ export function StaffProfile({
             <Download size={13} /> 데이터 내보내기
           </button>
 
-          {/* 가져오기는 원장만 */}
+          {/* 원장 전용: 가져오기 + CSV 내보내기 */}
           {isOwner && (
             <>
               <button
@@ -396,6 +398,18 @@ export function StaffProfile({
                 <Upload size={13} /> 데이터 가져오기
               </button>
               <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+              <button
+                onClick={() => exportClientsCSV(shopClients, shopConsultations)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                <Table2 size={13} /> 고객 CSV
+              </button>
+              <button
+                onClick={() => exportConsultationsCSV(shopClients, shopConsultations)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                <Table2 size={13} /> 시술 CSV
+              </button>
             </>
           )}
         </div>

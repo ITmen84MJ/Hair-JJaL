@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation, Designer } from '../../types';
@@ -8,6 +8,7 @@ import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { ClientForm } from './ClientForm';
 import { ConsultationForm } from '../Consultations/ConsultationForm';
 import { ClientStats } from './ClientStats';
+import { Modal } from '../common/Modal';
 
 interface Props {
   client: Client;
@@ -21,10 +22,46 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
+/** 라이트박스: 사진 배열에서 인덱스 기반 탐색 */
+function Lightbox({ photos, startIndex, onClose }: {
+  photos: { src: string; label: string; date: string }[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [idx, setIdx] = useState(startIndex);
+  const prev = () => setIdx(i => (i - 1 + photos.length) % photos.length);
+  const next = () => setIdx(i => (i + 1) % photos.length);
+  const photo = photos[idx];
+  return (
+    <Modal onClose={onClose} maxWidth="max-w-xl">
+      <div className="relative">
+        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{photo.date} · {photo.label}</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{idx + 1} / {photos.length}</p>
+        </div>
+        <SafeImg src={photo.src} alt={photo.label} className="w-full max-h-[70vh] object-contain bg-black" />
+        {photos.length > 1 && (
+          <>
+            <button onClick={prev} aria-label="이전 사진"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={next} aria-label="다음 사진"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+              <ChevronRightIcon size={18} />
+            </button>
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 export function ClientDetail({ client, consultations, designers, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
   const [showEditClient, setShowEditClient] = useState(false);
   const [showAddCon, setShowAddCon] = useState(false);
-  const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
+  const [activeTab, setActiveTab] = useState<'history' | 'gallery' | 'stats'>('history');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [monthFilter, setMonthFilter] = useState('');   // P2-16: 'YYYY-MM' 또는 ''(전체)
   const [tagInput, setTagInput] = useState('');         // P2-21: 인라인 태그 입력
 
@@ -44,6 +81,17 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
   }, [allSorted]);
   const age = client.birthDate ? differenceInYears(new Date(), parseISO(client.birthDate)) : null;
   const totalSpend = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
+
+  // 갤러리: 시간순(오래된→최신) before+after 수집
+  const galleryPhotos = useMemo(() => {
+    const items: { src: string; label: string; date: string }[] = [];
+    [...allSorted].reverse().forEach(con => {
+      const d = format(parseISO(con.date), 'yy.MM.dd', { locale: ko });
+      if (con.beforePhoto) items.push({ src: con.beforePhoto, label: 'Before', date: d });
+      if (con.afterPhoto)  items.push({ src: con.afterPhoto,  label: 'After',  date: d });
+    });
+    return items;
+  }, [allSorted]);
 
   return (
     <div className="p-6 space-y-6" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -130,18 +178,50 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl p-1" style={{ backgroundColor: 'var(--bg-muted)' }}>
-        {([['history', '상담 이력', Scissors], ['stats', '통계/차트', BarChart2]] as const).map(([id, label, Icon]) => (
+        {([
+          ['history', '상담 이력', Scissors],
+          ['gallery', `사진 (${galleryPhotos.length})`, Camera],
+          ['stats', '통계/차트', BarChart2],
+        ] as const).map(([id, label, Icon]) => (
           <button key={id} onClick={() => setActiveTab(id)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors"
             style={activeTab === id
               ? { backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: 'var(--shadow)' }
               : { color: 'var(--text-muted)' }}>
-            <Icon size={14} /> {label}
+            <Icon size={13} /> {label}
           </button>
         ))}
       </div>
 
       {activeTab === 'stats' && <ClientStats consultations={consultations} />}
+
+      {activeTab === 'gallery' && (
+        <div>
+          {galleryPhotos.length === 0 ? (
+            <div className="rounded-xl py-14 text-center border-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
+              <Image size={32} className="mx-auto mb-2 opacity-30" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>저장된 사진이 없습니다.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-1.5">
+              {galleryPhotos.map((p, i) => (
+                <button key={i} onClick={() => setLightboxIndex(i)}
+                  className="relative aspect-square rounded-xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-rose-400"
+                  aria-label={`${p.date} ${p.label} 사진 보기`}>
+                  <SafeImg src={p.src} alt={`${p.date} ${p.label}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <div className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] font-medium text-white"
+                    style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }}>
+                    {p.date} {p.label}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {lightboxIndex !== null && (
+            <Lightbox photos={galleryPhotos} startIndex={lightboxIndex} onClose={() => setLightboxIndex(null)} />
+          )}
+        </div>
+      )}
 
       {activeTab === 'history' && (
         <div>

@@ -46,26 +46,29 @@ function PhotoUpload({
 
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
+      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
           <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
             onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
           <div className="absolute top-2 right-2 flex gap-1">
-            <button type="button" onClick={() => inputRef.current?.click()}
-              className="bg-white/80 dark:bg-gray-800/80 p-1.5 rounded-lg shadow text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 transition-colors">
+            <button type="button" onClick={() => inputRef.current?.click()} aria-label="사진 변경"
+              className="p-1.5 rounded-lg shadow transition-colors"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
               <Upload size={12} />
             </button>
-            <button type="button" onClick={() => onChange('')}
-              className="bg-white/80 dark:bg-gray-800/80 p-1.5 rounded-lg shadow text-red-500 hover:bg-white dark:hover:bg-gray-700 transition-colors">
+            <button type="button" onClick={() => onChange('')} aria-label="사진 삭제"
+              className="p-1.5 rounded-lg shadow transition-colors text-red-500"
+              style={{ backgroundColor: 'var(--bg-card)' }}>
               <X size={12} />
             </button>
           </div>
         </div>
       ) : (
         <button type="button" onClick={() => inputRef.current?.click()}
-          className="w-full h-24 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 dark:text-gray-500 hover:border-rose-300 dark:hover:border-rose-600 hover:text-rose-400 transition-colors">
+          className="w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-rose-300 hover:text-rose-400 transition-colors"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
           <Image size={20} />
           <span className="text-xs">클릭하여 사진 업로드</span>
         </button>
@@ -223,11 +226,11 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">시술 날짜 *</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>시술 날짜 *</label>
               <input required type="date" value={form.date} onChange={e => setField('date', e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">담당 스타일리스트 *</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>담당 스타일리스트 *</label>
               {designers && designers.length > 0 ? (
                 <select
                   required
@@ -250,7 +253,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
           {/* Services */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">시술 항목</label>
+              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>시술 항목</label>
               <button type="button" onClick={addService} className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1">
                 <Plus size={12} /> 추가
               </button>
@@ -259,7 +262,8 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
               {form.services.map((svc, i) => (
                 <div key={i} className="flex gap-2 items-start">
                   <select value={svc.type} onChange={e => updateService(i, 'type', e.target.value)}
-                    className="border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-2 text-xs bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-300 flex-shrink-0 w-32">
+                    className="border rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300 flex-shrink-0 w-32"
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}>
                     {(Object.keys(SERVICE_LABELS) as ServiceType[]).map(t => (
                       <option key={t} value={t}>{SERVICE_LABELS[t]}</option>
                     ))}
@@ -267,10 +271,12 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
                   <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
                     className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
                   <input type="number" value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
-                    className="w-28 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="w-28 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
                     placeholder="금액" />
                   {form.services.length > 1 && (
-                    <button type="button" onClick={() => removeService(i)} className="text-gray-300 hover:text-red-500 pt-2">
+                    <button type="button" onClick={() => removeService(i)} aria-label="시술 항목 삭제"
+                      className="hover:text-red-500 pt-2 transition-colors" style={{ color: 'var(--text-muted)' }}>
                       <Trash2 size={14} />
                     </button>
                   )}
@@ -281,11 +287,11 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">모발 상태</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>모발 상태</label>
               <input value={form.hairCondition} onChange={e => setField('hairCondition', e.target.value)} className={inputCls} placeholder="예: 손상 보통, 건조함" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">두피 상태</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>두피 상태</label>
               <input value={form.scalp} onChange={e => setField('scalp', e.target.value)} className={inputCls} placeholder="예: 지성, 민감" />
             </div>
           </div>
@@ -294,7 +300,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             {/* 컬러 포뮬러 + 템플릿 */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">컬러 포뮬러</label>
+                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>컬러 포뮬러</label>
                 <div className="flex items-center gap-1">
                   {form.colorFormula.trim() && (
                     <button type="button" title="현재 포뮬러 저장"
@@ -340,7 +346,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             {/* 펌 포뮬러 + 템플릿 */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">펌 포뮬러</label>
+                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>펌 포뮬러</label>
                 <div className="flex items-center gap-1">
                   {form.permFormula.trim() && (
                     <button type="button" title="현재 포뮬러 저장"
@@ -392,7 +398,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">상담 메모</label>
+              <label className="block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>상담 메모</label>
               <VoiceNoteButton onAppend={text => setField('notes', (form.notes ? form.notes + '\n' : '') + text.trim())} />
             </div>
             <textarea value={form.notes} onChange={e => setField('notes', e.target.value)} rows={4}
@@ -401,18 +407,18 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">다음 방문 예정일</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>다음 방문 예정일</label>
               <input type="date" value={form.nextVisitDate} onChange={e => setField('nextVisitDate', e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">다음 방문 내용</label>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>다음 방문 내용</label>
               <input value={form.nextVisitNote} onChange={e => setField('nextVisitNote', e.target.value)} className={inputCls} placeholder="예: 뿌리 터치업" />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: 'var(--bg-muted)' }}>
             <input type="checkbox" id="isShared" checked={form.isShared} onChange={e => setField('isShared', e.target.checked)} className="w-4 h-4 rounded text-rose-500" />
-            <label htmlFor="isShared" className="text-sm text-gray-700 dark:text-gray-300">
+            <label htmlFor="isShared" className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               고객 공유 링크 활성화
             </label>
           </div>

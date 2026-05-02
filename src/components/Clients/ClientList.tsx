@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown } from 'lucide-react';
-import { Client, Consultation } from '../../types';
+import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown, Filter } from 'lucide-react';
+import { Client, Consultation, ServiceType } from '../../types';
 import { ClientForm } from './ClientForm';
 import { Modal } from '../common/Modal';
 import { format, parseISO } from 'date-fns';
+import { SERVICE_LABELS } from '../Consultations/serviceLabels';
+
+const ALL_SERVICE_TYPES: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
 interface Props {
   clients: Client[];
@@ -55,6 +58,22 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
   const [sortKey, setSortKey] = useState<'name' | 'recent' | 'visits'>('recent');
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [filterServices, setFilterServices] = useState<ServiceType[]>([]);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  // 사용 중인 태그 목록
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    clients.forEach(c => c.tags?.forEach(t => s.add(t)));
+    return [...s].sort();
+  }, [clients]);
+
+  const toggleService = (s: ServiceType) =>
+    setFilterServices(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  const toggleTag = (t: string) =>
+    setFilterTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  const hasFilter = filterServices.length > 0 || filterTags.length > 0;
 
   const lastConsultation = (id: string) =>
     consultations.filter(c => c.clientId === id).sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -62,11 +81,24 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
   const visitCount = (id: string) => consultations.filter(c => c.clientId === id).length;
 
   const filtered = useMemo(() => {
-    const searched = clients.filter(c =>
-      c.name.includes(search) ||
-      c.phone.replace(/-/g, '').includes(search.replace(/-/g, '')) ||
-      (c.email ?? '').includes(search)
-    );
+    const searched = clients.filter(c => {
+      // 텍스트 검색
+      if (search && !(
+        c.name.includes(search) ||
+        c.phone.replace(/-/g, '').includes(search.replace(/-/g, '')) ||
+        (c.email ?? '').includes(search)
+      )) return false;
+      // 태그 필터
+      if (filterTags.length > 0 && !filterTags.every(t => c.tags?.includes(t))) return false;
+      // 서비스 필터: 해당 시술 이력이 있는 고객만
+      if (filterServices.length > 0) {
+        const clientSvcTypes = new Set(
+          consultations.filter(con => con.clientId === c.id).flatMap(con => con.services.map(s => s.type))
+        );
+        if (!filterServices.every(s => clientSvcTypes.has(s))) return false;
+      }
+      return true;
+    });
     return [...searched].sort((a, b) => {
       if (sortKey === 'name') return a.name.localeCompare(b.name, 'ko');
       if (sortKey === 'visits') return visitCount(b.id) - visitCount(a.id);
@@ -97,6 +129,16 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
             className="w-full pl-9 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
             style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }} />
         </div>
+        <button onClick={() => setShowFilters(v => !v)} aria-label="필터"
+          className={`relative flex-shrink-0 px-3 py-2.5 border rounded-lg transition-colors ${hasFilter ? 'bg-rose-500 border-rose-500' : ''}`}
+          style={!hasFilter ? { borderColor: 'var(--border-input)', color: 'var(--text-muted)' } : {}}>
+          <Filter size={15} className={hasFilter ? 'text-white' : ''} />
+          {hasFilter && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              {filterServices.length + filterTags.length}
+            </span>
+          )}
+        </button>
         <div className="relative flex-shrink-0">
           <ArrowUpDown size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
           <select
@@ -111,6 +153,53 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
           </select>
         </div>
       </div>
+
+      {/* 필터 패널 */}
+      {showFilters && (
+        <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>시술 필터</p>
+            {filterServices.length > 0 && (
+              <button onClick={() => setFilterServices([])} className="text-xs" style={{ color: 'var(--text-muted)' }}>초기화</button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {ALL_SERVICE_TYPES.map(s => (
+              <button key={s} onClick={() => toggleService(s)}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${filterServices.includes(s) ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+                style={!filterServices.includes(s) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                {SERVICE_LABELS[s]}
+              </button>
+            ))}
+          </div>
+          {allTags.length > 0 && (
+            <>
+              <div className="flex items-center justify-between pt-1">
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>태그 필터</p>
+                {filterTags.length > 0 && (
+                  <button onClick={() => setFilterTags([])} className="text-xs" style={{ color: 'var(--text-muted)' }}>초기화</button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map(t => (
+                  <button key={t} onClick={() => toggleTag(t)}
+                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${filterTags.includes(t) ? 'bg-amber-500 text-white border-amber-500' : ''}`}
+                    style={!filterTags.includes(t) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-tag)' } : {}}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {hasFilter && (
+            <button onClick={() => { setFilterServices([]); setFilterTags([]); setShowFilters(false); }}
+              className="w-full text-xs py-2 rounded-xl border font-medium transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+              모든 필터 해제
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         {filtered.length === 0 && (

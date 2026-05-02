@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound } from 'lucide-react';
-import { Client, Consultation, Designer, Shop } from '../../types';
+import { Client, Consultation, Designer, Shop, ServiceType } from '../../types';
 import { Modal } from '../common/Modal';
+import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 
 interface Props {
   shop: Shop | null;
@@ -132,11 +133,34 @@ function LeaveModal({ designer, onClose, onConfirm }: {
   );
 }
 
+// 기간 옵션
+type PeriodKey = 'this_month' | 'last_month' | '3months' | '6months' | 'all';
+const PERIOD_OPTIONS: { id: PeriodKey; label: string }[] = [
+  { id: 'this_month', label: '이번 달' },
+  { id: 'last_month', label: '지난 달' },
+  { id: '3months',    label: '3개월' },
+  { id: '6months',    label: '6개월' },
+  { id: 'all',        label: '전체' },
+];
+
+function getPeriodRange(key: PeriodKey): { start: string; end: string } {
+  const now = new Date();
+  if (key === 'this_month') return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
+  if (key === 'last_month') {
+    const last = subMonths(now, 1);
+    return { start: format(startOfMonth(last), 'yyyy-MM-dd'), end: format(endOfMonth(last), 'yyyy-MM-dd') };
+  }
+  if (key === '3months') return { start: format(subMonths(now, 2), 'yyyy-MM-01'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
+  if (key === '6months') return { start: format(subMonths(now, 5), 'yyyy-MM-01'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
+  return { start: '2000-01-01', end: '2099-12-31' };
+}
+
 export function OwnerDashboard({ shop, clients, consultations, designers, onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
   const [tab, setTab] = useState<'stats' | 'staff' | 'shop'>('stats');
   const [showAdd, setShowAdd] = useState(false);
   const [leavingDesigner, setLeavingDesigner] = useState<Designer | null>(null);
   const [editingShop, setEditingShop] = useState(false);
+  const [periodKey, setPeriodKey] = useState<PeriodKey>('6months');
   const [shopForm, setShopForm] = useState({
     name: shop?.name ?? '',
     address: shop?.address ?? '',
@@ -146,12 +170,26 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
     slotInterval: String(shop?.slotInterval ?? 30),
   });
 
+  // ── 기간 필터된 시술 목록 ──
+  const { start: pStart, end: pEnd } = useMemo(() => getPeriodRange(periodKey), [periodKey]);
+  const periodConsultations = useMemo(() =>
+    consultations.filter(c => c.date >= pStart && c.date <= pEnd),
+    [consultations, pStart, pEnd]
+  );
+
   // ── Overall stats ──
   const totalRevenue = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
   const thisMonth = new Date().toISOString().slice(0, 7);
   const monthRevenue = consultations
     .filter(c => c.date.startsWith(thisMonth))
     .reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
+
+  // 기간별 매출/건수
+  const periodRevenue = useMemo(() =>
+    periodConsultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0),
+    [periodConsultations]
+  );
+  const periodCount = periodConsultations.length;
 
   // ── Monthly revenue chart (last 6 months) ──
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
@@ -163,6 +201,17 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
       .reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
     return { label, revenue };
   });
+
+  // ── 인기 시술 TOP5 (기간 필터 적용) ──
+  const topServices = useMemo(() => {
+    const counts: Partial<Record<ServiceType, number>> = {};
+    periodConsultations.forEach(c =>
+      c.services.forEach(svc => { counts[svc.type] = (counts[svc.type] ?? 0) + 1; })
+    );
+    return (Object.entries(counts) as [ServiceType, number][])
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [periodConsultations]);
 
   // ── Designer revenue breakdown (useMemo — 렌더마다 재계산 방지) ──
   const designerRevenue = useMemo(() => designers.map(d => {
@@ -229,11 +278,24 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
       {/* ── STATS TAB ── */}
       {tab === 'stats' && (
         <div className="space-y-5">
+          {/* 기간 선택기 */}
+          <div className="flex gap-1.5 flex-wrap">
+            {PERIOD_OPTIONS.map(({ id, label }) => (
+              <button key={id} onClick={() => setPeriodKey(id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                  periodKey === id ? 'bg-rose-500 text-white border-rose-500' : ''
+                }`}
+                style={periodKey !== id ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {statCard('총 매출', `${totalRevenue.toLocaleString()}원`, '누적', TrendingUp, 'bg-rose-500')}
-            {statCard('이번달 매출', `${monthRevenue.toLocaleString()}원`, format(new Date(), 'M월', { locale: ko }), TrendingUp, 'bg-amber-500')}
+            {statCard('기간 매출', `${periodRevenue.toLocaleString()}원`, PERIOD_OPTIONS.find(p => p.id === periodKey)?.label ?? '', TrendingUp, 'bg-amber-500')}
             {statCard('총 고객 수', `${clients.length}명`, '등록', Users, 'bg-blue-500')}
-            {statCard('총 시술 수', `${consultations.length}건`, '누적', Scissors, 'bg-emerald-500')}
+            {statCard('기간 시술', `${periodCount}건`, PERIOD_OPTIONS.find(p => p.id === periodKey)?.label ?? '', Scissors, 'bg-emerald-500')}
           </div>
 
           <div className="rounded-2xl border p-5" style={card}>
@@ -272,6 +334,42 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
                   />
                 </PieChart>
               </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* 인기 시술 TOP5 */}
+          {topServices.length > 0 && (
+            <div className="rounded-2xl border p-5" style={card}>
+              <p className="font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>
+                인기 시술 TOP {topServices.length}
+                <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
+                  {PERIOD_OPTIONS.find(p => p.id === periodKey)?.label} 기준
+                </span>
+              </p>
+              <div className="space-y-2.5">
+                {(() => {
+                  const max = topServices[0][1];
+                  return topServices.map(([type, cnt], i) => (
+                    <div key={type} className="flex items-center gap-3">
+                      <span className="text-xs font-bold w-4 text-center flex-shrink-0"
+                        style={{ color: i === 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                        {i + 1}
+                      </span>
+                      <span className="text-sm w-20 flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                        {SERVICE_LABELS[type]}
+                      </span>
+                      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-muted)' }}>
+                        <div className="h-full rounded-full bg-rose-400 transition-all"
+                          style={{ width: `${(cnt / max) * 100}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold w-8 text-right flex-shrink-0"
+                        style={{ color: 'var(--text-secondary)' }}>
+                        {cnt}건
+                      </span>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
           )}
         </div>

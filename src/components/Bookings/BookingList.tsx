@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, addMonths, subMonths as subMo } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CalendarDays, Clock, CheckCircle2, XCircle, User, Scissors, MessageSquare, ChevronDown } from 'lucide-react';
+import { CalendarDays, Clock, CheckCircle2, XCircle, User, Scissors, MessageSquare, ChevronDown, ChevronLeft, ChevronRight, LayoutList } from 'lucide-react';
 import { Booking, BookingStatus, AuthUser } from '../../types';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
+import { Modal } from '../common/Modal';
 
 interface Props {
   bookings: Booking[];
@@ -28,8 +29,8 @@ const TABS: { id: BookingStatus | 'all'; label: string }[] = [
 
 function ConfirmModal({ clientName, onClose, onConfirm }: { clientName: string; onClose: () => void; onConfirm: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>예약 확정</h3>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{clientName}</span> 고객의 예약을 확정하시겠습니까?
@@ -42,15 +43,15 @@ function ConfirmModal({ clientName, onClose, onConfirm }: { clientName: string; 
             className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold">확정</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
 function CancelModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (reason: string) => void }) {
   const [reason, setReason] = useState('');
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>예약 취소</h3>
         <textarea
           rows={3}
@@ -68,6 +69,99 @@ function CancelModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
             className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">취소 처리</button>
         </div>
       </div>
+    </Modal>
+  );
+}
+
+/** 월간 캘린더 — 날짜별 예약 배지 */
+function CalendarView({ bookings, onSelectDate }: {
+  bookings: Booking[];
+  onSelectDate: (date: string) => void;
+}) {
+  const [curMonth, setCurMonth] = useState(new Date());
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+
+  const days = useMemo(() => {
+    const start = startOfMonth(curMonth);
+    const end   = endOfMonth(curMonth);
+    const prefix = getDay(start); // 0=일
+    const all = eachDayOfInterval({ start, end });
+    return { prefix, all };
+  }, [curMonth]);
+
+  const dotsByDate = useMemo(() => {
+    const m: Record<string, { pending: number; confirmed: number }> = {};
+    bookings.forEach(b => {
+      if (!isSameMonth(parseISO(b.requestedDate), curMonth)) return;
+      if (!m[b.requestedDate]) m[b.requestedDate] = { pending: 0, confirmed: 0 };
+      if (b.status === 'pending')   m[b.requestedDate].pending++;
+      if (b.status === 'confirmed') m[b.requestedDate].confirmed++;
+    });
+    return m;
+  }, [bookings, curMonth]);
+
+  return (
+    <div className="rounded-2xl border p-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+      {/* Month nav */}
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={() => setCurMonth(m => subMo(m, 1))} aria-label="이전 달"
+          className="p-1.5 rounded-lg hover:opacity-60 transition-opacity" style={{ color: 'var(--text-muted)' }}>
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          {format(curMonth, 'yyyy년 M월', { locale: ko })}
+        </span>
+        <button onClick={() => setCurMonth(m => addMonths(m, 1))} aria-label="다음 달"
+          className="p-1.5 rounded-lg hover:opacity-60 transition-opacity" style={{ color: 'var(--text-muted)' }}>
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      {/* DOW header */}
+      <div className="grid grid-cols-7 mb-1">
+        {DOW.map(d => (
+          <div key={d} className="text-center text-[11px] font-medium py-1"
+            style={{ color: d === '일' ? '#f43f5e' : d === '토' ? '#60a5fa' : 'var(--text-muted)' }}>
+            {d}
+          </div>
+        ))}
+      </div>
+      {/* Day grid */}
+      <div className="grid grid-cols-7 gap-y-0.5">
+        {/* Prefix empty cells */}
+        {Array.from({ length: days.prefix }).map((_, i) => <div key={`p${i}`} />)}
+        {days.all.map(day => {
+          const key = format(day, 'yyyy-MM-dd');
+          const dots = dotsByDate[key];
+          const today = isToday(day);
+          const col = getDay(day) === 0 ? '#f43f5e' : getDay(day) === 6 ? '#60a5fa' : 'var(--text-primary)';
+          return (
+            <button
+              key={key}
+              onClick={() => dots && onSelectDate(key)}
+              disabled={!dots}
+              aria-label={`${format(day, 'M월 d일')} ${dots ? `예약 ${(dots.pending + dots.confirmed)}건` : ''}`}
+              className={`flex flex-col items-center py-1 rounded-lg transition-colors ${dots ? 'cursor-pointer hover:opacity-70' : ''}`}
+              style={today ? { backgroundColor: 'var(--bg-icon-rose)' } : {}}>
+              <span className="text-xs font-medium" style={{ color: col }}>{format(day, 'd')}</span>
+              {dots && (
+                <div className="flex gap-0.5 mt-0.5">
+                  {dots.pending   > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                  {dots.confirmed > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      {/* Legend */}
+      <div className="flex gap-4 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+        <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" /> 대기
+        </span>
+        <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" /> 확정
+        </span>
+      </div>
     </div>
   );
 }
@@ -77,13 +171,19 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarDateFilter, setCalendarDateFilter] = useState<string | null>(null);
 
   // Designer sees only bookings for their name (or no preference)
   const mine = user.role === 'designer' && user.designerName
     ? bookings.filter(b => !b.preferredDesigner || b.preferredDesigner === user.designerName)
     : bookings;
 
-  const filtered = tab === 'all' ? mine : mine.filter(b => b.status === tab);
+  const filtered = useMemo(() => {
+    const byStatus = tab === 'all' ? mine : mine.filter(b => b.status === tab);
+    if (calendarDateFilter) return byStatus.filter(b => b.requestedDate === calendarDateFilter);
+    return byStatus;
+  }, [mine, tab, calendarDateFilter]);
   const sorted = [...filtered].sort((a, b) => a.requestedDate.localeCompare(b.requestedDate));
 
   const confirm = (id: string) => {
@@ -104,10 +204,48 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
 
   return (
     <div className="p-6 space-y-5 max-w-2xl mx-auto">
-      <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>예약 관리</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>예약 관리</h1>
+        {/* 뷰 토글 */}
+        <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)' }}>
+          <button onClick={() => { setViewMode('list'); setCalendarDateFilter(null); }}
+            aria-label="목록 보기"
+            className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
+            style={{ color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <LayoutList size={15} />
+          </button>
+          <button onClick={() => setViewMode('calendar')}
+            aria-label="캘린더 보기"
+            className={`p-1.5 rounded-lg transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm' : ''}`}
+            style={{ color: viewMode === 'calendar' ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <CalendarDays size={15} />
+          </button>
+        </div>
+      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5">
+      {/* 캘린더 뷰 */}
+      {viewMode === 'calendar' && (
+        <div className="space-y-4">
+          <CalendarView bookings={mine} onSelectDate={date => {
+            setCalendarDateFilter(prev => prev === date ? null : date);
+            setTab('all');
+            setViewMode('list');
+          }} />
+        </div>
+      )}
+
+      {/* List view: tabs + cards */}
+      {viewMode === 'list' && <><div className="flex gap-1.5 flex-wrap">
+        {calendarDateFilter && (
+          <div className="w-full flex items-center gap-2">
+            <span className="text-xs px-3 py-1 rounded-full font-medium"
+              style={{ backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' }}>
+              📅 {calendarDateFilter}
+            </span>
+            <button onClick={() => setCalendarDateFilter(null)}
+              className="text-xs" style={{ color: 'var(--text-muted)' }}>✕ 필터 해제</button>
+          </div>
+        )}
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -240,6 +378,8 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
           })}
         </div>
       )}
+
+      </>}
 
       {confirmTarget && (() => {
         const b = sorted.find(x => x.id === confirmTarget);

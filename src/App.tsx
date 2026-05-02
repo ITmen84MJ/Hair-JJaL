@@ -283,6 +283,7 @@ export default function App() {
             shop={myShop}
             myConsultations={myOwnConsultations}
             shopConsultations={shopConsultations}
+            shopClients={shopClients}
             shopDesigners={shopDesigners}
             shopBookings={shopBookings}
             onUpdateDesigner={(id, data) => {

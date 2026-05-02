@@ -76,7 +76,8 @@ export interface AuthUser {
   password: string; // demo only — plain text
   avatar?: string;
   clientId?: string;     // customer: linked client record
-  designerName?: string; // designer: matches stylistName in consultations
+  designerName?: string; // designer/owner: matches stylistName in consultations
+  designerId?: string;   // designer/owner: links to Designer.id
 }
 
 export interface Designer {
@@ -119,6 +120,7 @@ export type View =
   | 'customer-booking'
   | 'bookings'
   | 'owner-staff'
+  | 'profile'
   | 'share';
 
 export interface AppState {

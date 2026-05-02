@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Sun, Moon, LogOut, Crown, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Users, Sun, Moon, LogOut, Crown, CalendarDays, UserCircle } from 'lucide-react';
 import { View, AuthUser, ROLE_LABELS } from '../../types';
 
 interface Props {
@@ -18,12 +18,14 @@ const NAV_ITEMS: Record<string, { id: View; label: string; Icon: React.ElementTy
     { id: 'dashboard',  label: '대시보드',  Icon: LayoutDashboard },
     { id: 'clients',    label: '고객 관리', Icon: Users },
     { id: 'bookings',   label: '예약 관리', Icon: CalendarDays },
+    { id: 'profile',    label: '내 정보',   Icon: UserCircle },
   ],
   owner: [
     { id: 'dashboard',   label: '대시보드',  Icon: LayoutDashboard },
     { id: 'clients',     label: '고객 관리', Icon: Users },
     { id: 'bookings',    label: '예약 관리', Icon: CalendarDays },
     { id: 'owner-staff', label: '직원 관리', Icon: Crown },
+    { id: 'profile',     label: '내 정보',   Icon: UserCircle },
   ],
 };
 

@@ -13,6 +13,7 @@ import { CustomerLayout } from './components/Customer/CustomerLayout';
 import { CustomerBooking } from './components/Customer/CustomerBooking';
 import { BookingList } from './components/Bookings/BookingList';
 import { OwnerDashboard } from './components/Owner/OwnerDashboard';
+import { StaffProfile } from './components/Staff/StaffProfile';
 
 export default function App() {
   const store = useStore();
@@ -127,9 +128,20 @@ export default function App() {
     ? shopBookings.filter(b => b.status === 'pending' && (!b.preferredDesigner || b.preferredDesigner === user.designerName)).length
     : shopBookings.filter(b => b.status === 'pending').length;
 
+  // 본인 Designer 레코드 (designerId로 직접 연결)
+  const myDesignerRecord = user.designerId
+    ? shopDesigners.find(d => d.id === user.designerId) ?? null
+    : null;
+
+  // 본인 담당 시술 이력
+  const myOwnConsultations = user.designerName
+    ? shopConsultations.filter(c => c.stylistName === user.designerName)
+    : [];
+
   // 모바일 상단 헤더용 뷰 제목
   const VIEW_TITLES: Partial<Record<typeof store.currentView, string>> = {
-    dashboard: '대시보드', clients: '고객 관리', bookings: '예약 관리', 'owner-staff': '직원 관리',
+    dashboard: '대시보드', clients: '고객 관리', bookings: '예약 관리',
+    'owner-staff': '직원 관리', profile: '내 정보',
   };
   const mobileTitle = VIEW_TITLES[store.currentView];
 
@@ -226,6 +238,20 @@ export default function App() {
             onAddDesigner={data => store.addDesigner({ ...data, shopId })}
             onUpdateDesigner={store.updateDesigner}
             onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}
+          />
+        )}
+
+        {store.currentView === 'profile' && (
+          <StaffProfile
+            user={user}
+            designer={myDesignerRecord}
+            shop={myShop}
+            myConsultations={myOwnConsultations}
+            shopConsultations={shopConsultations}
+            shopDesigners={shopDesigners}
+            shopBookings={shopBookings}
+            onUpdateDesigner={store.updateDesigner}
+            onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
           />
         )}
 

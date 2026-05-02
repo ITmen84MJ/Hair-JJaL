@@ -38,6 +38,7 @@ export const demoUsers: AuthUser[] = [
     email: 'park@hairjjal.com',
     password: '1234',
     designerName: '박스타일',
+    designerId: 'd1',
   },
   {
     id: 'u3',
@@ -47,6 +48,7 @@ export const demoUsers: AuthUser[] = [
     email: 'kim@hairjjal.com',
     password: '1234',
     designerName: '김헤어',
+    designerId: 'd2',
   },
   {
     id: 'u4',
@@ -55,6 +57,8 @@ export const demoUsers: AuthUser[] = [
     role: 'owner',
     email: 'owner@hairjjal.com',
     password: '1234',
+    designerName: '홍원장',
+    designerId: 'd6',
   },
   // ── 홍대점 ──
   {
@@ -74,6 +78,7 @@ export const demoUsers: AuthUser[] = [
     email: 'jeong@hairjjal.com',
     password: '1234',
     designerName: '정스타일',
+    designerId: 'd4',
   },
   {
     id: 'u7',
@@ -82,6 +87,8 @@ export const demoUsers: AuthUser[] = [
     role: 'owner',
     email: 'owner2@hairjjal.com',
     password: '1234',
+    designerName: '최원장',
+    designerId: 'd7',
   },
 ];
 
@@ -94,6 +101,9 @@ export const mockDesigners: Designer[] = [
   // 홍대점
   { id: 'd4', shopId: 's2', name: '정스타일',  email: 'jeong@hairjjal.com', phone: '010-7777-8888', status: 'active',   joinedAt: '2023-06-01' },
   { id: 'd5', shopId: 's2', name: '오컬러',    email: 'oh@hairjjal.com',    phone: '010-9999-0000', status: 'active',   joinedAt: '2024-03-01' },
+  // 원장 (각 지점 대표)
+  { id: 'd6', shopId: 's1', name: '홍원장',    email: 'owner@hairjjal.com', phone: '010-0001-1111', status: 'active',   joinedAt: '2023-01-01' },
+  { id: 'd7', shopId: 's2', name: '최원장',    email: 'owner2@hairjjal.com',phone: '010-0002-2222', status: 'active',   joinedAt: '2023-06-01' },
 ];
 
 // ── 고객 ───────────────────────────────────────────────────────

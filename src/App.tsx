@@ -46,24 +46,23 @@ export default function App() {
   // ── 온보딩 투어 (첫 로그인 시 1회) ──
   // rendered at z-[70] so it appears above everything
 
-  // ── 지점(shop)별 데이터 격리 ──
+  // ── 현재 로그인 사용자의 "소속 지점" (예약 기본값·지점 정보 표시용) ──
   const shopId = user.shopId;
-  const shopClients       = store.clients.filter(c  => c.shopId  === shopId);
-  const shopConsultations = store.consultations.filter(c => c.shopId === shopId);
-  const shopDesigners     = store.designers.filter(d => d.shopId  === shopId);
-  const shopBookings      = store.bookings.filter(b  => b.shopId  === shopId);
-  const myShop            = store.shops.find(s => s.id === shopId) ?? null;
+  const myShop = store.shops.find(s => s.id === shopId) ?? null;
 
   // ── CUSTOMER view ──
+  // 고객은 어느 지점이든 방문 가능 → 전 지점 시술·예약 이력 통합 조회
   if (user.role === 'customer') {
     const myClient = user.clientId
-      ? shopClients.find(c => c.id === user.clientId) ?? null
+      ? store.clients.find(c => c.id === user.clientId) ?? null   // 지점 필터 없음
       : null;
+    // 전 지점 시술 이력 통합 (고객 소유)
     const myConsultations = myClient
-      ? shopConsultations.filter(c => c.clientId === myClient.id)
+      ? store.consultations.filter(c => c.clientId === myClient.id)
       : [];
+    // 전 지점 예약 통합
     const myBookings = myClient
-      ? shopBookings.filter(b => b.clientId === myClient.id)
+      ? store.bookings.filter(b => b.clientId === myClient.id)
       : [];
 
     // Booking form
@@ -98,6 +97,7 @@ export default function App() {
         bookings={myBookings}
         shop={myShop}
         shopName={myShop?.name}
+        shops={store.shops}
         currentView={store.currentView}
         selectedConsultationId={store.selectedConsultationId}
         isDark={isDark}
@@ -107,6 +107,7 @@ export default function App() {
         onSelectConsultation={id => store.navigate('customer-consultation', undefined, id)}
         onNewBooking={() => store.navigate('customer-booking')}
         onUpdateClient={(id, data) => store.updateClient(id, data)}
+        onUpdateConsultation={store.updateConsultation}
         onCancelBooking={id => store.updateBooking(id, { status: 'cancelled', cancelReason: '고객 취소' })}
       />
       </ErrorBoundary>
@@ -116,16 +117,34 @@ export default function App() {
   // ── DESIGNER / OWNER layout with Sidebar ──
   const isDesigner = user.role === 'designer';
 
-  // Designer only sees their own clients/consultations (within the shop)
-  const visibleConsultations = isDesigner && user.designerName
-    ? shopConsultations.filter(c => c.stylistName === user.designerName)
-    : shopConsultations;
+  // 지점별 기본 데이터 (owner 통계·관리용, 예약은 venue 기반)
+  const shopConsultations = store.consultations.filter(c => c.shopId === shopId);
+  const shopDesigners     = store.designers.filter(d => d.shopId === shopId);
+  const shopBookings      = store.bookings.filter(b => b.shopId === shopId);
 
-  const visibleClientIds = new Set(visibleConsultations.map(c => c.clientId));
-  // Clients with no consultations yet are visible to all designers in the shop
-  const clientsWithAnyCon = new Set(shopConsultations.map(c => c.clientId));
+  // ── 디자이너: 이직해도 본인이 시술한 전 지점 이력 보유 ──
+  // ── 원장: 해당 지점(venue)에서 이뤄진 시술만 관리 ──
+  const visibleConsultations = isDesigner && user.designerName
+    ? store.consultations.filter(c => c.stylistName === user.designerName)  // 지점 무관 본인 시술
+    : shopConsultations;  // owner: venue 기준
+
+  // 디자이너가 볼 수 있는 고객:
+  //   1) 본인이 시술한 고객 (전 지점 포함)
+  //   2) 현재 지점에 등록된 신규 고객 (아직 시술 기록 없음)
+  const designerClientIds = new Set(visibleConsultations.map(c => c.clientId));
+  const clientsWithAnyConsultation = new Set(store.consultations.map(c => c.clientId));
+
+  // 원장이 볼 수 있는 고객: 해당 지점에서 시술받은 고객
+  const shopConsultationClientIds = new Set(shopConsultations.map(c => c.clientId));
+  const shopClients = store.clients.filter(c =>
+    shopConsultationClientIds.has(c.id) || c.shopId === shopId
+  );
+
   const visibleClients = isDesigner
-    ? shopClients.filter(c => visibleClientIds.has(c.id) || !clientsWithAnyCon.has(c.id))
+    ? store.clients.filter(c =>
+        designerClientIds.has(c.id) ||
+        (c.shopId === shopId && !clientsWithAnyConsultation.has(c.id))
+      )
     : shopClients;
 
   const selectedClient = store.selectedClientId
@@ -136,8 +155,9 @@ export default function App() {
     ? shopConsultations.find(c => c.id === store.selectedConsultationId) ?? null
     : null;
 
+  // 선택된 고객의 시술 이력 — 디자이너는 본인 것만, 원장은 지점 전체
   const clientConsultations = selectedClient
-    ? shopConsultations.filter(c => c.clientId === selectedClient.id)
+    ? visibleConsultations.filter(c => c.clientId === selectedClient.id)
     : [];
 
   // Pending booking count for sidebar badge
@@ -150,9 +170,9 @@ export default function App() {
     ? shopDesigners.find(d => d.id === user.designerId) ?? null
     : null;
 
-  // 본인 담당 시술 이력
+  // 본인 담당 시술 이력 — 이직 전 지점 포함 전체 (지점 무관)
   const myOwnConsultations = user.designerName
-    ? shopConsultations.filter(c => c.stylistName === user.designerName)
+    ? store.consultations.filter(c => c.stylistName === user.designerName)
     : [];
 
   // 모바일 상단 헤더용 뷰 제목

@@ -12,7 +12,8 @@ export interface Shop {
 
 export interface Client {
   id: string;
-  shopId: string;    // 소속 지점
+  /** 최초 등록 지점 (선택). 고객은 어느 지점이든 독립적으로 방문 가능 */
+  shopId?: string;
   name: string;
   phone: string;
   email?: string;
@@ -41,9 +42,17 @@ export interface Service {
   price?: number;
 }
 
+/** 고객이 디자이너에게 기록 수정·삭제를 요청할 때 저장 */
+export interface ModificationRequest {
+  type: 'edit' | 'delete';
+  message?: string;
+  requestedAt: string;   // ISO string
+}
+
 export interface Consultation {
   id: string;
-  shopId: string;    // 소속 지점
+  /** 시술이 이뤄진 지점 (venue 기록용). 소유권은 디자이너·고객에게 있음 */
+  shopId: string;
   clientId: string;
   date: string;
   stylistName: string;
@@ -60,6 +69,8 @@ export interface Consultation {
   shareToken: string;
   isShared: boolean;
   createdAt: string;
+  /** 고객이 수정·삭제를 요청한 경우 저장. 디자이너가 처리 후 제거 */
+  modificationRequest?: ModificationRequest;
 }
 
 export type UserRole = 'customer' | 'designer' | 'owner';

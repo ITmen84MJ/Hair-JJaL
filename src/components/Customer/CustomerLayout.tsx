@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Phone, Mail, Edit2, Check, X } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AuthUser, Client, Consultation, Booking, View } from '../../types';
+import { AuthUser, Client, Consultation, Booking, Shop, View } from '../../types';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 import { CustomerHome } from './CustomerHome';
 import { CustomerConsultationView } from './CustomerConsultationView';
@@ -12,7 +12,8 @@ interface Props {
   client: Client | null;
   consultations: Consultation[];
   bookings: Booking[];
-  shop?: import('../../types').Shop | null;
+  shop?: Shop | null;
+  shops?: Shop[];
   shopName?: string;
   currentView: View;
   selectedConsultationId: string | null;
@@ -23,6 +24,7 @@ interface Props {
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
   onUpdateClient: (id: string, data: Partial<Client>) => void;
+  onUpdateConsultation: (id: string, data: Partial<Consultation>) => void;
   onCancelBooking: (id: string) => void;
 }
 
@@ -85,10 +87,10 @@ function ProfileEdit({ client, onSave, onCancel }: {
 const SESSION_TAB_KEY = 'hairjjal_customer_tab';
 
 export function CustomerLayout({
-  user, client, consultations, bookings, shop, shopName,
+  user, client, consultations, bookings, shop, shops = [], shopName,
   currentView, selectedConsultationId,
   isDark, onToggleTheme, onLogout, onNavigate,
-  onSelectConsultation, onNewBooking, onUpdateClient, onCancelBooking,
+  onSelectConsultation, onNewBooking, onUpdateClient, onUpdateConsultation, onCancelBooking,
 }: Props) {
   // P2-14: 탭 선택을 sessionStorage에 유지
   const [tab, setTab] = useState<CustomerTab>(() => {
@@ -114,11 +116,20 @@ export function CustomerLayout({
       <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
         <CustomerConsultationView
           consultation={con}
+          shops={shops}
           onBack={() => onNavigate('customer-home')}
           onBookNextVisit={date => {
             sessionStorage.setItem('hairjjal_booking_prefill_date', date);
             onNewBooking();
           }}
+          onRequestModification={(type, message) =>
+            onUpdateConsultation(con.id, {
+              modificationRequest: { type, message, requestedAt: new Date().toISOString() },
+            })
+          }
+          onCancelModificationRequest={() =>
+            onUpdateConsultation(con.id, { modificationRequest: undefined })
+          }
         />
       </div>
     );

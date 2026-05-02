@@ -100,6 +100,17 @@ export const demoUsers: AuthUser[] = [
     designerName: '최원장',
     designerId: 'd7',
   },
+  // 이드레스 — 강남점에서 홍대점으로 이직 (이직 시나리오 데모)
+  {
+    id: 'u9',
+    shopId: 's2',
+    name: '이드레스',
+    role: 'designer',
+    email: 'lee@hairjjal.com',
+    password: '1234',
+    designerName: '이드레스',
+    designerId: 'd3b',
+  },
 ];
 
 // ── 디자이너 ───────────────────────────────────────────────────
@@ -107,7 +118,12 @@ export const mockDesigners: Designer[] = [
   // 강남점
   { id: 'd1', shopId: 's1', name: '박스타일',  email: 'park@hairjjal.com',  phone: '010-1111-2222', status: 'active',   joinedAt: '2023-03-01' },
   { id: 'd2', shopId: 's1', name: '김헤어',    email: 'kim@hairjjal.com',   phone: '010-3333-4444', status: 'active',   joinedAt: '2024-01-15' },
+  // 이드레스: 강남점에서 퇴직 후 홍대점으로 이직 (이직 시나리오)
   { id: 'd3', shopId: 's1', name: '이드레스',  email: 'lee@hairjjal.com',   phone: '010-5555-6666', status: 'inactive', joinedAt: '2022-06-01', leftAt: '2025-12-31', leftReason: '이직' },
+  { id: 'd3b', shopId: 's2', name: '이드레스', email: 'lee@hairjjal.com',   phone: '010-5555-6666', status: 'active',  joinedAt: '2026-01-10',
+    bio: '컬러 전문 스타일리스트 | 강남·홍대 경력 4년',
+    specialties: ['color', 'bleach', 'cut'],
+  },
   // 홍대점
   { id: 'd4', shopId: 's2', name: '정스타일',  email: 'jeong@hairjjal.com', phone: '010-7777-8888', status: 'active',   joinedAt: '2023-06-01' },
   { id: 'd5', shopId: 's2', name: '오컬러',    email: 'oh@hairjjal.com',    phone: '010-9999-0000', status: 'active',   joinedAt: '2024-03-01' },
@@ -117,8 +133,9 @@ export const mockDesigners: Designer[] = [
 ];
 
 // ── 고객 ───────────────────────────────────────────────────────
+// ※ shopId는 '최초 등록 지점' 메타데이터일 뿐 — 고객은 어느 지점이든 방문 가능
 export const mockClients: Client[] = [
-  // 강남점 고객
+  // 강남점 최초 등록 고객
   {
     id: 'c1', shopId: 's1',
     name: '김지수', phone: '010-1234-5678', email: 'jisoo@example.com',
@@ -273,6 +290,37 @@ export const mockConsultations: Consultation[] = [
     notes: '첫 펌으로 약한 웨이브 원함. 결과 만족도 높음.',
     shareToken: 'share-stu901', isShared: false,
     createdAt: '2026-04-30T11:00:00Z',
+  },
+
+  // ── 크로스-지점 시나리오 ─────────────────────────────────────
+  // 이드레스가 강남점 재직 시절 김지수(c1) 시술 (현재 홍대점으로 이직했지만 이력 보유)
+  {
+    id: 'con8', shopId: 's1', clientId: 'c1',
+    date: '2025-10-15', stylistName: '이드레스',
+    services: [
+      { type: 'cut',   description: '레이어드 컷 + 앞머리 정리', price: 45000 },
+      { type: 'scalp', description: '두피 스케일링',              price: 40000 },
+    ],
+    hairCondition: '두피 지성, 모발 보통',
+    scalp: '지성 두피',
+    notes: '두피 스케일링 후 환경 개선 필요. 산성 샴푸 권장.',
+    shareToken: 'share-vwx234', isShared: false,
+    createdAt: '2025-10-15T11:00:00Z',
+  },
+  // 이드레스가 홍대점으로 이직 후 김지수(c1) 재방문 — 고객이 디자이너를 따라온 케이스
+  {
+    id: 'con9', shopId: 's2', clientId: 'c1',
+    date: '2026-03-20', stylistName: '이드레스',
+    services: [
+      { type: 'color',     description: '내추럴 브라운 뿌리 염색', price: 65000  },
+      { type: 'treatment', description: '모이스처 트리트먼트',      price: 35000  },
+    ],
+    hairCondition: '뿌리 새치 10%, 전체적으로 건강',
+    colorFormula: 'Wella 5/07 + 5/3 (60:40) + 6% (1:1.5)',
+    notes: '이직 후 첫 방문. 강남점 시절 이력 참고하여 자연스러운 커버 진행. 고객 만족.',
+    nextVisitDate: '2026-06-01', nextVisitNote: '뿌리 터치업',
+    shareToken: 'share-yza567', isShared: false,
+    createdAt: '2026-03-20T14:00:00Z',
   },
 ];
 

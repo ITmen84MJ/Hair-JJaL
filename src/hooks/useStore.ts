@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 const STORAGE_KEY = 'hairlog_data';
 // 스키마 변경 시 반드시 올릴 것 — 구버전 localStorage를 자동 초기화
 // v2: shopId 추가 / v3: designerId + 오컬러 계정
-const DATA_VERSION = 3;
+// v4: Client.shopId optional / Consultation.modificationRequest / 크로스-지점 모델
+const DATA_VERSION = 4;
 
 const MOCK_DEFAULTS = () => ({
   clients: mockClients,

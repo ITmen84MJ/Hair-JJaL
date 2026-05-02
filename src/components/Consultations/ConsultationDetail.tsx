@@ -80,6 +80,33 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
         <button onClick={() => setShowDeleteModal(true)} className="p-1.5 rounded-lg transition-colors hover:text-red-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
       </div>
 
+      {/* 고객이 수정/삭제 요청을 남긴 경우 배너 표시 */}
+      {con.modificationRequest && (
+        <div className="rounded-2xl border px-4 py-3.5 flex items-start gap-3"
+          style={{ backgroundColor: 'var(--bg-warning)', borderColor: 'var(--border-warning)' }}>
+          <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-warning)' }} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-warning)' }}>
+              고객 {con.modificationRequest.type === 'delete' ? '삭제' : '수정'} 요청
+            </p>
+            {con.modificationRequest.message && (
+              <p className="text-xs mt-0.5 whitespace-pre-wrap" style={{ color: 'var(--text-warning)' }}>
+                {con.modificationRequest.message}
+              </p>
+            )}
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+              {format(parseISO(con.modificationRequest.requestedAt), 'yyyy-MM-dd HH:mm', { locale: ko })} 요청
+            </p>
+          </div>
+          <button
+            onClick={() => onUpdate(con.id, { modificationRequest: undefined })}
+            className="text-xs px-3 py-1.5 rounded-xl flex-shrink-0 font-medium transition-colors"
+            style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            처리 완료
+          </button>
+        </div>
+      )}
+
       {/* Date & Services */}
       <div className="rounded-2xl border p-5 space-y-4" style={card}>
         <div className="flex items-start justify-between">

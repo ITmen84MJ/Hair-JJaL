@@ -23,6 +23,11 @@ export default defineConfig({
         // share 링크 등 query string 포함 URL도 정상 처리
         navigateFallbackDenylist: [/^\/Hair-JJaL\/api\//],
 
+        // offline.html을 명시적으로 사전 캐시에 포함
+        additionalManifestEntries: [
+          { url: '/Hair-JJaL/offline.html', revision: '1' },
+        ],
+
         // 런타임 캐싱 전략
         runtimeCaching: [
           {

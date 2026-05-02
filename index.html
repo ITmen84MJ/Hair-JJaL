@@ -9,7 +9,11 @@
     <!-- 앱 정보 -->
     <title>Hair JJaL — 헤어 상담 이력 관리</title>
     <meta name="description" content="헤어 상담 이력을 쉽게 기록하고 공유하는 서비스입니다." />
-    <meta name="theme-color" content="#f43f5e" />
+    <!-- theme-color: 라이트/다크 모드 각각 지정 (Chrome Android 상단바 색상) -->
+    <meta name="theme-color" content="#f43f5e" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <!-- 브라우저 기본 UI(스크롤바·폼) 다크/라이트 모드 인식 -->
+    <meta name="color-scheme" content="light dark" />
 
     <!-- PWA 매니페스트 -->
     <link rel="manifest" href="/Hair-JJaL/manifest.json" />
@@ -19,7 +23,8 @@
 
     <!-- iOS Safari "홈 화면에 추가" 지원 -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent: viewport-fit=cover와 함께 사용 시 상태바가 앱 위에 투명하게 표시 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Hair JJaL" />
     <link rel="apple-touch-icon" href="/Hair-JJaL/apple-touch-icon.png" />
 

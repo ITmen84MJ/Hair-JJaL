@@ -127,7 +127,20 @@ export function useStore() {
   }, []);
 
   const updateDesigner = useCallback((id: string, data: Partial<Designer>) => {
-    setDesigners(prev => prev.map(d => d.id === id ? { ...d, ...data } : d));
+    // P2-20: 이름이 바뀌면 해당 디자이너의 상담 이력 stylistName 동기화
+    if (data.name !== undefined) {
+      setDesigners(prev => {
+        const oldName = prev.find(d => d.id === id)?.name;
+        if (oldName && oldName !== data.name) {
+          setConsultations(cs => cs.map(c =>
+            c.stylistName === oldName ? { ...c, stylistName: data.name as string } : c
+          ));
+        }
+        return prev.map(d => d.id === id ? { ...d, ...data } : d);
+      });
+    } else {
+      setDesigners(prev => prev.map(d => d.id === id ? { ...d, ...data } : d));
+    }
   }, []);
 
   // ── Bookings ───────────────────────────────────────────────────

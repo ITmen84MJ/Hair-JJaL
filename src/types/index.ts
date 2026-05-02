@@ -4,6 +4,9 @@ export interface Shop {
   name: string;      // 지점명 (예: 헤어 짤 강남점)
   address?: string;
   phone?: string;
+  openTime?: string;    // HH:MM, 기본값 '10:00'
+  closeTime?: string;   // HH:MM, 기본값 '19:00'
+  slotInterval?: number; // 분 단위, 기본값 30
   createdAt: string;
 }
 

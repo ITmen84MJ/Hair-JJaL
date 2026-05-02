@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -136,7 +136,14 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
   const [showAdd, setShowAdd] = useState(false);
   const [leavingDesigner, setLeavingDesigner] = useState<Designer | null>(null);
   const [editingShop, setEditingShop] = useState(false);
-  const [shopForm, setShopForm] = useState({ name: shop?.name ?? '', address: shop?.address ?? '', phone: shop?.phone ?? '' });
+  const [shopForm, setShopForm] = useState({
+    name: shop?.name ?? '',
+    address: shop?.address ?? '',
+    phone: shop?.phone ?? '',
+    openTime: shop?.openTime ?? '10:00',
+    closeTime: shop?.closeTime ?? '19:00',
+    slotInterval: String(shop?.slotInterval ?? 30),
+  });
 
   // ── Overall stats ──
   const totalRevenue = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
@@ -156,14 +163,17 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
     return { label, revenue };
   });
 
-  // ── Designer revenue breakdown ──
-  const designerRevenue = designers.map(d => {
+  // ── Designer revenue breakdown (useMemo — 렌더마다 재계산 방지) ──
+  const designerRevenue = useMemo(() => designers.map(d => {
     const cons = consultations.filter(c => c.stylistName === d.name);
     const revenue = cons.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
     return { ...d, revenue, consultationCount: cons.length };
-  }).sort((a, b) => b.revenue - a.revenue);
+  }).sort((a, b) => b.revenue - a.revenue), [designers, consultations]);
 
-  const pieData = designerRevenue.filter(d => d.revenue > 0).map(d => ({ name: d.name, value: d.revenue }));
+  const pieData = useMemo(
+    () => designerRevenue.filter(d => d.revenue > 0).map(d => ({ name: d.name, value: d.revenue })),
+    [designerRevenue],
+  );
 
   const handleLeave = (reason: string) => {
     if (!leavingDesigner) return;
@@ -363,13 +373,13 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
               <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>지점 정보</h3>
             </div>
             {!editingShop ? (
-              <button onClick={() => { setShopForm({ name: shop.name, address: shop.address ?? '', phone: shop.phone ?? '' }); setEditingShop(true); }}
+              <button onClick={() => { setShopForm({ name: shop.name, address: shop.address ?? '', phone: shop.phone ?? '', openTime: shop.openTime ?? '10:00', closeTime: shop.closeTime ?? '19:00', slotInterval: String(shop.slotInterval ?? 30) }); setEditingShop(true); }}
                 className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)' }}>
                 <Edit2 size={15} />
               </button>
             ) : (
               <div className="flex gap-1.5">
-                <button onClick={() => { onUpdateShop(shopForm); setEditingShop(false); }}
+                <button onClick={() => { onUpdateShop({ ...shopForm, slotInterval: Number(shopForm.slotInterval) }); setEditingShop(false); }}
                   className="p-1.5 rounded-lg bg-rose-500 text-white"><Check size={14} /></button>
                 <button onClick={() => setEditingShop(false)}
                   className="p-1.5 rounded-lg border" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}><X size={14} /></button>
@@ -378,17 +388,46 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
           </div>
           {editingShop ? (
             <div className="space-y-3">
-              {[['지점명 *', 'name'], ['주소', 'address'], ['전화번호', 'phone']].map(([label, key]) => (
+              {([['지점명 *', 'name'], ['주소', 'address'], ['전화번호', 'phone']] as const).map(([label, key]) => (
                 <div key={key}>
                   <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
                   <input
-                    value={shopForm[key as keyof typeof shopForm]}
+                    value={shopForm[key]}
                     onChange={e => setShopForm(f => ({ ...f, [key]: e.target.value }))}
                     className="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
                     style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
                   />
                 </div>
               ))}
+              <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>예약 시간 설정</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>오픈</p>
+                    <input type="time" value={shopForm.openTime}
+                      onChange={e => setShopForm(f => ({ ...f, openTime: e.target.value }))}
+                      className="w-full border rounded-xl px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>마감</p>
+                    <input type="time" value={shopForm.closeTime}
+                      onChange={e => setShopForm(f => ({ ...f, closeTime: e.target.value }))}
+                      className="w-full border rounded-xl px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                  </div>
+                  <div>
+                    <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>간격(분)</p>
+                    <select value={shopForm.slotInterval}
+                      onChange={e => setShopForm(f => ({ ...f, slotInterval: e.target.value }))}
+                      className="w-full border rounded-xl px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}>
+                      <option value="30">30분</option>
+                      <option value="60">60분</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -408,6 +447,12 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
                   <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{shop.phone}</p>
                 </div>
               )}
+              <div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>예약 시간</p>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  {shop.openTime ?? '10:00'} ~ {shop.closeTime ?? '19:00'} ({shop.slotInterval ?? 30}분 간격)
+                </p>
+              </div>
               <div>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>개점일</p>
                 <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{shop.createdAt.slice(0, 10)}</p>

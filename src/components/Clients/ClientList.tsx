@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown } from 'lucide-react';
 import { Client, Consultation } from '../../types';
 import { ClientForm } from './ClientForm';
 import { format, parseISO } from 'date-fns';
@@ -51,19 +51,30 @@ function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
 
 export function ClientList({ clients, consultations, onSelectClient, onAddClient, onDeleteClient }: Props) {
   const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<'name' | 'recent' | 'visits'>('recent');
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
-
-  const filtered = clients.filter(c =>
-    c.name.includes(search) ||
-    c.phone.replace(/-/g, '').includes(search.replace(/-/g, '')) ||
-    (c.email ?? '').includes(search)
-  );
 
   const lastConsultation = (id: string) =>
     consultations.filter(c => c.clientId === id).sort((a, b) => b.date.localeCompare(a.date))[0];
 
   const visitCount = (id: string) => consultations.filter(c => c.clientId === id).length;
+
+  const filtered = useMemo(() => {
+    const searched = clients.filter(c =>
+      c.name.includes(search) ||
+      c.phone.replace(/-/g, '').includes(search.replace(/-/g, '')) ||
+      (c.email ?? '').includes(search)
+    );
+    return [...searched].sort((a, b) => {
+      if (sortKey === 'name') return a.name.localeCompare(b.name, 'ko');
+      if (sortKey === 'visits') return visitCount(b.id) - visitCount(a.id);
+      // 'recent': 최근 방문 기준
+      const la = lastConsultation(a.id)?.date ?? a.createdAt;
+      const lb = lastConsultation(b.id)?.date ?? b.createdAt;
+      return lb.localeCompare(la);
+    });
+  }, [clients, consultations, search, sortKey]);
 
   return (
     <div className="p-6 space-y-5" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -78,11 +89,26 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
         </button>
       </div>
 
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
-        <input type="text" placeholder="이름, 전화번호, 이메일 검색" value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-          style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }} />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+          <input type="text" placeholder="이름, 전화번호, 이메일 검색" value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+            style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }} />
+        </div>
+        <div className="relative flex-shrink-0">
+          <ArrowUpDown size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+          <select
+            value={sortKey}
+            onChange={e => setSortKey(e.target.value as typeof sortKey)}
+            className="pl-7 pr-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 appearance-none"
+            style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
+          >
+            <option value="recent">최근방문순</option>
+            <option value="name">이름순</option>
+            <option value="visits">방문많은순</option>
+          </select>
+        </div>
       </div>
 
       <div className="space-y-2">

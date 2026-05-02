@@ -9,6 +9,7 @@ interface Props {
   clientName: string;
   initial?: Partial<Consultation>;
   designers?: Designer[];
+  lastConsultation?: Consultation; // P2-22: 이전 방문 컨텍스트
   onSave: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
@@ -63,7 +64,8 @@ function PhotoUpload({
   );
 }
 
-export function ConsultationForm({ clientId, clientName, initial, designers, onSave, onClose }: Props) {
+export function ConsultationForm({ clientId, clientName, initial, designers, lastConsultation, onSave, onClose }: Props) {
+  const [showLastVisit, setShowLastVisit] = useState(false);
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
     stylistName: initial?.stylistName ?? '',
@@ -125,6 +127,49 @@ export function ConsultationForm({ clientId, clientName, initial, designers, onS
           <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-5">
+          {/* P2-22: 이전 방문 컨텍스트 */}
+          {!initial && lastConsultation && (
+            <div className="rounded-xl border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-muted)' }}>
+              <button
+                type="button"
+                onClick={() => setShowLastVisit(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <span>📋 이전 방문 참조 ({lastConsultation.date})</span>
+                <span>{showLastVisit ? '▲' : '▼'}</span>
+              </button>
+              {showLastVisit && (
+                <div className="px-4 pb-3 space-y-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                  {lastConsultation.hairCondition && (
+                    <div>
+                      <p className="text-[10px] font-medium mt-2" style={{ color: 'var(--text-muted)' }}>모발 상태</p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{lastConsultation.hairCondition}</p>
+                    </div>
+                  )}
+                  {lastConsultation.colorFormula && (
+                    <div>
+                      <p className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>컬러 포뮬러</p>
+                      <p className="text-xs font-mono rounded px-2 py-1" style={{ backgroundColor: 'var(--bg-formula)', color: 'var(--text-secondary)' }}>{lastConsultation.colorFormula}</p>
+                    </div>
+                  )}
+                  {lastConsultation.permFormula && (
+                    <div>
+                      <p className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>펌 포뮬러</p>
+                      <p className="text-xs font-mono rounded px-2 py-1" style={{ backgroundColor: 'var(--bg-formula)', color: 'var(--text-secondary)' }}>{lastConsultation.permFormula}</p>
+                    </div>
+                  )}
+                  {lastConsultation.notes && (
+                    <div>
+                      <p className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>메모</p>
+                      <p className="text-xs whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{lastConsultation.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">시술 날짜 *</label>

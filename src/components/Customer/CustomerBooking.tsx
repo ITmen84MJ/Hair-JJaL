@@ -15,12 +15,18 @@ interface Props {
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
-const TIME_SLOTS = [
-  '10:00', '10:30', '11:00', '11:30', '12:00',
-  '13:00', '13:30', '14:00', '14:30', '15:00',
-  '15:30', '16:00', '16:30', '17:00', '17:30',
-  '18:00', '18:30', '19:00',
-];
+function generateTimeSlots(openTime = '10:00', closeTime = '19:00', interval = 30): string[] {
+  const slots: string[] = [];
+  const [oh, om] = openTime.split(':').map(Number);
+  const [ch, cm] = closeTime.split(':').map(Number);
+  let cur = oh * 60 + om;
+  const end = ch * 60 + cm;
+  while (cur < end) {
+    slots.push(`${String(Math.floor(cur / 60)).padStart(2, '0')}:${String(cur % 60).padStart(2, '0')}`);
+    cur += interval;
+  }
+  return slots;
+}
 
 const SERVICE_OPTIONS: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
@@ -34,6 +40,16 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
   const [notes, setNotes] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [dupWarning, setDupWarning] = useState(false);
+
+  // 선택된 지점 정보
+  const selectedShop = shops.find(s => s.id === selectedShopId);
+
+  // 선택된 지점의 영업 시간 기반 시간 슬롯
+  const TIME_SLOTS = generateTimeSlots(
+    selectedShop?.openTime,
+    selectedShop?.closeTime,
+    selectedShop?.slotInterval,
+  );
 
   // 선택된 지점의 재직 중 디자이너만
   const designers = allDesigners.filter(d => d.shopId === selectedShopId && d.status === 'active');

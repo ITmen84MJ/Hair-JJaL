@@ -80,14 +80,28 @@ function ProfileEdit({ client, onSave, onCancel }: {
   );
 }
 
+const SESSION_TAB_KEY = 'hairjjal_customer_tab';
+
 export function CustomerLayout({
   user, client, consultations, bookings, shopName,
   currentView, selectedConsultationId,
   isDark, onToggleTheme, onLogout, onNavigate,
   onSelectConsultation, onNewBooking, onUpdateClient,
 }: Props) {
-  const [tab, setTab] = useState<CustomerTab>('home');
+  // P2-14: 탭 선택을 sessionStorage에 유지
+  const [tab, setTab] = useState<CustomerTab>(() => {
+    const saved = sessionStorage.getItem(SESSION_TAB_KEY);
+    return (saved as CustomerTab) ?? 'home';
+  });
   const [editingProfile, setEditingProfile] = useState(false);
+
+  const switchTab = (t: CustomerTab) => {
+    setTab(t);
+    sessionStorage.setItem(SESSION_TAB_KEY, t);
+  };
+
+  // P2-18: 대기 중 예약 배지
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
   // 상담 상세 진입 시 탭 오버레이
   if (currentView === 'customer-consultation' && selectedConsultationId) {
@@ -350,11 +364,19 @@ export function CustomerLayout({
         style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {TAB_ITEMS.map(({ id, label, Icon }) => {
           const active = tab === id;
+          const badge = id === 'bookings' && pendingCount > 0 ? pendingCount : 0;
           return (
-            <button key={id} onClick={() => setTab(id)}
+            <button key={id} onClick={() => switchTab(id)}
               className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors relative"
               style={active ? { color: '#f43f5e' } : { color: 'var(--text-muted)' }}>
-              <Icon size={20} />
+              <span className="relative">
+                <Icon size={20} />
+                {badge > 0 && (
+                  <span className="absolute -top-1 -right-2 min-w-[16px] h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                    {badge}
+                  </span>
+                )}
+              </span>
               <span className="text-[10px]">{label}</span>
               {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-rose-500" />}
             </button>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation, Designer } from '../../types';
@@ -24,8 +24,23 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
   const [showEditClient, setShowEditClient] = useState(false);
   const [showAddCon, setShowAddCon] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'stats'>('history');
+  const [monthFilter, setMonthFilter] = useState('');   // P2-16: 'YYYY-MM' 또는 ''(전체)
+  const [tagInput, setTagInput] = useState('');         // P2-21: 인라인 태그 입력
 
-  const sorted = [...consultations].sort((a, b) => b.date.localeCompare(a.date));
+  const allSorted = useMemo(
+    () => [...consultations].sort((a, b) => b.date.localeCompare(a.date)),
+    [consultations],
+  );
+  const sorted = useMemo(
+    () => monthFilter ? allSorted.filter(c => c.date.startsWith(monthFilter)) : allSorted,
+    [allSorted, monthFilter],
+  );
+
+  // P2-16: 이력에 있는 연월 목록 추출
+  const monthOptions = useMemo(() => {
+    const set = new Set(allSorted.map(c => c.date.slice(0, 7)));
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [allSorted]);
   const age = client.birthDate ? differenceInYears(new Date(), parseISO(client.birthDate)) : null;
   const totalSpend = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
 
@@ -63,6 +78,40 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
                 {client.tags.map(tag => <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-tag)', color: 'var(--text-tag)' }}>{tag}</span>)}
               </div>
             )}
+            {/* P2-21: 인라인 태그 관리 */}
+            <div className="mt-3">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Tag size={11} style={{ color: 'var(--text-muted)' }} />
+                {(client.tags ?? []).map(tag => (
+                  <span key={tag} className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: 'var(--bg-tag)', color: 'var(--text-tag)' }}>
+                    {tag}
+                    <button
+                      onClick={() => onUpdateClient(client.id, { tags: client.tags?.filter(t => t !== tag) })}
+                      className="ml-0.5 hover:opacity-60"><X size={10} /></button>
+                  </span>
+                ))}
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const t = tagInput.trim();
+                    if (t && !(client.tags ?? []).includes(t)) {
+                      onUpdateClient(client.id, { tags: [...(client.tags ?? []), t] });
+                    }
+                    setTagInput('');
+                  }}
+                  className="flex items-center gap-1">
+                  <input
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    placeholder="태그 추가"
+                    className="w-20 text-xs border rounded-full px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-rose-300"
+                    style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
+                  />
+                  <button type="submit" className="text-rose-500 hover:text-rose-700"><Plus size={13} /></button>
+                </form>
+              </div>
+            </div>
             {client.notes && <p className="mt-3 text-xs rounded-lg px-3 py-2" style={{ backgroundColor: 'var(--bg-note)', color: 'var(--text-secondary)' }}>{client.notes}</p>}
           </div>
         </div>
@@ -95,11 +144,28 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
 
       {activeTab === 'history' && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>상담 이력 ({sorted.length})</h3>
-            <button onClick={() => setShowAddCon(true)} className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
-              <Plus size={13} /> 상담 추가
-            </button>
+          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+              상담 이력 ({sorted.length}{monthFilter ? `/${allSorted.length}` : ''})
+            </h3>
+            <div className="flex items-center gap-2">
+              {monthOptions.length > 1 && (
+                <select
+                  value={monthFilter}
+                  onChange={e => setMonthFilter(e.target.value)}
+                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
+                >
+                  <option value="">전체</option>
+                  {monthOptions.map(m => (
+                    <option key={m} value={m}>{m.replace('-', '년 ')}월</option>
+                  ))}
+                </select>
+              )}
+              <button onClick={() => setShowAddCon(true)} className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                <Plus size={13} /> 상담 추가
+              </button>
+            </div>
           </div>
           {sorted.length === 0 && (
             <div className="rounded-xl py-12 text-center text-sm border-2 border-dashed" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
@@ -140,7 +206,16 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
       )}
 
       {showEditClient && <ClientForm initial={client} onSave={data => { onUpdateClient(client.id, data); setShowEditClient(false); }} onClose={() => setShowEditClient(false)} />}
-      {showAddCon && <ConsultationForm clientId={client.id} clientName={client.name} designers={designers} onSave={data => { onAddConsultation(data); setShowAddCon(false); }} onClose={() => setShowAddCon(false)} />}
+      {showAddCon && (
+        <ConsultationForm
+          clientId={client.id}
+          clientName={client.name}
+          designers={designers}
+          lastConsultation={allSorted[0]}
+          onSave={data => { onAddConsultation(data); setShowAddCon(false); }}
+          onClose={() => setShowAddCon(false)}
+        />
+      )}
     </div>
   );
 }

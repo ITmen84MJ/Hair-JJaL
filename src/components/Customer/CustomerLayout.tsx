@@ -385,7 +385,7 @@ export function CustomerLayout({
           <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-black text-xs">J</span>
           </div>
-          <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+          <span className="font-bold text-sm truncate max-w-[160px]" style={{ color: 'var(--text-primary)' }}>
             {shopName ?? 'Hair JJaL'}
           </span>
         </div>

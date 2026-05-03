@@ -226,7 +226,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{client.name}</span>
+                    <span className="font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{client.name}</span>
                     {client.tags?.map(tag => (
                       <span key={tag} className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-tag)', color: 'var(--text-tag)' }}>{tag}</span>
                     ))}

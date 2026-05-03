@@ -72,8 +72,8 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
         <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center mx-auto">
           <Store size={24} className="text-white" />
         </div>
-        <h3 className="text-lg font-bold text-gray-900">가입 완료!</h3>
-        <p className="text-sm text-gray-500">지점이 생성되었습니다.<br />이메일과 비밀번호로 로그인해 주세요.</p>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>가입 완료!</h3>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>지점이 생성되었습니다.<br />이메일과 비밀번호로 로그인해 주세요.</p>
         <button onClick={onBack}
           className="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
           로그인 화면으로
@@ -85,9 +85,9 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex items-center gap-1.5 mb-1">
-        <div className="h-px flex-1 bg-gray-100" />
-        <span className="text-[11px] text-gray-400 font-semibold">원장 정보</span>
-        <div className="h-px flex-1 bg-gray-100" />
+        <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>원장 정보</span>
+        <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
       </div>
 
       <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
@@ -99,8 +99,8 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
         <input required type={showPw ? 'text' : 'password'} placeholder="비밀번호 (6자 이상) *"
           value={form.password} onChange={f('password')} className={`${inp} pr-10`}
           style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-        <button type="button" onClick={() => setShowPw(v => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+        <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+          className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
           {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
@@ -108,9 +108,9 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
 
       <div className="flex items-center gap-1.5 pt-1">
-        <div className="h-px flex-1 bg-gray-100" />
-        <span className="text-[11px] text-gray-400 font-semibold">지점 정보</span>
-        <div className="h-px flex-1 bg-gray-100" />
+        <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>지점 정보</span>
+        <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
       </div>
 
       <input required placeholder="지점명 *" value={form.shopName} onChange={f('shopName')} className={inp}
@@ -154,7 +154,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
   demoUsers.forEach(u => { (byShop[u.shopId] = byShop[u.shopId] || []).push(u); });
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #fff1f2 0%, #fef9f0 50%, #fff 100%)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="w-full max-w-md space-y-6">
 
         {/* Logo */}
@@ -162,16 +162,16 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
           <div className="w-16 h-16 bg-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-200">
             <Scissors size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Hair JJaL</h1>
-          <p className="text-gray-500 mt-1 text-sm">헤어 상담 이력 관리 서비스</p>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>Hair JJaL</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>헤어 상담 이력 관리 서비스</p>
         </div>
 
         {/* 로그인 / 원장 가입 카드 */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
+        <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
 
           {mode === 'login' ? (
             <>
-              <h2 className="font-semibold text-gray-800 mb-4">로그인</h2>
+              <h2 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>로그인</h2>
               <form onSubmit={handleSubmit} className="space-y-3">
                 <input
                   type="email" required placeholder="이메일" value={email}
@@ -186,8 +186,8 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
                     className={`${inp} pr-10`}
                     style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
                   />
-                  <button type="button" onClick={() => setShowPw(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+                    className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
                     {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -201,7 +201,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
               {/* 원장 가입 유도 */}
               <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                 <button onClick={() => setMode('register')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors hover:border-amber-400 hover:bg-amber-50"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
                   style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
                   <Store size={15} className="text-amber-500" />
                   원장으로 신규 지점 개설하기
@@ -211,10 +211,10 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
           ) : (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setMode('login')} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+                <button onClick={() => setMode('login')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
                   <ArrowLeft size={18} />
                 </button>
-                <h2 className="font-semibold text-gray-800">원장 가입 · 지점 개설</h2>
+                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>원장 가입 · 지점 개설</h2>
               </div>
               <OwnerRegisterForm
                 onBack={() => setMode('login')}
@@ -226,9 +226,9 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
 
         {/* Demo accounts — DEV 환경 전용 */}
         {import.meta.env.DEV && (
-          <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
+          <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">데모 계정으로 체험하기</span>
+              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>데모 계정으로 체험하기</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">DEV ONLY</span>
             </div>
             <div className="space-y-4">

@@ -210,14 +210,14 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
         <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--bg-muted)' }}>
           <button onClick={() => { setViewMode('list'); setCalendarDateFilter(null); }}
             aria-label="목록 보기"
-            className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm' : ''}`}
-            style={{ color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-muted)', backgroundColor: viewMode === 'list' ? 'var(--bg-card)' : 'transparent', boxShadow: viewMode === 'list' ? 'var(--shadow)' : 'none' }}>
             <LayoutList size={15} />
           </button>
           <button onClick={() => setViewMode('calendar')}
             aria-label="캘린더 보기"
-            className={`p-1.5 rounded-lg transition-colors ${viewMode === 'calendar' ? 'bg-white shadow-sm' : ''}`}
-            style={{ color: viewMode === 'calendar' ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: viewMode === 'calendar' ? 'var(--text-primary)' : 'var(--text-muted)', backgroundColor: viewMode === 'calendar' ? 'var(--bg-card)' : 'transparent', boxShadow: viewMode === 'calendar' ? 'var(--shadow)' : 'none' }}>
             <CalendarDays size={15} />
           </button>
         </div>

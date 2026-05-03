@@ -6,6 +6,7 @@ import { Client, Consultation } from '../../types';
 import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from './serviceLabels';
 import { ConsultationForm } from './ConsultationForm';
+import { Modal } from '../common/Modal';
 
 interface Props {
   consultation: Consultation;
@@ -24,8 +25,8 @@ function DeleteConsultationModal({ isShared, onClose, onConfirm }: {
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-sm rounded-2xl p-6 space-y-4" style={card}>
+    <Modal onClose={onClose}>
+      <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
             <AlertTriangle size={18} className="text-red-500" />
@@ -48,7 +49,7 @@ function DeleteConsultationModal({ isShared, onClose, onConfirm }: {
             className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">삭제</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -70,14 +71,14 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
   return (
     <div className="p-6 space-y-5 max-w-2xl" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex items-center gap-3">
-        <button onClick={onBack} style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>상담 상세</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{client.name} 고객</p>
+        <button onClick={onBack} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>상담 상세</h1>
+          <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{client.name} 고객</p>
         </div>
-        <button onClick={() => window.print()} className="p-1.5 rounded-lg transition-colors print:hidden" style={{ color: 'var(--text-muted)' }} aria-label="인쇄"><Printer size={16} /></button>
-        <button onClick={() => setShowEdit(true)} className="p-1.5 rounded-lg transition-colors hover:text-rose-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
-        <button onClick={() => setShowDeleteModal(true)} className="p-1.5 rounded-lg transition-colors hover:text-red-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
+        <button onClick={() => window.print()} aria-label="인쇄" className="p-1.5 rounded-lg transition-colors print:hidden" style={{ color: 'var(--text-muted)' }}><Printer size={16} /></button>
+        <button onClick={() => setShowEdit(true)} aria-label="상담 수정" className="p-1.5 rounded-lg transition-colors hover:text-rose-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
+        <button onClick={() => setShowDeleteModal(true)} aria-label="상담 삭제" className="p-1.5 rounded-lg transition-colors hover:text-red-500 print:hidden" style={{ color: 'var(--text-muted)' }}><Trash2 size={16} /></button>
       </div>
 
       {/* 고객이 수정/삭제 요청을 남긴 경우 배너 표시 */}
@@ -190,7 +191,10 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
             <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>고객 공유</p>
           </div>
           <button onClick={() => onToggleShare(con.id)}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${con.isShared ? 'bg-rose-500' : 'bg-gray-200'}`}>
+            aria-label={con.isShared ? '공유 비활성화' : '공유 활성화'}
+            aria-pressed={con.isShared}
+            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+            style={{ backgroundColor: con.isShared ? '#f43f5e' : 'var(--border-input)' }}>
             <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${con.isShared ? 'translate-x-4' : 'translate-x-1'}`} />
           </button>
         </div>

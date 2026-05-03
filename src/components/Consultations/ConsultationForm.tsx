@@ -178,7 +178,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
           <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{initial ? '상담 수정' : '새 상담 추가'}</h2>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{clientName} 고객</p>
         </div>
-        <button onClick={handleClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+        <button onClick={handleClose} aria-label="닫기" style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
       </div>
         <form onSubmit={submit} className="p-6 space-y-5">
           {/* P2-22: 이전 방문 컨텍스트 */}

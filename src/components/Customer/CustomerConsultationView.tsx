@@ -46,7 +46,7 @@ export function CustomerConsultationView({
   return (
     <div className="p-5 space-y-4 max-w-lg mx-auto" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex items-center gap-3">
-        <button onClick={onBack} style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
+        <button onClick={onBack} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>시술 상세</h1>
       </div>
 

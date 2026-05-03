@@ -140,7 +140,7 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
     <div className="p-5 space-y-5 max-w-lg mx-auto" style={{ backgroundColor: 'var(--bg-app)' }}>
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={onBack} style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
+        <button onClick={onBack} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>예약 신청</h1>
       </div>
 

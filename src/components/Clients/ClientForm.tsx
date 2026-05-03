@@ -41,7 +41,7 @@ export function ClientForm({ initial, onSave, onClose }: Props) {
     <Modal onClose={onClose} maxWidth="max-w-md">
       <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
         <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{initial ? '고객 정보 수정' : '새 고객 추가'}</h2>
-        <button onClick={onClose} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+        <button onClick={onClose} aria-label="닫기" style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
       </div>
       <form onSubmit={submit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">

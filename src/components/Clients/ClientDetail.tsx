@@ -96,8 +96,8 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
   return (
     <div className="p-6 space-y-6" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex items-center gap-3">
-        <button onClick={onBack} style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>고객 상세</h1>
+        <button onClick={onBack} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
+        <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>고객 상세</h1>
       </div>
 
       {/* Profile */}

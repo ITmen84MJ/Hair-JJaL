@@ -14,6 +14,7 @@ interface Props {
 }
 
 const COLORS = ['#f43f5e', '#fb7185', '#fbbf24', '#a78bfa', '#34d399', '#60a5fa', '#f97316', '#e879f9'];
+const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 
 export function ClientStats({ consultations }: Props) {
   const now = new Date();
@@ -62,7 +63,8 @@ export function ClientStats({ consultations }: Props) {
 
   if (consultations.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl py-12 text-center text-gray-400 text-sm">
+      <div className="rounded-xl border border-dashed py-12 text-center text-sm"
+        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
         상담 이력이 없어 통계를 표시할 수 없습니다.
       </div>
     );
@@ -73,23 +75,23 @@ export function ClientStats({ consultations }: Props) {
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         {statCards.map(({ label, value }) => (
-          <div key={label} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">{value}</p>
+          <div key={label} className="rounded-xl border p-4" style={card}>
+            <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+            <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* Monthly visits bar chart */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">월별 방문 횟수 (최근 6개월)</h3>
+      <div className="rounded-xl border p-5" style={card}>
+        <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>월별 방문 횟수 (최근 6개월)</h3>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" className="dark:stroke-gray-700" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip
-              contentStyle={{ background: 'var(--tooltip-bg, #fff)', border: '1px solid #f3f4f6', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
               formatter={(v) => [`${v}회`, '방문']}
             />
             <Bar dataKey="visits" fill="#f43f5e" radius={[4, 4, 0, 0]} />
@@ -98,8 +100,8 @@ export function ClientStats({ consultations }: Props) {
       </div>
 
       {/* Monthly spend area chart */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">월별 매출 추이 (최근 6개월)</h3>
+      <div className="rounded-xl border p-5" style={card}>
+        <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>월별 매출 추이 (최근 6개월)</h3>
         <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={monthlyData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
             <defs>
@@ -108,12 +110,12 @@ export function ClientStats({ consultations }: Props) {
                 <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" className="dark:stroke-gray-700" />
-            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false}
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
               tickFormatter={v => `${(v / 10000).toFixed(0)}만`} />
             <Tooltip
-              contentStyle={{ background: 'var(--tooltip-bg, #fff)', border: '1px solid #f3f4f6', borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
               formatter={(v) => [`${Number(v).toLocaleString()}원`, '매출']}
             />
             <Area type="monotone" dataKey="spend" stroke="#f43f5e" strokeWidth={2} fill="url(#spendGrad)" />
@@ -123,8 +125,8 @@ export function ClientStats({ consultations }: Props) {
 
       {/* Service type pie chart */}
       {serviceData.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">시술 종류 분포</h3>
+        <div className="rounded-xl border p-5" style={card}>
+          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>시술 종류 분포</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={serviceData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
@@ -134,10 +136,10 @@ export function ClientStats({ consultations }: Props) {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: 'var(--tooltip-bg, #fff)', border: '1px solid #f3f4f6', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text-primary)' }}
                 formatter={(v) => [`${v}회`]}
               />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

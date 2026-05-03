@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
-  HardDrive,
+  HardDrive, BookOpen,
 } from 'lucide-react';
 import { getStorageUsage } from '../../utils/backup';
 import { format, parseISO, startOfMonth } from 'date-fns';
@@ -372,6 +372,41 @@ export function StaffProfile({
           데이터 내보내기 기능은 고객 개인정보 보호를 위해 제공되지 않습니다.
         </p>
       </div>
+
+      {/* ── 사용 매뉴얼 ── */}
+      {(() => {
+        const manual = isOwner
+          ? { href: '/manuals/manual-owner.html',    label: '원장 매뉴얼',     sub: '직원 관리 · 분석 · 데이터 백업',    color: '#d97706', bg: 'var(--bg-icon-amber)',  border: '#fde68a' }
+          : { href: '/manuals/manual-designer.html', label: '디자이너 매뉴얼', sub: '고객 관리 · 이력 작성 · 예약 관리', color: '#4f46e5', bg: '#eef2ff',               border: '#c7d2fe' };
+        return (
+          <div className="rounded-2xl border p-5 space-y-3" style={card}>
+            <div className="flex items-center gap-2">
+              <BookOpen size={14} style={{ color: 'var(--text-muted)' }} />
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>사용 매뉴얼</h3>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              앱 기능을 PDF 형태로 안내합니다. 링크 열기 후 브라우저에서 <strong>인쇄 → PDF로 저장</strong>하세요.
+            </p>
+            <a
+              href={manual.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-3 rounded-xl border transition-all hover:shadow-sm"
+              style={{ backgroundColor: manual.bg, borderColor: manual.border, textDecoration: 'none' }}
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: manual.color }}>
+                <BookOpen size={14} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-tight" style={{ color: manual.color }}>{manual.label}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>{manual.sub}</p>
+              </div>
+              <span className="text-xs flex-shrink-0 font-medium" style={{ color: manual.color }}>열기 →</span>
+            </a>
+          </div>
+        );
+      })()}
     </div>
   );
 }

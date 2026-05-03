@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Phone, Mail, Edit2, Check, X } from 'lucide-react';
+import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Phone, Mail, Edit2, Check, X, BookOpen } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Client, Consultation, Booking, Shop, View } from '../../types';
@@ -361,6 +361,34 @@ export function CustomerLayout({
             <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{client.notes}</p>
           </div>
         )}
+
+        {/* 사용 매뉴얼 */}
+        <div className="rounded-2xl border p-4 space-y-3" style={card}>
+          <div className="flex items-center gap-2">
+            <BookOpen size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>사용 매뉴얼</p>
+          </div>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            앱 이용 방법을 안내합니다. 링크 열기 후 브라우저에서 <strong>인쇄 → PDF로 저장</strong>하세요.
+          </p>
+          <a
+            href="/manuals/manual-customer.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all hover:shadow-sm"
+            style={{ backgroundColor: '#eff6ff', borderColor: '#bfdbfe', textDecoration: 'none' }}
+          >
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: '#2563eb' }}>
+              <BookOpen size={13} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold leading-tight" style={{ color: '#2563eb' }}>고객 매뉴얼</p>
+              <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>예약 · 시술 이력 · 공유 링크</p>
+            </div>
+            <span className="text-xs flex-shrink-0 font-medium" style={{ color: '#2563eb' }}>열기 →</span>
+          </a>
+        </div>
 
         {/* Logout */}
         <div className="rounded-2xl border p-4" style={card}>

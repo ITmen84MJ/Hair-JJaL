@@ -287,11 +287,17 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>모발 상태</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>모발 상태</label>
+                <VoiceNoteButton compact onAppend={text => setField('hairCondition', (form.hairCondition ? form.hairCondition + ' ' : '') + text.trim())} />
+              </div>
               <input value={form.hairCondition} onChange={e => setField('hairCondition', e.target.value)} className={inputCls} placeholder="예: 손상 보통, 건조함" />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>두피 상태</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>두피 상태</label>
+                <VoiceNoteButton compact onAppend={text => setField('scalp', (form.scalp ? form.scalp + ' ' : '') + text.trim())} />
+              </div>
               <input value={form.scalp} onChange={e => setField('scalp', e.target.value)} className={inputCls} placeholder="예: 지성, 민감" />
             </div>
           </div>
@@ -302,6 +308,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>컬러 포뮬러</label>
                 <div className="flex items-center gap-1">
+                  <VoiceNoteButton compact onAppend={text => setField('colorFormula', (form.colorFormula ? form.colorFormula + ' ' : '') + text.trim())} />
                   {form.colorFormula.trim() && (
                     <button type="button" title="현재 포뮬러 저장"
                       onClick={() => addTemplate('color', form.colorFormula)}
@@ -348,6 +355,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>펌 포뮬러</label>
                 <div className="flex items-center gap-1">
+                  <VoiceNoteButton compact onAppend={text => setField('permFormula', (form.permFormula ? form.permFormula + ' ' : '') + text.trim())} />
                   {form.permFormula.trim() && (
                     <button type="button" title="현재 포뮬러 저장"
                       onClick={() => addTemplate('perm', form.permFormula)}

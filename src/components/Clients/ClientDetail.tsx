@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download } from 'lucide-react';
+import { exportClientHistory } from '../../utils/csv';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation, Designer } from '../../types';
@@ -97,7 +98,17 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
     <div className="p-6 space-y-6" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex items-center gap-3">
         <button onClick={onBack} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></button>
-        <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>고객 상세</h1>
+        <h1 className="text-xl font-bold truncate flex-1" style={{ color: 'var(--text-primary)' }}>고객 상세</h1>
+        {consultations.length > 0 && (
+          <button
+            onClick={() => exportClientHistory(client, consultations)}
+            aria-label="시술 이력 CSV 내보내기"
+            title="CSV 내보내기"
+            className="p-1.5 rounded-lg transition-colors hover:text-rose-500"
+            style={{ color: 'var(--text-muted)' }}>
+            <Download size={16} />
+          </button>
+        )}
       </div>
 
       {/* Profile */}

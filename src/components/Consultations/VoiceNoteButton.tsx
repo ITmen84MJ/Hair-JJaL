@@ -4,6 +4,8 @@ import { useSpeechRecognition } from '../../hooks/useSpeechRecognition';
 
 interface Props {
   onAppend: (text: string) => void;
+  /** true이면 아이콘만 표시 (라벨 옆 인라인 배치용) */
+  compact?: boolean;
 }
 
 // 에러 코드 → 사용자 메시지 매핑
@@ -37,7 +39,7 @@ function getErrorMessage(code: string): { title: string; hint: string; canRetry:
   };
 }
 
-export function VoiceNoteButton({ onAppend }: Props) {
+export function VoiceNoteButton({ onAppend, compact = false }: Props) {
   const [errorCode, setErrorCode] = useState('');
 
   const { isListening, interimText, supported, start, stop } = useSpeechRecognition({
@@ -64,6 +66,39 @@ export function VoiceNoteButton({ onAppend }: Props) {
   };
 
   const err = errorCode ? getErrorMessage(errorCode) : null;
+
+  // compact: 아이콘 전용 버튼 (라벨 행 인라인 배치용)
+  if (compact) {
+    return (
+      <div className="inline-flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label={isListening ? '음성 입력 중지' : '음성으로 입력'}
+          title={isListening ? '음성 입력 중지' : '음성으로 입력'}
+          className={`p-1 rounded transition-colors ${
+            isListening
+              ? 'text-red-500 animate-pulse'
+              : 'hover:text-rose-500'
+          }`}
+          style={{ color: isListening ? undefined : 'var(--text-muted)' }}
+        >
+          {isListening ? <MicOff size={13} /> : <Mic size={13} />}
+        </button>
+        {isListening && interimText && (
+          <span className="text-[10px] italic truncate max-w-[80px]"
+            style={{ color: 'var(--text-muted)' }}>
+            {interimText}...
+          </span>
+        )}
+        {err && (
+          <span className="text-[10px]" style={{ color: 'var(--text-warning)' }} title={err.hint}>
+            {err.title}
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

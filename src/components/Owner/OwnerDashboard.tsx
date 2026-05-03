@@ -2,10 +2,12 @@ import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound } from 'lucide-react';
+import { Users, Scissors, TrendingUp, UserCheck, UserX, Plus, Phone, Mail, CalendarDays, Crown, Store, Edit2, Check, X, KeyRound, Download, Upload, Database, FileText } from 'lucide-react';
 import { Client, Consultation, Designer, DesignerRole, Shop, ServiceType } from '../../types';
 import { Modal } from '../common/Modal';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
+import { getStorageUsage, exportData, importData } from '../../utils/backup';
+import { exportAllClients } from '../../utils/csv';
 
 interface Props {
   shop: Shop | null;
@@ -300,6 +302,83 @@ function getPeriodRange(key: PeriodKey): { start: string; end: string } {
   return { start: '2000-01-01', end: '2099-12-31' };
 }
 
+function DataManagementSection({ clients, consultations }: { clients: Client[]; consultations: Consultation[] }) {
+  const [importError, setImportError] = useState('');
+  const { usedMB, percent } = getStorageUsage();
+
+  const barColor = percent >= 80 ? '#ef4444' : percent >= 60 ? '#f59e0b' : '#10b981';
+
+  return (
+    <div className="rounded-2xl border p-5 space-y-5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' }}>
+      <div className="flex items-center gap-2">
+        <Database size={16} style={{ color: 'var(--text-muted)' }} />
+        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>데이터 관리</h3>
+      </div>
+
+      {/* 저장 공간 게이지 */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>저장 공간 사용량</p>
+          <p className="text-xs font-bold" style={{ color: percent >= 80 ? '#ef4444' : 'var(--text-muted)' }}>
+            {usedMB} MB / 약 5 MB ({percent}%)
+          </p>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-muted)' }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, backgroundColor: barColor }} />
+        </div>
+        {percent >= 80 && (
+          <p className="text-xs mt-1.5 text-red-500">
+            저장 공간이 부족합니다. 데이터를 내보내거나 오래된 사진을 삭제해 주세요.
+          </p>
+        )}
+      </div>
+
+      {/* JSON 전체 백업 */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>전체 데이터 백업 (JSON)</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          모든 고객·시술 이력·예약·직원 정보를 JSON 파일로 저장합니다. 다른 기기로 이전하거나 복원할 때 사용하세요.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={exportData}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors hover:border-rose-400 hover:text-rose-500"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            <Download size={13} /> JSON 내보내기
+          </button>
+          <button
+            onClick={() => importData(setImportError)}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors hover:border-rose-400 hover:text-rose-500"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            <Upload size={13} /> JSON 가져오기
+          </button>
+        </div>
+        {importError && (
+          <p className="text-xs text-red-500">{importError}</p>
+        )}
+        <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+          ⚠ 가져오기 시 현재 데이터가 백업 파일로 교체됩니다. 먼저 내보내기로 현재 데이터를 저장해 두세요.
+        </p>
+      </div>
+
+      {/* CSV 내보내기 */}
+      <div className="space-y-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>고객 목록 내보내기 (CSV)</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          전체 고객 기본 정보를 엑셀·스프레드시트에서 열 수 있는 CSV 파일로 내보냅니다.
+        </p>
+        <button
+          onClick={() => exportAllClients(clients, consultations)}
+          disabled={clients.length === 0}
+          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors hover:border-rose-400 hover:text-rose-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          <FileText size={13} /> 전체 고객 CSV ({clients.length}명)
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function OwnerDashboard({ shop, clients, consultations, designers, onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
   const [tab, setTab] = useState<'stats' | 'staff' | 'shop'>('stats');
   const [showAdd, setShowAdd] = useState(false);
@@ -446,6 +525,7 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
 
           <div className="rounded-2xl border p-5" style={card}>
             <p className="font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>월별 매출 추이</p>
+            <div role="img" aria-label={`월별 매출 추이 차트 (최근 6개월): ${monthlyData.map(d => `${d.label} ${d.revenue.toLocaleString()}원`).join(', ')}`}>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData} barSize={24} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -461,11 +541,13 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
                 <Bar dataKey="revenue" fill="#f43f5e" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
 
           {pieData.length > 0 && (
             <div className="rounded-2xl border p-5" style={card}>
               <p className="font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>디자이너별 매출 비중</p>
+              <div role="img" aria-label={`디자이너별 매출 비중 차트: ${pieData.map(d => `${d.name} ${Number(d.value).toLocaleString()}원`).join(', ')}`}>
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="42%" innerRadius={48} outerRadius={76} paddingAngle={3} dataKey="value">
@@ -480,6 +562,7 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
                   />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
             </div>
           )}
 
@@ -729,6 +812,9 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
           )}
         </div>
       )}
+
+      {/* ── DATA TAB (지점 정보 탭 하단) ── */}
+      {tab === 'shop' && <DataManagementSection clients={clients} consultations={consultations} />}
 
       {showAdd && <AddDesignerModal onClose={() => setShowAdd(false)} onAdd={onAddDesigner} />}
       {leavingDesigner && <LeaveModal designer={leavingDesigner} onClose={() => setLeavingDesigner(null)} onConfirm={handleLeave} />}

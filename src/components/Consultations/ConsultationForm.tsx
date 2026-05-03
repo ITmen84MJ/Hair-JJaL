@@ -260,26 +260,28 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             </div>
             <div className="space-y-2">
               {form.services.map((svc, i) => (
-                <div key={i} className="flex gap-2 items-start">
+                <div key={i} className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2">
                   <select value={svc.type} onChange={e => updateService(i, 'type', e.target.value)}
-                    className="border rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300 flex-shrink-0 w-32"
+                    className="border rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300 sm:flex-shrink-0 sm:w-32"
                     style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}>
                     {(Object.keys(SERVICE_LABELS) as ServiceType[]).map(t => (
                       <option key={t} value={t}>{SERVICE_LABELS[t]}</option>
                     ))}
                   </select>
-                  <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
-                    className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
-                  <input type="number" value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
-                    className="w-28 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
-                    placeholder="금액" />
-                  {form.services.length > 1 && (
-                    <button type="button" onClick={() => removeService(i)} aria-label="시술 항목 삭제"
-                      className="hover:text-red-500 pt-2 transition-colors" style={{ color: 'var(--text-muted)' }}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+                  <div className="flex gap-1.5 flex-1">
+                    <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
+                      className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
+                    <input type="number" value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
+                      className="w-24 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                      placeholder="금액" />
+                    {form.services.length > 1 && (
+                      <button type="button" onClick={() => removeService(i)} aria-label="시술 항목 삭제"
+                        className="hover:text-red-500 py-2 transition-colors flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

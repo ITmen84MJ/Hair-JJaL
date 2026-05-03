@@ -85,6 +85,7 @@ export function ClientStats({ consultations }: Props) {
       {/* Monthly visits bar chart */}
       <div className="rounded-xl border p-5" style={card}>
         <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>월별 방문 횟수 (최근 6개월)</h3>
+        <div role="img" aria-label={`월별 방문 횟수 차트 (최근 6개월): ${monthlyData.map(d => `${d.month} ${d.visits}회`).join(', ')}`}>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
@@ -97,11 +98,13 @@ export function ClientStats({ consultations }: Props) {
             <Bar dataKey="visits" fill="#f43f5e" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Monthly spend area chart */}
       <div className="rounded-xl border p-5" style={card}>
         <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>월별 매출 추이 (최근 6개월)</h3>
+        <div role="img" aria-label={`월별 매출 차트 (최근 6개월): ${monthlyData.map(d => `${d.month} ${d.spend.toLocaleString()}원`).join(', ')}`}>
         <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={monthlyData} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
             <defs>
@@ -121,12 +124,14 @@ export function ClientStats({ consultations }: Props) {
             <Area type="monotone" dataKey="spend" stroke="#f43f5e" strokeWidth={2} fill="url(#spendGrad)" />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Service type pie chart */}
       {serviceData.length > 0 && (
         <div className="rounded-xl border p-5" style={card}>
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>시술 종류 분포</h3>
+          <div role="img" aria-label={`시술 종류 분포 차트: ${serviceData.map(d => `${d.name} ${d.value}회`).join(', ')}`}>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={serviceData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
@@ -142,6 +147,7 @@ export function ClientStats({ consultations }: Props) {
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
             </PieChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
     </div>

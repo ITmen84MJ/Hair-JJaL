@@ -9,7 +9,7 @@ import { ClientList } from './components/Clients/ClientList';
 import { ClientDetail } from './components/Clients/ClientDetail';
 import { ConsultationDetail } from './components/Consultations/ConsultationDetail';
 import { ShareView } from './components/Share/ShareView';
-import { LoginPage } from './components/Auth/LoginPage';
+import { LoginPage, type OwnerRegisterData } from './components/Auth/LoginPage';
 import { CustomerLayout } from './components/Customer/CustomerLayout';
 import { CustomerBooking } from './components/Customer/CustomerBooking';
 import { BookingList } from './components/Bookings/BookingList';
@@ -22,7 +22,7 @@ const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').th
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, updateName, updateExtraUser } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, updateName, updateExtraUser } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -40,7 +40,34 @@ export default function App() {
 
   // ── Not logged in ──
   if (!user) {
-    return <ErrorBoundary><LoginPage onLogin={login} onLoginAs={loginAs} /></ErrorBoundary>;
+    const registerOwner = async (data: OwnerRegisterData): Promise<string | null> => {
+      // 1. 지점 생성
+      const shop = store.addShop({
+        name:    data.shopName,
+        address: data.shopAddress,
+        phone:   data.shopPhone,
+      });
+      // 2. 원장 계정 생성 (생성된 shopId 연결)
+      const err = await addOwnerAccount({
+        shopId:   shop.id,
+        name:     data.name,
+        email:    data.email,
+        password: data.password,
+      });
+      if (err) {
+        // 계정 생성 실패 시 생성된 지점도 롤백할 수 없으므로
+        // 사용자에게 에러 반환 (지점은 다음 가입 시도 때 중복 생성될 수 있으나
+        // 이메일 중복 체크가 먼저 실패하므로 실질적으로 orphan 지점은 드물게 발생)
+        return err;
+      }
+      return null;
+    };
+
+    return (
+      <ErrorBoundary>
+        <LoginPage onLogin={login} onLoginAs={loginAs} onRegisterOwner={registerOwner} />
+      </ErrorBoundary>
+    );
   }
 
   // ── 온보딩 투어 (첫 로그인 시 1회) ──

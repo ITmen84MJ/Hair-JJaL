@@ -178,6 +178,33 @@ export function useAuth() {
     localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, newUser]));
   }, []);
 
+  // ── 원장 계정 생성 (지점 ID는 store.addShop() 호출 후 전달) ───────
+  const addOwnerAccount = useCallback(async (data: {
+    shopId: string;
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<string | null> => {
+    const lowerEmail = data.email.toLowerCase().trim();
+    const allUsers = [...demoUsers, ...loadExtraUsers()];
+    if (allUsers.some(u => u.email.toLowerCase() === lowerEmail)) {
+      return '이미 사용 중인 이메일입니다.';
+    }
+    const passwordHash = await hashPassword(lowerEmail, data.password);
+    const newUser: AuthUser = {
+      id: uuidv4(),
+      shopId: data.shopId,
+      name: data.name,
+      role: 'owner',
+      email: lowerEmail,
+      passwordHash,
+      designerName: data.name,
+    };
+    const extras = loadExtraUsers();
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, newUser]));
+    return null;
+  }, []);
+
   // ── 본인 이름 변경 ────────────────────────────────────────────────
   const updateName = useCallback((name: string) => {
     setUser(prev => {
@@ -209,5 +236,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, login, loginAs, logout, addDesignerAccount, updateName, updateExtraUser };
+  return { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, updateName, updateExtraUser };
 }

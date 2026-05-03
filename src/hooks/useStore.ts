@@ -156,6 +156,12 @@ export function useStore() {
   }, []);
 
   // ── Shops ──────────────────────────────────────────────────────
+  const addShop = useCallback((data: Omit<Shop, 'id' | 'createdAt'>) => {
+    const shop: Shop = { ...data, id: uuidv4(), createdAt: new Date().toISOString() };
+    setShops(prev => [...prev, shop]);
+    return shop;
+  }, []);
+
   const updateShop = useCallback((id: string, data: Partial<Shop>) => {
     setShops(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
   }, []);
@@ -168,6 +174,6 @@ export function useStore() {
     addConsultation, updateConsultation, deleteConsultation, toggleShare,
     addDesigner, updateDesigner,
     addBooking, updateBooking,
-    updateShop,
+    addShop, updateShop,
   };
 }

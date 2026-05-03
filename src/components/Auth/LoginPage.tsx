@@ -1,24 +1,142 @@
 import { useState } from 'react';
-import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser } from '../../types';
+
+export interface OwnerRegisterData {
+  name: string;
+  email: string;
+  password: string;
+  shopName: string;
+  shopAddress?: string;
+  shopPhone?: string;
+}
 
 interface Props {
   onLogin: (email: string, password: string) => Promise<string | null>;
   onLoginAs: (userId: string) => void;
+  onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
 }
 
 const roleInfo = {
-  customer: { label: '고객', Icon: User, color: 'bg-blue-50 text-blue-600 border-blue-200', desc: '내 시술 이력 확인' },
-  designer: { label: '헤어디자이너', Icon: Palette, color: 'bg-rose-50 text-rose-600 border-rose-200', desc: '고객 관리 · 상담 기록' },
-  owner: { label: '원장', Icon: Crown, color: 'bg-amber-50 text-amber-600 border-amber-200', desc: '전체 통계 · 직원 관리' },
+  customer: { label: '고객',        Icon: User,   color: 'bg-blue-50 text-blue-600 border-blue-200',  desc: '내 시술 이력 확인' },
+  designer: { label: '헤어디자이너', Icon: Palette, color: 'bg-rose-50 text-rose-600 border-rose-200',  desc: '고객 관리 · 상담 기록' },
+  owner:    { label: '원장',         Icon: Crown,  color: 'bg-amber-50 text-amber-600 border-amber-200', desc: '전체 통계 · 직원 관리' },
 } as const;
 
-export function LoginPage({ onLogin, onLoginAs }: Props) {
-  const [email, setEmail] = useState('');
+// ── 원장 회원가입 폼 ───────────────────────────────────────────────
+function OwnerRegisterForm({ onBack, onSubmit }: {
+  onBack: () => void;
+  onSubmit: (data: OwnerRegisterData) => Promise<string | null>;
+}) {
+  const [form, setForm] = useState({
+    name: '', email: '', password: '', confirmPassword: '',
+    shopName: '', shopAddress: '', shopPhone: '',
+  });
+  const [showPw, setShowPw]   = useState(false);
+  const [error, setError]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone]       = useState(false);
+
+  const f = (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const inp = "w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 transition-all";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    if (form.password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.');
+      return;
+    }
+    setLoading(true);
+    const err = await onSubmit({
+      name:        form.name.trim(),
+      email:       form.email.trim(),
+      password:    form.password,
+      shopName:    form.shopName.trim(),
+      shopAddress: form.shopAddress.trim() || undefined,
+      shopPhone:   form.shopPhone.trim()   || undefined,
+    });
+    if (err) { setError(err); setLoading(false); }
+    else     { setDone(true); setLoading(false); }
+  };
+
+  if (done) {
+    return (
+      <div className="text-center space-y-3 py-4">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500 flex items-center justify-center mx-auto">
+          <Store size={24} className="text-white" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900">가입 완료!</h3>
+        <p className="text-sm text-gray-500">지점이 생성되었습니다.<br />이메일과 비밀번호로 로그인해 주세요.</p>
+        <button onClick={onBack}
+          className="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
+          로그인 화면으로
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="flex items-center gap-1.5 mb-1">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-[11px] text-gray-400 font-semibold">원장 정보</span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+
+      <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <input required type="email" placeholder="이메일 (로그인 ID) *" value={form.email} onChange={f('email')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+
+      <div className="relative">
+        <input required type={showPw ? 'text' : 'password'} placeholder="비밀번호 (6자 이상) *"
+          value={form.password} onChange={f('password')} className={`${inp} pr-10`}
+          style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+        <button type="button" onClick={() => setShowPw(v => !v)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+      <input required type="password" placeholder="비밀번호 확인 *" value={form.confirmPassword} onChange={f('confirmPassword')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+
+      <div className="flex items-center gap-1.5 pt-1">
+        <div className="h-px flex-1 bg-gray-100" />
+        <span className="text-[11px] text-gray-400 font-semibold">지점 정보</span>
+        <div className="h-px flex-1 bg-gray-100" />
+      </div>
+
+      <input required placeholder="지점명 *" value={form.shopName} onChange={f('shopName')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <input placeholder="주소 (선택)" value={form.shopAddress} onChange={f('shopAddress')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <input placeholder="전화번호 (선택)" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+
+      {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+
+      <button type="submit" disabled={loading}
+        className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-amber-200">
+        {loading ? '처리 중...' : '지점 개설 및 가입'}
+      </button>
+    </form>
+  );
+}
+
+// ── 메인 LoginPage ─────────────────────────────────────────────────
+export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
+  const [mode, setMode]       = useState<'login' | 'register'>('login');
+  const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [error, setError] = useState('');
+  const [showPw, setShowPw]   = useState(false);
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
@@ -31,16 +149,14 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
   };
 
   const inp = "w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 transition-all";
-
   const shopName = (shopId: string) => mockShops.find(s => s.id === shopId)?.name ?? '';
-
-  // Group by shop first, then by role within each shop
   const byShop: Record<string, AuthUser[]> = {};
   demoUsers.forEach(u => { (byShop[u.shopId] = byShop[u.shopId] || []).push(u); });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #fff1f2 0%, #fef9f0 50%, #fff 100%)' }}>
       <div className="w-full max-w-md space-y-6">
+
         {/* Logo */}
         <div className="text-center">
           <div className="w-16 h-16 bg-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-rose-200">
@@ -50,37 +166,65 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
           <p className="text-gray-500 mt-1 text-sm">헤어 상담 이력 관리 서비스</p>
         </div>
 
-        {/* Login form */}
+        {/* 로그인 / 원장 가입 카드 */}
         <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
-          <h2 className="font-semibold text-gray-800 mb-4">로그인</h2>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input
-              type="email" required placeholder="이메일" value={email}
-              onChange={e => { setEmail(e.target.value); setError(''); }}
-              className={inp}
-              style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
-            />
-            <div className="relative">
-              <input
-                type={showPw ? 'text' : 'password'} required placeholder="비밀번호" value={password}
-                onChange={e => { setPassword(e.target.value); setError(''); }}
-                className={`${inp} pr-10`}
-                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+
+          {mode === 'login' ? (
+            <>
+              <h2 className="font-semibold text-gray-800 mb-4">로그인</h2>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <input
+                  type="email" required placeholder="이메일" value={email}
+                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  className={inp}
+                  style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                />
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'} required placeholder="비밀번호" value={password}
+                    onChange={e => { setPassword(e.target.value); setError(''); }}
+                    className={`${inp} pr-10`}
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+                <button type="submit" disabled={loading}
+                  className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-rose-200">
+                  {loading ? '로그인 중...' : '로그인'}
+                </button>
+              </form>
+
+              {/* 원장 가입 유도 */}
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                <button onClick={() => setMode('register')}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors hover:border-amber-400 hover:bg-amber-50"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                  <Store size={15} className="text-amber-500" />
+                  원장으로 신규 지점 개설하기
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => setMode('login')} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+                  <ArrowLeft size={18} />
+                </button>
+                <h2 className="font-semibold text-gray-800">원장 가입 · 지점 개설</h2>
+              </div>
+              <OwnerRegisterForm
+                onBack={() => setMode('login')}
+                onSubmit={onRegisterOwner}
               />
-              <button type="button" onClick={() => setShowPw(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
-            <button type="submit" disabled={loading}
-              className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-rose-200">
-              {loading ? '로그인 중...' : '로그인'}
-            </button>
-          </form>
+            </>
+          )}
         </div>
 
-        {/* Demo accounts — DEV 환경 전용. 프로덕션 빌드에서는 렌더링되지 않음 */}
+        {/* Demo accounts — DEV 환경 전용 */}
         {import.meta.env.DEV && (
           <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
             <div className="flex items-center gap-2 mb-4">
@@ -92,9 +236,7 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
                 <div key={sid}>
                   <div className="flex items-center gap-1.5 mb-2">
                     <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
-                    <span className="text-xs font-bold px-2" style={{ color: 'var(--text-muted)' }}>
-                      {shopName(sid)}
-                    </span>
+                    <span className="text-xs font-bold px-2" style={{ color: 'var(--text-muted)' }}>{shopName(sid)}</span>
                     <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
                   </div>
                   <div className="space-y-1.5">
@@ -127,12 +269,9 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
               ))}
             </div>
             <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setShowHint(v => !v)}
+              <button type="button" onClick={() => setShowHint(v => !v)}
                 className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-              >
+                style={{ color: 'var(--text-muted)' }}>
                 <HelpCircle size={12} />
                 {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
               </button>

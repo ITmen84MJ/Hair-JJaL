@@ -1,30 +1,38 @@
-name: Deploy Hair JJaL to GitHub Pages
+# ══════════════════════════════════════════════════════════════════
+# Hair JJaL — GitHub Pages 자동 배포
+#
+# 트리거: main 브랜치 push 또는 수동 실행(workflow_dispatch)
+# 흐름:  코드 체크아웃 → Node 설치 → npm ci → tsc → build → Pages 배포
+# ══════════════════════════════════════════════════════════════════
+
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]        # main 브랜치에 push 되면 자동 배포
-  workflow_dispatch:         # GitHub Actions 탭에서 수동 실행도 가능
+    branches: [main]
+  workflow_dispatch:   # GitHub Actions 탭에서 수동 실행 가능
 
-# GitHub Pages 배포에 필요한 권한
+# Pages 배포에 필요한 최소 권한만 부여 (최소 권한 원칙 · MASVS-AUTH-1)
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read    # 코드 읽기
+  pages:    write   # Pages 배포
+  id-token: write   # OIDC 토큰 (배포 인증)
 
-# 동시 배포 방지 (이전 배포가 진행 중이어도 최신 것을 우선)
+# 동시 배포 방지 — 새 push가 오면 진행 중인 배포를 취소하고 최신 것을 우선
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  # ── 1단계: 빌드 ──────────────────────────────────────
+  # ── 1. 빌드 ──────────────────────────────────────────────────────
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: 소스 코드 체크아웃
+      - name: 코드 체크아웃
         uses: actions/checkout@v4
 
-      - name: Node.js 설정
+      - name: Node.js 설치
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -33,22 +41,26 @@ jobs:
       - name: 의존성 설치
         run: npm ci
 
+      - name: TypeScript 타입 체크
+        run: npx tsc --noEmit
+
       - name: 프로덕션 빌드
         run: npm run build
 
-      - name: GitHub Pages 아티팩트 업로드
+      - name: Pages 아티팩트 업로드
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist          # Vite 빌드 결과물 폴더
+          path: dist
 
-  # ── 2단계: 배포 ──────────────────────────────────────
+  # ── 2. 배포 ──────────────────────────────────────────────────────
   deploy:
+    name: Deploy
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: GitHub Pages에 배포
-        id: deployment
+      - name: GitHub Pages 배포
         uses: actions/deploy-pages@v4
+        id: deployment

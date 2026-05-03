@@ -375,9 +375,10 @@ export function StaffProfile({
 
       {/* ── 사용 매뉴얼 ── */}
       {(() => {
+        const base = import.meta.env.BASE_URL;
         const manual = isOwner
-          ? { href: '/manuals/manual-owner.html',    label: '원장 매뉴얼',     sub: '직원 관리 · 분석 · 데이터 백업',    color: '#d97706', bg: 'var(--bg-icon-amber)',  border: '#fde68a' }
-          : { href: '/manuals/manual-designer.html', label: '디자이너 매뉴얼', sub: '고객 관리 · 이력 작성 · 예약 관리', color: '#4f46e5', bg: '#eef2ff',               border: '#c7d2fe' };
+          ? { href: `${base}manuals/manual-owner.html`,    label: '원장 매뉴얼',     sub: '직원 관리 · 분석 · 데이터 백업',    color: '#d97706', bg: 'var(--bg-icon-amber)',  border: '#fde68a' }
+          : { href: `${base}manuals/manual-designer.html`, label: '디자이너 매뉴얼', sub: '고객 관리 · 이력 작성 · 예약 관리', color: '#4f46e5', bg: '#eef2ff',               border: '#c7d2fe' };
         return (
           <div className="rounded-2xl border p-5 space-y-3" style={card}>
             <div className="flex items-center gap-2">

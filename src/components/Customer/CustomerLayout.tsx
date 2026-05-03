@@ -372,7 +372,7 @@ export function CustomerLayout({
             앱 이용 방법을 안내합니다. 링크 열기 후 브라우저에서 <strong>인쇄 → PDF로 저장</strong>하세요.
           </p>
           <a
-            href="/manuals/manual-customer.html"
+            href={`${import.meta.env.BASE_URL}manuals/manual-customer.html`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all hover:shadow-sm"

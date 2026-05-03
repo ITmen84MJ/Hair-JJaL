@@ -87,7 +87,12 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   email: string;
-  password?: string; // demo only — never persisted in session storage
+  /** 데모 계정 전용 평문 비밀번호. extra_users에는 저장 안 함 */
+  password?: string;
+  /** SHA-256(email:password) — addDesignerAccount로 생성된 실제 계정에만 사용 */
+  passwordHash?: string;
+  /** 세션 발급 시각 (ISO string). 8시간 후 만료 */
+  loginAt?: string;
   avatar?: string;
   clientId?: string;     // customer: linked client record
   designerName?: string; // designer/owner: matches stylistName in consultations

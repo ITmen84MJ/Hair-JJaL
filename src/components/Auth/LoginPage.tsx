@@ -4,7 +4,7 @@ import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser } from '../../types';
 
 interface Props {
-  onLogin: (email: string, password: string) => string | null;
+  onLogin: (email: string, password: string) => Promise<string | null>;
   onLoginAs: (userId: string) => void;
 }
 
@@ -22,14 +22,12 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const err = onLogin(email, password);
-      if (err) setError(err);
-      setLoading(false);
-    }, 400);
+    const err = await onLogin(email, password);
+    if (err) setError(err);
+    setLoading(false);
   };
 
   const inp = "w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 transition-all";
@@ -82,66 +80,70 @@ export function LoginPage({ onLogin, onLoginAs }: Props) {
           </form>
         </div>
 
-        {/* Demo accounts */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">데모 계정으로 체험하기</p>
-          <div className="space-y-4">
-            {Object.entries(byShop).map(([sid, users]) => (
-              <div key={sid}>
-                {/* 지점 구분 헤더 */}
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
-                  <span className="text-xs font-bold px-2" style={{ color: 'var(--text-muted)' }}>
-                    {shopName(sid)}
-                  </span>
-                  <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+        {/* Demo accounts — DEV 환경 전용. 프로덕션 빌드에서는 렌더링되지 않음 */}
+        {import.meta.env.DEV && (
+          <div className="bg-white rounded-2xl shadow-xl shadow-rose-100/50 p-6 border border-rose-50">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">데모 계정으로 체험하기</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">DEV ONLY</span>
+            </div>
+            <div className="space-y-4">
+              {Object.entries(byShop).map(([sid, users]) => (
+                <div key={sid}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+                    <span className="text-xs font-bold px-2" style={{ color: 'var(--text-muted)' }}>
+                      {shopName(sid)}
+                    </span>
+                    <div className="h-px flex-1" style={{ backgroundColor: 'var(--border)' }} />
+                  </div>
+                  <div className="space-y-1.5">
+                    {users.map(u => {
+                      const { label, Icon, color, desc } = roleInfo[u.role as keyof typeof roleInfo];
+                      return (
+                        <button key={u.id} onClick={() => onLoginAs(u.id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left hover:shadow-sm transition-all group"
+                          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = '#fda4af')}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${color.split(' ')[0]} ${color.split(' ')[1]}`}>
+                            {u.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              <span className={`inline-flex items-center gap-0.5 mr-1.5 ${color.split(' ')[1]}`}>
+                                <Icon size={9} /> {label}
+                              </span>
+                              · {desc}
+                            </p>
+                          </div>
+                          <span className="text-xs text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">입장 →</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  {users.map(u => {
-                    const { label, Icon, color, desc } = roleInfo[u.role as keyof typeof roleInfo];
-                    return (
-                      <button key={u.id} onClick={() => onLoginAs(u.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left hover:shadow-sm transition-all group"
-                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = '#fda4af')}
-                        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${color.split(' ')[0]} ${color.split(' ')[1]}`}>
-                          {u.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
-                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            <span className={`inline-flex items-center gap-0.5 mr-1.5 ${color.split(' ')[1]}`}>
-                              <Icon size={9} /> {label}
-                            </span>
-                            · {desc}
-                          </p>
-                        </div>
-                        <span className="text-xs text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity">입장 →</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setShowHint(v => !v)}
+                className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <HelpCircle size={12} />
+                {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
+              </button>
+              {showHint && (
+                <p className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                  데모 계정 비밀번호는 모두 <span className="font-mono font-semibold">1234</span>입니다.
+                </p>
+              )}
+            </div>
           </div>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setShowHint(v => !v)}
-              className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <HelpCircle size={12} />
-              {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
-            </button>
-            {showHint && (
-              <p className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                데모 계정 비밀번호는 모두 <span className="font-mono font-semibold">1234</span>입니다.
-              </p>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

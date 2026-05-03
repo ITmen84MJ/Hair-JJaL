@@ -12,7 +12,7 @@ interface Props {
   clients: Client[];
   consultations: Consultation[];
   designers: Designer[];
-  onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>, password: string) => void;
+  onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>, password: string) => Promise<void> | void;
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
   onUpdateShop: (data: Partial<Shop>) => void;
 }
@@ -22,18 +22,21 @@ const COLORS = ['#f43f5e', '#fb923c', '#facc15', '#34d399', '#60a5fa', '#a78bfa'
 
 function AddDesignerModal({ onClose, onAdd }: {
   onClose: () => void;
-  onAdd: (d: Omit<Designer, 'id' | 'shopId'>, password: string) => void;
+  onAdd: (d: Omit<Designer, 'id' | 'shopId'>, password: string) => Promise<void> | void;
 }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '1234' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }));
 
-  const handle = (e: React.FormEvent) => {
+  const handle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.password.trim()) return;
-    onAdd({ name: form.name, email: form.email, phone: form.phone, status: 'active', joinedAt: new Date().toISOString().slice(0, 10) }, form.password);
+    setSubmitting(true);
+    await onAdd({ name: form.name, email: form.email, phone: form.phone, status: 'active', joinedAt: new Date().toISOString().slice(0, 10) }, form.password);
     setDone(true);
+    setSubmitting(false);
   };
 
   const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
@@ -85,8 +88,10 @@ function AddDesignerModal({ onClose, onAdd }: {
                 <button type="button" onClick={onClose}
                   className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
                   style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
-                <button type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold">추가</button>
+                <button type="submit" disabled={submitting}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white text-sm font-semibold">
+                  {submitting ? '처리 중...' : '추가'}
+                </button>
               </div>
             </form>
           </>

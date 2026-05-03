@@ -279,9 +279,9 @@ export default function App() {
               clients={shopClients}
               consultations={shopConsultations}
               designers={shopDesigners}
-              onAddDesigner={(data, password) => {
+              onAddDesigner={async (data, password) => {
                 const designer = store.addDesigner({ ...data, shopId });
-                addDesignerAccount({
+                await addDesignerAccount({
                   shopId,
                   name: designer.name,
                   email: designer.email,

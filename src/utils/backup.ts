@@ -1,42 +1,12 @@
-const STORAGE_KEY = 'hairlog_data';
-
-/** 전체 앱 데이터를 JSON 파일로 내려받기 */
-export function exportData(): void {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
-  const blob = new Blob([raw], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `hairjjal-backup-${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-/** JSON 파일을 불러와 localStorage에 덮어쓰기. 성공하면 true 반환. */
-export function importData(file: File): Promise<boolean> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        // 최소 유효성 검사
-        if (!data.version || !Array.isArray(data.clients)) {
-          resolve(false);
-          return;
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        resolve(true);
-      } catch {
-        resolve(false);
-      }
-    };
-    reader.onerror = () => resolve(false);
-    reader.readAsText(file);
-  });
-}
+/**
+ * backup.ts
+ *
+ * ⚠ 보안 결정 (MASVS-STORAGE-1 / OWASP A01):
+ *   exportData() / importData() 함수는 고객 이름·전화번호·생년월일 등 민감한 개인정보를
+ *   암호화 없이 파일로 내보내거나 가져오는 기능이었습니다.
+ *   클라이언트 단독 환경(localStorage)에서는 전송 계층 암호화나 접근 제어를 보장할 수 없으므로
+ *   해당 기능을 제거하고 백엔드 도입 시 서버 사이드 암호화 내보내기로 재구현할 것을 권고합니다.
+ */
 
 /** localStorage 총 사용량 추산 (UTF-16: 2 bytes/char) */
 export function getStorageUsage(): { usedMB: string; percent: number } {

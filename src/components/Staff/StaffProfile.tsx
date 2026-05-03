@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
-  Download, Upload, HardDrive, Table2,
+  HardDrive,
 } from 'lucide-react';
-import { exportData, importData, getStorageUsage } from '../../utils/backup';
-import { exportClientsCSV, exportConsultationsCSV } from '../../utils/csv';
+import { getStorageUsage } from '../../utils/backup';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Designer, Shop, Consultation, Booking, ROLE_LABELS } from '../../types';
@@ -95,18 +94,8 @@ export function StaffProfile({
     setEditShop(false);
   };
 
-  /* ── 데이터 관리 ── */
-  const importRef = useRef<HTMLInputElement>(null);
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  /* ── 저장공간 사용량 ── */
   const { usedMB, percent } = getStorageUsage();
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const ok = await importData(file);
-    setImportStatus(ok ? 'success' : 'error');
-    if (ok) setTimeout(() => window.location.reload(), 1200);
-    e.target.value = '';
-  };
 
   /* ── 역할 색 ── */
   const roleBadgeStyle: React.CSSProperties = isOwner
@@ -379,49 +368,8 @@ export function StaffProfile({
           )}
         </div>
 
-        {/* 액션 버튼 */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={exportData}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-            <Download size={13} /> 데이터 내보내기
-          </button>
-
-          {/* 원장 전용: 가져오기 + CSV 내보내기 */}
-          {isOwner && (
-            <>
-              <button
-                onClick={() => importRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                <Upload size={13} /> 데이터 가져오기
-              </button>
-              <input ref={importRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-              <button
-                onClick={() => exportClientsCSV(shopClients, shopConsultations)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                <Table2 size={13} /> 고객 CSV
-              </button>
-              <button
-                onClick={() => exportConsultationsCSV(shopClients, shopConsultations)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors hover:bg-rose-50"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                <Table2 size={13} /> 시술 CSV
-              </button>
-            </>
-          )}
-        </div>
-
-        {importStatus === 'success' && (
-          <p className="text-xs text-emerald-600">✓ 가져오기 성공! 잠시 후 새로고침됩니다.</p>
-        )}
-        {importStatus === 'error' && (
-          <p className="text-xs text-red-500">✗ 가져오기 실패. Hair JJaL 백업 파일인지 확인해 주세요.</p>
-        )}
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          내보내기 파일은 JSON 형식으로 저장됩니다. 가져오기 시 현재 데이터를 덮어씁니다.
+          데이터 내보내기 기능은 고객 개인정보 보호를 위해 제공되지 않습니다.
         </p>
       </div>
     </div>

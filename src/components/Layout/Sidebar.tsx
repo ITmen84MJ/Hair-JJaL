@@ -185,14 +185,14 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
             </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Safari에서 아래 단계를 따라 앱처럼 설치하세요.</p>
             <ol className="space-y-3">
-              {[
-                '하단 툴바의 <b>공유 버튼</b> (□↑)을 탭합니다.',
-                '스크롤하여 <b>"홈 화면에 추가"</b>를 선택합니다.',
-                '이름을 확인하고 오른쪽 상단 <b>"추가"</b>를 탭합니다.',
-              ].map((step, i) => (
+              {([
+                <>하단 툴바의 <b>공유 버튼</b> (□↑)을 탭합니다.</>,
+                <>스크롤하여 <b>"홈 화면에 추가"</b>를 선택합니다.</>,
+                <>이름을 확인하고 오른쪽 상단 <b>"추가"</b>를 탭합니다.</>,
+              ] as React.ReactNode[]).map((step, i) => (
                 <li key={i} className="flex gap-3 text-sm items-start">
                   <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center flex-shrink-0 font-bold mt-0.5">{i + 1}</span>
-                  <span style={{ color: 'var(--text-secondary)' }} dangerouslySetInnerHTML={{ __html: step }} />
+                  <span style={{ color: 'var(--text-secondary)' }}>{step}</span>
                 </li>
               ))}
             </ol>

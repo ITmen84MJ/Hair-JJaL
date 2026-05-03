@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',   // 새 버전 배포 시 자동 업데이트
-      injectRegister: 'auto',
+      injectRegister: 'script', // 외부 .js 파일로 SW 등록 → CSP script-src에 'unsafe-inline' 불필요
 
       // manifest.json은 public/에 직접 관리 (manifest: false)
       manifest: false,

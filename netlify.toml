@@ -1,0 +1,73 @@
+# ══════════════════════════════════════════════════════════════════
+# netlify.toml — Hair JJaL 배포 설정
+# OWASP Top 10 2021 · OWASP MASVS v2 기준 보안 헤더 포함
+#
+# ⚠ 주의: Netlify 배포 시 vite.config.ts 의 base 를 '/Hair-JJaL/' → '/' 로 변경
+#         및 navigateFallback 을 '/index.html' 로 수정 필요
+# ══════════════════════════════════════════════════════════════════
+
+[build]
+  command   = "npm run build"
+  publish   = "dist"
+
+# ── SPA 라우팅 fallback ────────────────────────────────────────────
+# share 링크(?share=xxx) 등 클라이언트 라우팅 경로 지원
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# ── 보안 헤더 (모든 응답에 적용) ──────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+
+    # ── A03 Injection / MASVS-CODE-2: XSS 방어 ──────────────────
+    # frame-ancestors 는 HTTP 헤더 전용 (meta 태그 불가)
+    # script-src 'self' : 인라인 스크립트 완전 차단
+    # style-src 'unsafe-inline' : React style={{}} 인라인 속성 허용 불가피
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+      worker-src 'self' blob:;
+      manifest-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+      upgrade-insecure-requests;
+    """
+
+    # ── 클릭재킹 방어 (CSP frame-ancestors 보조) ─────────────────
+    X-Frame-Options = "DENY"
+
+    # ── MIME 스니핑 방지 (MASVS-NETWORK-1) ───────────────────────
+    X-Content-Type-Options = "nosniff"
+
+    # ── XSS 필터 (구형 브라우저 대응) ────────────────────────────
+    X-XSS-Protection = "1; mode=block"
+
+    # ── HTTPS 강제 · HSTS (MASVS-NETWORK-1 / A02) ────────────────
+    # max-age=31536000 : 1년
+    # includeSubDomains: 서브도메인 포함
+    # preload : HSTS 프리로드 목록 등록 가능 (https://hstspreload.org)
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+    # ── Referrer 노출 최소화 (외부 링크 이동 시 경로 숨김) ────────
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # ── 브라우저 기능 권한 최소화 (MASVS-PLATFORM) ────────────────
+    # camera: 사진 업로드(input file)만 사용, getUserMedia 직접 접근 없음
+    # microphone: 음성 메모 기능 사용 → self 허용
+    # geolocation: 미사용
+    # payment: 미사용
+    # usb / serial / bluetooth: 미사용
+    Permissions-Policy = "camera=(), microphone=(self), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()"
+
+    # ── 교차 출처 정책 (Spectre 사이드채널 공격 경감) ─────────────
+    Cross-Origin-Opener-Policy    = "same-origin"
+    Cross-Origin-Embedder-Policy  = "require-corp"
+    Cross-Origin-Resource-Policy  = "same-origin"

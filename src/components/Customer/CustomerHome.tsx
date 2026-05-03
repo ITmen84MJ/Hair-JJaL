@@ -9,7 +9,7 @@ interface Props {
   client: Client | null;
   consultations: Consultation[];
   bookings: Booking[];
-  shop?: Shop | null;
+  shops?: Shop[];
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
 }
@@ -22,7 +22,7 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.Element
   cancelled: { label: '취소됨', Icon: XCircle,       bg: 'var(--bg-neutral)', text: 'var(--text-neutral)' },
 };
 
-export function CustomerHome({ client, consultations, bookings, shop, onSelectConsultation, onNewBooking }: Props) {
+export function CustomerHome({ client, consultations, bookings, shops = [], onSelectConsultation, onNewBooking }: Props) {
   if (!client) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -38,6 +38,11 @@ export function CustomerHome({ client, consultations, bookings, shop, onSelectCo
   const sorted = [...consultations].sort((a, b) => b.date.localeCompare(a.date));
   const next = sorted.find(c => c.nextVisitDate && c.nextVisitDate > new Date().toISOString().slice(0, 10));
   const totalSpend = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
+
+  // 가장 최근 시술이 이뤄진 지점
+  const recentShop = sorted[0]?.shopId
+    ? shops.find(s => s.id === sorted[0].shopId) ?? null
+    : null;
 
   // Only show non-cancelled bookings, sorted newest first
   const myBookings = [...bookings]
@@ -130,34 +135,37 @@ export function CustomerHome({ client, consultations, bookings, shop, onSelectCo
         </div>
       )}
 
-      {/* Shop info card */}
-      {shop && (shop.address || shop.phone || shop.openTime) && (
+      {/* 최근 방문 지점 정보 */}
+      {recentShop && (recentShop.address || recentShop.phone || recentShop.openTime) && (
         <div className="rounded-2xl border p-4 space-y-2" style={card}>
           <div className="flex items-center gap-2 mb-1">
             <Store size={14} className="text-rose-400 flex-shrink-0" />
-            <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{shop.name}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{recentShop.name}</p>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>최근 방문 지점</p>
+            </div>
           </div>
-          {shop.phone && (
-            <a href={`tel:${shop.phone}`}
+          {recentShop.phone && (
+            <a href={`tel:${recentShop.phone}`}
               className="flex items-center gap-2 text-sm transition-colors"
               style={{ color: 'var(--text-secondary)' }}>
               <PhoneIcon size={13} className="text-rose-300 flex-shrink-0" />
-              <span>{shop.phone}</span>
+              <span>{recentShop.phone}</span>
             </a>
           )}
-          {shop.address && (
-            <a href={`https://map.kakao.com/?q=${encodeURIComponent(shop.address)}`}
+          {recentShop.address && (
+            <a href={`https://map.kakao.com/?q=${encodeURIComponent(recentShop.address)}`}
               target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm transition-colors"
               style={{ color: 'var(--text-secondary)' }}>
               <MapPin size={13} className="text-rose-300 flex-shrink-0" />
-              <span className="underline underline-offset-2">{shop.address}</span>
+              <span className="underline underline-offset-2">{recentShop.address}</span>
             </a>
           )}
-          {(shop.openTime || shop.closeTime) && (
+          {(recentShop.openTime || recentShop.closeTime) && (
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
               <Clock size={13} className="text-rose-300 flex-shrink-0" />
-              <span>{shop.openTime ?? '?'} – {shop.closeTime ?? '?'}</span>
+              <span>{recentShop.openTime ?? '?'} – {recentShop.closeTime ?? '?'}</span>
             </div>
           )}
         </div>

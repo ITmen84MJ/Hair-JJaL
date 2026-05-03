@@ -401,7 +401,7 @@ export function CustomerLayout({
             client={client}
             consultations={consultations}
             bookings={bookings}
-            shop={shop}
+            shops={shops}
             onSelectConsultation={onSelectConsultation}
             onNewBooking={onNewBooking}
           />

@@ -3,7 +3,12 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // GitHub Pages 저장소 이름과 동일하게 base 경로 설정
-export default defineConfig({
+// 개발 서버(preview 포함)에서는 루트(/)로 서빙하고 빌드 시에만 /Hair-JJaL/ 적용
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
+  const base = isProd ? '/Hair-JJaL/' : '/';
+
+  return {
   plugins: [
     react(),
     VitePWA({
@@ -18,14 +23,16 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
 
         // SPA 네비게이션 fallback — 모든 탐색 요청을 index.html로
-        navigateFallback: '/Hair-JJaL/index.html',
+        navigateFallback: isProd ? '/Hair-JJaL/index.html' : '/index.html',
 
-        // share 링크 등 query string 포함 URL도 정상 처리
-        navigateFallbackDenylist: [/^\/Hair-JJaL\/api\//],
+        // share 링크 등 query string 포함 URL, 매뉴얼 HTML은 SW가 가로채지 않음
+        navigateFallbackDenylist: isProd
+          ? [/^\/Hair-JJaL\/api\//, /^\/Hair-JJaL\/manuals\//]
+          : [/^\/api\//, /^\/manuals\//],
 
         // offline.html을 명시적으로 사전 캐시에 포함
         additionalManifestEntries: [
-          { url: '/Hair-JJaL/offline.html', revision: '1' },
+          { url: isProd ? '/Hair-JJaL/offline.html' : '/offline.html', revision: '1' },
         ],
 
         // 런타임 캐싱 전략
@@ -46,7 +53,7 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/Hair-JJaL/',
+  base,
   build: {
     rollupOptions: {
       output: {
@@ -59,4 +66,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

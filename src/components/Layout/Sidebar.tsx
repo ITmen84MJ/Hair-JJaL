@@ -13,6 +13,8 @@ interface Props {
   shopName?: string;
   onLogout: () => void;
   pendingBookings?: number;
+  /** designer의 role — manager이면 '매니저' 배지 표시 */
+  designerRole?: string;
 }
 
 const NAV_ITEMS: Record<string, { id: View; label: string; Icon: React.ElementType }[]> = {
@@ -37,7 +39,7 @@ const ROLE_BADGE_STYLE: Record<string, React.CSSProperties> = {
   customer: { backgroundColor: 'var(--role-customer-bg)', color: 'var(--role-customer-text)' },
 };
 
-export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, shopName, onLogout, pendingBookings = 0 }: Props) {
+export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, shopName, onLogout, pendingBookings = 0, designerRole }: Props) {
   const items = NAV_ITEMS[user.role] ?? NAV_ITEMS.designer;
   const { canInstall, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
@@ -75,10 +77,18 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
-              <span className="text-xs px-1.5 py-0.5 rounded-md font-medium"
-                style={ROLE_BADGE_STYLE[user.role] ?? {}}>
-                {ROLE_LABELS[user.role]}
-              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                  style={ROLE_BADGE_STYLE[user.role] ?? {}}>
+                  {ROLE_LABELS[user.role]}
+                </span>
+                {designerRole === 'manager' && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-md font-medium"
+                    style={{ backgroundColor: 'var(--bg-icon-amber)', color: 'var(--text-icon-amber)' }}>
+                    매니저
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

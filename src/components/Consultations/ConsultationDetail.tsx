@@ -28,8 +28,9 @@ function DeleteConsultationModal({ isShared, onClose, onConfirm }: {
     <Modal onClose={onClose}>
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle size={18} className="text-red-500" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'var(--bg-danger)' }}>
+            <AlertTriangle size={18} style={{ color: 'var(--text-danger)' }} />
           </div>
           <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>상담 이력 삭제</h3>
         </div>

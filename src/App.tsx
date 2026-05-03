@@ -149,25 +149,34 @@ export default function App() {
   const shopDesigners     = store.designers.filter(d => d.shopId === shopId);
   const shopBookings      = store.bookings.filter(b => b.shopId === shopId);
 
-  // ── 디자이너: 이직해도 본인이 시술한 전 지점 이력 보유 ──
-  // ── 원장: 해당 지점(venue)에서 이뤄진 시술만 관리 ──
-  const visibleConsultations = isDesigner && user.designerName
-    ? store.consultations.filter(c => c.stylistName === user.designerName)  // 지점 무관 본인 시술
-    : shopConsultations;  // owner: venue 기준
+  // 본인 Designer 레코드 (designerId로 직접 연결)
+  const myDesignerRecord = user.designerId
+    ? shopDesigners.find(d => d.id === user.designerId) ?? null
+    : null;
 
-  // 디자이너가 볼 수 있는 고객:
+  // ── 3-2 권한 세분화: manager role 디자이너는 지점 전체 데이터 열람 가능 ──
+  const isManager = isDesigner && myDesignerRecord?.role === 'manager';
+
+  // ── 디자이너(staff): 이직해도 본인이 시술한 전 지점 이력 보유 ──
+  // ── 디자이너(manager): 지점 전체 시술 이력 열람 ──
+  // ── 원장: 해당 지점(venue)에서 이뤄진 시술만 관리 ──
+  const visibleConsultations = isDesigner && user.designerName && !isManager
+    ? store.consultations.filter(c => c.stylistName === user.designerName)  // 지점 무관 본인 시술
+    : shopConsultations;  // manager·owner: venue 기준
+
+  // 디자이너(staff)가 볼 수 있는 고객:
   //   1) 본인이 시술한 고객 (전 지점 포함)
   //   2) 현재 지점에 등록된 신규 고객 (아직 시술 기록 없음)
   const designerClientIds = new Set(visibleConsultations.map(c => c.clientId));
   const clientsWithAnyConsultation = new Set(store.consultations.map(c => c.clientId));
 
-  // 원장이 볼 수 있는 고객: 해당 지점에서 시술받은 고객
+  // 원장·manager가 볼 수 있는 고객: 해당 지점에서 시술받은 고객
   const shopConsultationClientIds = new Set(shopConsultations.map(c => c.clientId));
   const shopClients = store.clients.filter(c =>
     shopConsultationClientIds.has(c.id) || c.shopId === shopId
   );
 
-  const visibleClients = isDesigner
+  const visibleClients = isDesigner && !isManager
     ? store.clients.filter(c =>
         designerClientIds.has(c.id) ||
         (c.shopId === shopId && !clientsWithAnyConsultation.has(c.id))
@@ -182,20 +191,15 @@ export default function App() {
     ? shopConsultations.find(c => c.id === store.selectedConsultationId) ?? null
     : null;
 
-  // 선택된 고객의 시술 이력 — 디자이너는 본인 것만, 원장은 지점 전체
+  // 선택된 고객의 시술 이력 — 디자이너(staff)는 본인 것만, manager·원장은 지점 전체
   const clientConsultations = selectedClient
     ? visibleConsultations.filter(c => c.clientId === selectedClient.id)
     : [];
 
   // Pending booking count for sidebar badge
-  const pendingBookings = isDesigner && user.designerName
+  const pendingBookings = isDesigner && !isManager && user.designerName
     ? shopBookings.filter(b => b.status === 'pending' && (!b.preferredDesigner || b.preferredDesigner === user.designerName)).length
     : shopBookings.filter(b => b.status === 'pending').length;
-
-  // 본인 Designer 레코드 (designerId로 직접 연결)
-  const myDesignerRecord = user.designerId
-    ? shopDesigners.find(d => d.id === user.designerId) ?? null
-    : null;
 
   // 본인 담당 시술 이력 — 이직 전 지점 포함 전체 (지점 무관)
   const myOwnConsultations = user.designerName
@@ -223,6 +227,7 @@ export default function App() {
         shopName={myShop?.name}
         onLogout={logout}
         pendingBookings={pendingBookings}
+        designerRole={myDesignerRecord?.role}
       />
       {/* 모바일에서는 하단 탭 바 높이(약 68px)만큼 패딩 확보 */}
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0 min-w-0">
@@ -253,6 +258,8 @@ export default function App() {
             <Dashboard
               clients={visibleClients}
               consultations={visibleConsultations}
+              bookings={shopBookings}
+              designerName={isDesigner && !isManager ? user.designerName : undefined}
               onNavigate={store.navigate}
             />
           </Suspense>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hair JJaL — 원장 사용 매뉴얼</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', '맑은 고딕', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #1e1e2e;
+    background: #fff;
+  }
+
+  .page {
+    width: 210mm;
+    margin: 0 auto;
+    padding: 18mm 18mm 20mm;
+  }
+
+  /* ── 표지 (앰버/골드 테마) ── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120mm;
+    text-align: center;
+    border-bottom: 3px solid #d97706;
+    margin-bottom: 14mm;
+    padding-bottom: 14mm;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: #fffbeb;
+    color: #b45309;
+    font-size: 9pt; font-weight: 700; letter-spacing: .08em;
+    padding: 4px 14px; border-radius: 20px; border: 1.5px solid #fde68a;
+    margin-bottom: 8mm;
+  }
+  .cover-logo {
+    width: 18mm; height: 18mm;
+    background: #d97706; border-radius: 6mm;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 6mm;
+    font-size: 22pt; font-weight: 900; color: #fff; letter-spacing: -1px;
+  }
+  .cover h1 { font-size: 22pt; font-weight: 900; color: #d97706; margin-bottom: 3mm; }
+  .cover h2 { font-size: 14pt; font-weight: 700; color: #1e1e2e; margin-bottom: 4mm; }
+  .cover p  { font-size: 9.5pt; color: #64748b; }
+
+  /* ── 목차 ── */
+  .toc-title {
+    font-size: 13pt; font-weight: 800; color: #d97706;
+    border-left: 5px solid #d97706; padding-left: 8px; margin-bottom: 6mm;
+  }
+  .toc-list { list-style: none; }
+  .toc-list li {
+    display: flex; align-items: baseline; gap: 4px;
+    padding: 2.5px 0; font-size: 10pt;
+  }
+  .toc-list li .dot { flex: 1; border-bottom: 1px dotted #cbd5e1; margin: 0 4px 3px; }
+  .toc-list .toc-chapter { font-weight: 700; font-size: 10.5pt; color: #d97706; margin-top: 4px; }
+  .toc-list .toc-page { color: #64748b; font-size: 9.5pt; flex-shrink: 0; }
+
+  /* ── 챕터 ── */
+  .chapter { margin-top: 14mm; }
+  .chapter-header {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fff 100%);
+    border-left: 5px solid #d97706; border-radius: 0 8px 8px 0;
+    padding: 6px 14px; margin-bottom: 6mm;
+  }
+  .chapter-num {
+    width: 22px; height: 22px;
+    background: #d97706; border-radius: 50%;
+    color: #fff; font-size: 9pt; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .chapter-header h2 { font-size: 13pt; font-weight: 800; color: #1e1e2e; }
+
+  /* ── 섹션 ── */
+  .section { margin-bottom: 8mm; }
+  .section h3 {
+    font-size: 11pt; font-weight: 700; color: #92400e;
+    margin-bottom: 3mm; display: flex; align-items: center; gap: 6px;
+  }
+  .section h3::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    background: #d97706; border-radius: 50%; flex-shrink: 0;
+  }
+
+  /* ── 스텝 카드 ── */
+  .steps { display: flex; flex-direction: column; gap: 3mm; }
+  .step {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: #fafafa; border: 1px solid #f1f5f9;
+    border-radius: 8px; padding: 8px 12px;
+  }
+  .step-num {
+    min-width: 22px; height: 22px;
+    background: #d97706; color: #fff; border-radius: 50%;
+    font-size: 9pt; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-body { flex: 1; }
+  .step-body strong { display: block; font-size: 10.5pt; color: #1e1e2e; margin-bottom: 2px; }
+  .step-body p { font-size: 9.5pt; color: #475569; }
+
+  /* ── 박스 ── */
+  .tip {
+    background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 8px;
+    padding: 8px 12px; font-size: 9.5pt; color: #c2410c;
+    margin-top: 3mm; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .tip-icon { flex-shrink: 0; font-size: 12pt; line-height: 1.4; }
+  .note {
+    background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 8px;
+    padding: 8px 12px; font-size: 9.5pt; color: #0369a1;
+    margin-top: 3mm; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .note-icon { flex-shrink: 0; font-size: 12pt; line-height: 1.4; }
+  .warn {
+    background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 8px;
+    padding: 8px 12px; font-size: 9.5pt; color: #be123c;
+    margin-top: 3mm; display: flex; gap: 8px; align-items: flex-start;
+  }
+  .warn-icon { flex-shrink: 0; font-size: 12pt; line-height: 1.4; }
+
+  /* ── UI 요소 ── */
+  kbd {
+    display: inline-block; background: #d97706; color: #fff;
+    border-radius: 4px; padding: 1px 7px;
+    font-size: 8.5pt; font-family: inherit; font-weight: 600; vertical-align: middle;
+  }
+  code {
+    background: #f1f5f9; color: #92400e;
+    border-radius: 4px; padding: 1px 6px;
+    font-size: 9pt; font-family: 'Consolas', monospace;
+  }
+
+  /* ── 표 ── */
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-top: 3mm; }
+  th {
+    background: #fffbeb; color: #92400e; font-weight: 700;
+    text-align: left; padding: 6px 10px; border: 1px solid #fde68a;
+  }
+  td { padding: 5px 10px; border: 1px solid #f1f5f9; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  hr { border: none; border-top: 1.5px solid #f1f5f9; margin: 8mm 0; }
+
+  .footer {
+    margin-top: 10mm; padding-top: 4mm;
+    border-top: 2px solid #d97706;
+    display: flex; justify-content: space-between;
+    font-size: 8.5pt; color: #94a3b8;
+  }
+
+  @media print {
+    body { font-size: 10pt; }
+    .page { width: 100%; padding: 15mm 16mm 18mm; }
+    .chapter, .step, .tip, .note, .warn { page-break-inside: avoid; }
+    .cover { page-break-after: always; }
+    .toc-section { page-break-after: always; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 표지 -->
+  <div class="cover">
+    <div class="cover-badge">OWNER GUIDE</div>
+    <div class="cover-logo">J</div>
+    <h1>Hair JJaL</h1>
+    <h2>원장 사용 매뉴얼</h2>
+    <p>직원 관리 · 매출 분석 · 데이터 관리 · 지점 설정</p>
+    <p style="margin-top:6mm; font-size:8.5pt;">Rev. 1.0 &nbsp;|&nbsp; 2025년</p>
+  </div>
+
+  <!-- 목차 -->
+  <div class="toc-section">
+    <div class="toc-title">목차</div>
+    <ul class="toc-list">
+      <li class="toc-chapter"><span>1. 원장 계정 등록 · 로그인</span><span class="dot"></span><span class="toc-page">2</span></li>
+      <li class="toc-chapter"><span>2. 대시보드 (원장 전용)</span><span class="dot"></span><span class="toc-page">3</span></li>
+      <li><span style="padding-left:12px">지점 통합 통계 · 디자이너별 분석</span><span class="dot"></span><span class="toc-page">3</span></li>
+      <li class="toc-chapter"><span>3. 직원 관리</span><span class="dot"></span><span class="toc-page">4</span></li>
+      <li><span style="padding-left:12px">디자이너 추가 · 수정 · 권한 설정 · 비활성화</span><span class="dot"></span><span class="toc-page">4</span></li>
+      <li class="toc-chapter"><span>4. 고객 · 상담 이력 관리</span><span class="dot"></span><span class="toc-page">6</span></li>
+      <li class="toc-chapter"><span>5. 예약 관리</span><span class="dot"></span><span class="toc-page">7</span></li>
+      <li class="toc-chapter"><span>6. 데이터 관리</span><span class="dot"></span><span class="toc-page">8</span></li>
+      <li><span style="padding-left:12px">저장 공간 · 백업/복원 · CSV 내보내기</span><span class="dot"></span><span class="toc-page">8</span></li>
+      <li class="toc-chapter"><span>7. 지점 정보 설정</span><span class="dot"></span><span class="toc-page">9</span></li>
+      <li class="toc-chapter"><span>8. 자주 묻는 질문 (FAQ)</span><span class="dot"></span><span class="toc-page">10</span></li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- Chapter 1 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">1</div>
+      <h2>원장 계정 등록 · 로그인</h2>
+    </div>
+
+    <div class="section">
+      <h3>첫 번째 사용 — 원장 계정 생성</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>앱 주소 접속 → 로그인 화면에서 <kbd>원장 계정 만들기</kbd></strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>지점 정보 입력</strong>
+            <p>지점명(필수), 주소, 전화번호, 영업시간을 입력합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>원장 정보 입력</strong>
+            <p>이름, 이메일, 비밀번호를 입력합니다. 이메일은 로그인 ID가 됩니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong><kbd>가입 완료</kbd> → 자동 로그인 및 대시보드 진입</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>로그인</h3>
+      <p>이메일 · 비밀번호를 입력하고 <kbd>로그인</kbd>합니다. 사이드바에 <code>원장</code> 배지와 <kbd>직원 관리</kbd> 메뉴가 추가로 표시됩니다.</p>
+    </div>
+  </div>
+
+  <!-- Chapter 2 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">2</div>
+      <h2>대시보드 (원장 전용)</h2>
+    </div>
+
+    <div class="section">
+      <h3>지점 통합 통계 카드</h3>
+      <table>
+        <thead><tr><th>카드</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>전체 고객</td><td>지점에 등록된 고객 총 수</td></tr>
+          <tr><td>이번 달 시술</td><td>지점 전체 당월 시술 건수</td></tr>
+          <tr><td>이번 달 매출</td><td>지점 전체 당월 합산 금액</td></tr>
+          <tr><td>예약 예정</td><td>다음 방문 권장일이 설정된 건수</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>오늘의 예약</h3>
+      <p>오늘 날짜 <code>확정</code>/<code>대기</code> 예약 전체가 시간순으로 표시됩니다. 고객명, 담당 디자이너, 시간, 상태 배지를 확인할 수 있습니다.</p>
+    </div>
+
+    <div class="section">
+      <h3>원장 전용 분석 대시보드</h3>
+      <p>사이드바 <kbd>직원 관리</kbd> → <strong>분석</strong> 탭(OwnerDashboard)에서 더 상세한 분석을 제공합니다.</p>
+      <table>
+        <thead><tr><th>섹션</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>월별 매출 추이</td><td>최근 6개월 바 차트, 월별 시술 건수 추이</td></tr>
+          <tr><td>디자이너별 매출 비중</td><td>파이 차트로 디자이너별 기여도 시각화</td></tr>
+          <tr><td>인기 시술 TOP 5</td><td>가장 많이 시술된 항목 순위</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chapter 3 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">3</div>
+      <h2>직원 관리</h2>
+    </div>
+
+    <div class="section">
+      <h3>디자이너 추가</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong><kbd>직원 관리</kbd> → <kbd>+ 직원 추가</kbd></strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>직원 정보 입력</strong>
+            <p>이름(필수), 이메일(필수, 로그인 ID), 전화번호, 경력, 전문 분야, 권한(staff / manager)을 입력합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>초기 비밀번호 설정 후 <kbd>추가</kbd></strong>
+            <p>직원에게 이메일과 비밀번호를 별도 전달하세요.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>직원에게 계정을 전달할 때 비밀번호는 첫 로그인 후 변경하도록 안내하세요. (현재 버전에서는 원장이 비밀번호를 재설정합니다.)</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>권한 설명</h3>
+      <table>
+        <thead><tr><th>권한</th><th>열람 범위</th><th>주요 차이점</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>staff (일반)</strong></td>
+            <td>본인이 시술한 고객 + 이력만</td>
+            <td>타 디자이너 고객 데이터 비공개</td>
+          </tr>
+          <tr>
+            <td><strong>manager (매니저)</strong></td>
+            <td>지점 전체 고객 + 이력</td>
+            <td>부재 중 다른 직원 고객도 관리 가능</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note">
+        <div class="note-icon">ℹ️</div>
+        <div>매니저는 사이드바 이름 아래 <code>매니저</code> 배지가 표시됩니다. 원장은 항상 지점 전체 데이터를 열람할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>직원 정보 수정</h3>
+      <p>직원 카드의 <kbd>✎ 수정</kbd> → 이름, 이메일, 전화번호, 권한 등 변경 후 <kbd>저장</kbd>.</p>
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div><strong>이메일 변경 시 주의</strong>: 이메일을 변경하면 해당 직원의 로그인 이메일이 즉시 새 이메일로 변경됩니다. 변경 전 직원에게 반드시 사전 안내하세요.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>직원 비활성화 · 삭제</h3>
+      <p>퇴직한 직원은 삭제하기 전 고려사항:</p>
+      <ul style="margin-top:2mm; padding-left:18px; font-size:9.5pt; color:#475569;">
+        <li>삭제해도 해당 직원이 기록한 <strong>시술 이력은 보존</strong>됩니다.</li>
+        <li>직원 레코드만 삭제되며, 이력의 스타일리스트명은 그대로 남습니다.</li>
+        <li>로그인은 즉시 불가능해집니다.</li>
+      </ul>
+      <div class="steps" style="margin-top:3mm;">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>직원 카드 → <kbd>🗑 삭제</kbd></strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>확인 모달에서 <kbd>삭제</kbd></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 4 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">4</div>
+      <h2>고객 · 상담 이력 관리</h2>
+    </div>
+
+    <div class="section">
+      <h3>원장의 고객 데이터 범위</h3>
+      <p>원장은 지점에 등록된 <strong>모든 고객</strong>과 <strong>모든 시술 이력</strong>을 열람·수정·삭제할 수 있습니다. 디자이너 기능(고객 추가, 이력 작성, 공유 등)을 동일하게 사용할 수 있습니다.</p>
+      <div class="note">
+        <div class="note-icon">ℹ️</div>
+        <div>고객 관리 · 상담 이력 작성 · 공유 링크 발급의 세부 사용법은 <strong>디자이너 매뉴얼 3~6장</strong>을 참고하세요. 원장도 동일한 방법으로 사용합니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>전체 고객 CSV 내보내기</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong><kbd>직원 관리</kbd> → <strong>지점 정보</strong> 탭 → <strong>데이터 관리</strong> 섹션</strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong><kbd>📊 전체 고객 CSV</kbd> 버튼 클릭</strong>
+            <p>전체 고객의 이름·전화번호·방문 횟수·마지막 방문일·태그를 엑셀 호환 CSV로 다운로드합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 5 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">5</div>
+      <h2>예약 관리</h2>
+    </div>
+
+    <div class="section">
+      <h3>원장의 예약 관리 범위</h3>
+      <p>원장은 지점의 <strong>전체 예약</strong>을 열람·확정·취소할 수 있습니다. 사이드바의 <code>대기</code> 배지 숫자가 미확인 신규 예약 수를 나타냅니다.</p>
+    </div>
+
+    <div class="section">
+      <h3>예약 확정 처리</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong><kbd>예약 관리</kbd> → <strong>대기</strong> 탭에서 미확인 예약 확인</strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>예약 카드 탭 → 상세 확인 → <kbd>확정</kbd> 또는 <kbd>취소</kbd></strong>
+            <p>취소 시 사유를 입력하면 고객 예약 탭에 사유가 표시됩니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>매일 영업 시작 전 <code>대기</code> 탭을 확인하여 전날 밤 이후 접수된 예약을 처리하는 루틴을 만들어 두세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 6 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">6</div>
+      <h2>데이터 관리</h2>
+    </div>
+
+    <div class="section">
+      <h3>데이터 관리 화면 접근</h3>
+      <p><kbd>직원 관리</kbd> → <strong>지점 정보</strong> 탭 → 하단 <strong>데이터 관리</strong> 섹션</p>
+    </div>
+
+    <div class="section">
+      <h3>저장 공간 게이지</h3>
+      <p>현재 앱 데이터가 사용 중인 저장 공간을 게이지 바로 표시합니다. 브라우저 localStorage 한계(약 5MB)에 가까워지면 <strong>빨간색</strong>으로 변하고 경고 토스트가 표시됩니다.</p>
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div>Before/After 사진을 많이 업로드하면 저장 공간이 빠르게 차오릅니다. 사진은 자동 압축되지만, 80% 이상 사용 시 정기적으로 JSON 백업 후 불필요한 데이터를 정리하세요.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>JSON 전체 백업 (내보내기)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong><kbd>📥 데이터 내보내기</kbd> 버튼 클릭</strong>
+            <p>고객·이력·예약·직원·지점 데이터 전체가 <code>hairjjal-backup-YYYY-MM-DD.json</code> 파일로 다운로드됩니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>매주 또는 매월 백업 파일을 저장해 두세요. 기기 교체, 브라우저 초기화, 실수 삭제 등의 상황에서 복원할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>JSON 백업 복원 (가져오기)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong><kbd>📤 데이터 가져오기</kbd> 버튼 클릭 → 백업 파일 선택</strong>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>유효성 검증 후 자동 페이지 재시작</strong>
+            <p>올바른 백업 파일이면 데이터가 덮어씌워지고 앱이 재시작됩니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="warn">
+        <div class="warn-icon">⚠️</div>
+        <div>가져오기는 <strong>현재 데이터를 모두 덮어씁니다.</strong> 기존 데이터를 먼저 내보내기로 백업한 후 진행하세요. 이 작업은 되돌릴 수 없습니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>전체 고객 CSV 내보내기</h3>
+      <p><kbd>📊 전체 고객 CSV</kbd> 버튼을 클릭하면 모든 고객의 이름, 전화번호, 이메일, 방문 횟수, 마지막 방문일, 태그를 하나의 CSV 파일로 다운로드합니다. 엑셀에서 바로 열 수 있으며 한글 깨짐이 없습니다.</p>
+    </div>
+  </div>
+
+  <!-- Chapter 7 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">7</div>
+      <h2>지점 정보 설정</h2>
+    </div>
+
+    <div class="section">
+      <h3>지점 정보 수정</h3>
+      <p><kbd>직원 관리</kbd> → <strong>지점 정보</strong> 탭 → <kbd>✎ 지점 정보 수정</kbd></p>
+      <table>
+        <thead><tr><th>항목</th><th>설명</th></tr></thead>
+        <tbody>
+          <tr><td>지점명</td><td>앱 상단 및 사이드바에 표시되는 이름</td></tr>
+          <tr><td>주소</td><td>고객 홈 화면 → 지도 링크에 사용</td></tr>
+          <tr><td>전화번호</td><td>고객 홈 화면 → 전화 연결에 사용</td></tr>
+          <tr><td>영업시간</td><td>예약 폼의 시간 슬롯 생성에 반영 (시작~종료 시간)</td></tr>
+        </tbody>
+      </table>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>영업시간을 정확히 입력하면 고객이 영업 외 시간으로 예약을 신청하는 것을 방지할 수 있습니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 8 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">8</div>
+      <h2>자주 묻는 질문 (FAQ)</h2>
+    </div>
+
+    <div class="section">
+      <table>
+        <thead><tr><th>질문</th><th>답변</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>직원이 비밀번호를 잊었어요.</td>
+            <td>직원 관리에서 해당 직원의 비밀번호를 재설정(삭제 후 재등록 또는 초기화)할 수 있습니다. 새 비밀번호를 직접 전달하세요.</td>
+          </tr>
+          <tr>
+            <td>직원 이메일을 변경했는데 로그인이 안 돼요.</td>
+            <td>이메일 변경과 동시에 로그인 계정도 변경됩니다. 변경된 이메일로 로그인하도록 안내하세요.</td>
+          </tr>
+          <tr>
+            <td>데이터가 5MB를 넘을 것 같아요.</td>
+            <td>즉시 JSON 백업을 받아두고, 오래된 Before/After 사진이 있는 이력을 편집하여 사진을 제거하면 공간을 확보할 수 있습니다.</td>
+          </tr>
+          <tr>
+            <td>기기를 교체하면 데이터가 사라지나요?</td>
+            <td>네. 현재 데이터는 브라우저 localStorage에 저장됩니다. 새 기기에서 사용하려면 JSON 백업 → 새 기기에서 가져오기를 하세요.</td>
+          </tr>
+          <tr>
+            <td>직원별 매출 비교를 볼 수 있나요?</td>
+            <td>직원 관리 → 분석 탭 → 디자이너별 매출 비중 파이 차트에서 확인할 수 있습니다.</td>
+          </tr>
+          <tr>
+            <td>다른 지점을 추가로 운영하고 싶어요.</td>
+            <td>현재 버전에서는 계정당 지점 1개를 지원합니다. 복수 지점 운영은 추후 업데이트를 통해 지원될 예정입니다.</td>
+          </tr>
+          <tr>
+            <td>고객 예약 승인 알림을 자동으로 보낼 수 있나요?</td>
+            <td>현재 버전은 푸시 알림을 지원하지 않습니다. 예약 확정 후 카카오톡 등으로 직접 안내해 주세요.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer">
+    <span>Hair JJaL — 원장 사용 매뉴얼 Rev. 1.0</span>
+    <span>© 2025 Hair JJaL. All rights reserved.</span>
+  </div>
+
+</div>
+</body>
+</html>

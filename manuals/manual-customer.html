@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hair JJaL — 고객 사용 매뉴얼</title>
+<style>
+  /* ── 기본 리셋 ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── 타이포 ── */
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', '맑은 고딕', sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.7;
+    color: #1e1e2e;
+    background: #fff;
+  }
+
+  /* ── 페이지 레이아웃 ── */
+  .page {
+    width: 210mm;
+    margin: 0 auto;
+    padding: 18mm 18mm 20mm;
+  }
+
+  /* ── 표지 ── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 120mm;
+    text-align: center;
+    border-bottom: 3px solid #f43f5e;
+    margin-bottom: 14mm;
+    padding-bottom: 14mm;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: #fff1f3;
+    color: #f43f5e;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: .08em;
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #fda4af;
+    margin-bottom: 8mm;
+  }
+  .cover-logo {
+    width: 18mm;
+    height: 18mm;
+    background: #f43f5e;
+    border-radius: 6mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 6mm;
+    font-size: 22pt;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -1px;
+  }
+  .cover h1 { font-size: 22pt; font-weight: 900; color: #f43f5e; margin-bottom: 3mm; }
+  .cover h2 { font-size: 14pt; font-weight: 700; color: #1e1e2e; margin-bottom: 4mm; }
+  .cover p  { font-size: 9.5pt; color: #64748b; }
+
+  /* ── 목차 ── */
+  .toc-title {
+    font-size: 13pt;
+    font-weight: 800;
+    color: #f43f5e;
+    border-left: 5px solid #f43f5e;
+    padding-left: 8px;
+    margin-bottom: 6mm;
+  }
+  .toc-list { list-style: none; }
+  .toc-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 2.5px 0;
+    font-size: 10pt;
+  }
+  .toc-list li .dot {
+    flex: 1;
+    border-bottom: 1px dotted #cbd5e1;
+    margin: 0 4px 3px;
+  }
+  .toc-list .toc-chapter { font-weight: 700; font-size: 10.5pt; color: #f43f5e; margin-top: 4px; }
+  .toc-list .toc-page { color: #64748b; font-size: 9.5pt; flex-shrink: 0; }
+
+  /* ── 챕터 제목 ── */
+  .chapter {
+    margin-top: 14mm;
+  }
+  .chapter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #fff1f3 0%, #fff 100%);
+    border-left: 5px solid #f43f5e;
+    border-radius: 0 8px 8px 0;
+    padding: 6px 14px;
+    margin-bottom: 6mm;
+  }
+  .chapter-num {
+    width: 22px; height: 22px;
+    background: #f43f5e;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .chapter-header h2 { font-size: 13pt; font-weight: 800; color: #1e1e2e; }
+
+  /* ── 섹션 ── */
+  .section { margin-bottom: 8mm; }
+  .section h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #be123c;
+    margin-bottom: 3mm;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section h3::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: #f43f5e;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── 스텝 카드 ── */
+  .steps { display: flex; flex-direction: column; gap: 3mm; }
+  .step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: #fafafa;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .step-num {
+    min-width: 22px; height: 22px;
+    background: #f43f5e;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 9pt;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-body { flex: 1; }
+  .step-body strong { display: block; font-size: 10.5pt; color: #1e1e2e; margin-bottom: 2px; }
+  .step-body p { font-size: 9.5pt; color: #475569; }
+
+  /* ── 팁 박스 ── */
+  .tip {
+    background: #fff7ed;
+    border: 1.5px solid #fed7aa;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 9.5pt;
+    color: #c2410c;
+    margin-top: 3mm;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .tip-icon { flex-shrink: 0; font-size: 12pt; line-height: 1.4; }
+
+  /* ── 주의 박스 ── */
+  .note {
+    background: #f0f9ff;
+    border: 1.5px solid #bae6fd;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 9.5pt;
+    color: #0369a1;
+    margin-top: 3mm;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .note-icon { flex-shrink: 0; font-size: 12pt; line-height: 1.4; }
+
+  /* ── UI 라벨 ── */
+  kbd {
+    display: inline-block;
+    background: #f43f5e;
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 8.5pt;
+    font-family: inherit;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  code {
+    background: #f1f5f9;
+    color: #be123c;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 9pt;
+    font-family: 'Consolas', monospace;
+  }
+
+  /* ── 표 ── */
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-top: 3mm; }
+  th {
+    background: #fff1f3;
+    color: #be123c;
+    font-weight: 700;
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid #fecdd3;
+  }
+  td { padding: 5px 10px; border: 1px solid #f1f5f9; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  /* ── 구분선 ── */
+  hr { border: none; border-top: 1.5px solid #f1f5f9; margin: 8mm 0; }
+
+  /* ── 페이지 번호 푸터 ── */
+  .footer {
+    margin-top: 10mm;
+    padding-top: 4mm;
+    border-top: 2px solid #f43f5e;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8.5pt;
+    color: #94a3b8;
+  }
+
+  /* ── 인쇄 설정 ── */
+  @media print {
+    body { font-size: 10pt; }
+    .page { width: 100%; padding: 15mm 16mm 18mm; }
+    .chapter { page-break-inside: avoid; }
+    .step  { page-break-inside: avoid; }
+    .tip   { page-break-inside: avoid; }
+    .note  { page-break-inside: avoid; }
+    .cover { page-break-after: always; }
+    .toc-section { page-break-after: always; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 표지 -->
+  <div class="cover">
+    <div class="cover-badge">CUSTOMER GUIDE</div>
+    <div class="cover-logo">J</div>
+    <h1>Hair JJaL</h1>
+    <h2>고객 사용 매뉴얼</h2>
+    <p>예약 · 시술 이력 확인 · 공유 링크 안내</p>
+    <p style="margin-top:6mm; font-size:8.5pt;">Rev. 1.0 &nbsp;|&nbsp; 2025년</p>
+  </div>
+
+  <!-- 목차 -->
+  <div class="toc-section">
+    <div class="toc-title">목차</div>
+    <ul class="toc-list">
+      <li class="toc-chapter"><span>1. 시작하기 — 로그인</span><span class="dot"></span><span class="toc-page">2</span></li>
+      <li><span style="padding-left:12px">계정 받기 / 첫 로그인</span><span class="dot"></span><span class="toc-page">2</span></li>
+      <li class="toc-chapter"><span>2. 홈 화면 둘러보기</span><span class="dot"></span><span class="toc-page">3</span></li>
+      <li><span style="padding-left:12px">메인 탭 구성</span><span class="dot"></span><span class="toc-page">3</span></li>
+      <li class="toc-chapter"><span>3. 예약 신청하기</span><span class="dot"></span><span class="toc-page">4</span></li>
+      <li><span style="padding-left:12px">예약 작성 · 확인 · 취소</span><span class="dot"></span><span class="toc-page">4</span></li>
+      <li class="toc-chapter"><span>4. 시술 이력 확인</span><span class="dot"></span><span class="toc-page">5</span></li>
+      <li><span style="padding-left:12px">이력 목록 · 상세 보기</span><span class="dot"></span><span class="toc-page">5</span></li>
+      <li class="toc-chapter"><span>5. 공유 링크로 이력 열기</span><span class="dot"></span><span class="toc-page">6</span></li>
+      <li class="toc-chapter"><span>6. 앱 설치 (PWA)</span><span class="dot"></span><span class="toc-page">6</span></li>
+      <li class="toc-chapter"><span>7. 자주 묻는 질문 (FAQ)</span><span class="dot"></span><span class="toc-page">7</span></li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <!-- Chapter 1 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">1</div>
+      <h2>시작하기 — 로그인</h2>
+    </div>
+
+    <div class="section">
+      <h3>계정 받기</h3>
+      <p>고객 계정은 헤어샵 직원이 직접 발급합니다. 방문 시 담당 디자이너 또는 원장에게 계정 생성을 요청하세요. 가입 완료 후 <strong>이메일</strong>과 <strong>임시 비밀번호</strong>를 안내받습니다.</p>
+    </div>
+
+    <div class="section">
+      <h3>첫 로그인</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>앱 주소 접속</strong>
+            <p>브라우저에서 샵으로부터 받은 주소를 입력하거나 북마크를 탭합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>이메일 · 비밀번호 입력 후 <kbd>로그인</kbd> 탭</strong>
+            <p>이메일은 대소문자를 구분하지 않습니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>고객 홈 화면 진입 확인</strong>
+            <p>상단에 샵 이름과 내 이름이 표시되면 로그인 성공입니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>비밀번호를 잊었거나 로그인이 안 된다면 담당 직원에게 계정 재설정을 요청하세요. 현재 버전에서는 셀프 비밀번호 재설정을 지원하지 않습니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 2 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">2</div>
+      <h2>홈 화면 둘러보기</h2>
+    </div>
+
+    <div class="section">
+      <h3>메인 탭 구성</h3>
+      <table>
+        <thead>
+          <tr><th>탭 이름</th><th>주요 기능</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>홈</strong></td><td>최근 시술 요약, 다음 방문 예정일, 매장 연락처 · 위치</td></tr>
+          <tr><td><strong>예약</strong></td><td>신규 예약 신청, 예약 내역 확인, 예약 취소</td></tr>
+          <tr><td><strong>시술 이력</strong></td><td>전체 시술 기록 목록 및 상세 정보</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <div class="note-icon">ℹ️</div>
+        <div>화면 오른쪽 상단의 <kbd>☀ / ☾</kbd> 아이콘을 탭하면 다크 모드와 라이트 모드를 전환할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>홈 탭 — 매장 정보 확인</h3>
+      <p>홈 탭 하단의 <strong>내 지점</strong> 카드에서 매장 주소, 전화번호, 영업시간을 확인할 수 있습니다.</p>
+      <ul style="margin-top:2mm; padding-left:18px; font-size:9.5pt; color:#475569;">
+        <li>전화번호 탭 → 바로 전화 연결</li>
+        <li>주소 탭 → 카카오맵에서 길찾기</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Chapter 3 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">3</div>
+      <h2>예약 신청하기</h2>
+    </div>
+
+    <div class="section">
+      <h3>신규 예약 작성</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>하단 <kbd>예약</kbd> 탭 → <kbd>+ 예약 신청</kbd> 버튼</strong>
+            <p>예약 신청 폼이 열립니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>원하는 날짜 · 시간 선택</strong>
+            <p>매장 영업시간 범위 내 30분 단위 슬롯이 표시됩니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>시술 항목 선택</strong>
+            <p>컷 · 컬러 · 펌 등 원하는 시술을 하나 이상 선택합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>담당 디자이너 선택 (선택 사항)</strong>
+            <p>원하는 디자이너가 없으면 비워두면 매장에서 배정합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <strong>요청 사항 입력 후 <kbd>예약 신청</kbd></strong>
+            <p>특이사항(두피 예민, 시술 참고 이미지 설명 등)을 자유롭게 입력하세요.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>시술 이력에서 <strong>"이 날짜로 예약하기"</strong> 버튼을 탭하면 다음 방문 권장일이 미리 입력된 예약 폼으로 이동합니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>예약 상태 확인</h3>
+      <table>
+        <thead><tr><th>상태 배지</th><th>의미</th></tr></thead>
+        <tbody>
+          <tr><td><code>대기</code></td><td>예약 접수 완료, 매장 확인 전</td></tr>
+          <tr><td><code>확정</code></td><td>매장이 예약을 확인·승인함</td></tr>
+          <tr><td><code>취소</code></td><td>본인 또는 매장 측에서 취소함</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h3>예약 취소</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>예약 탭에서 취소할 예약 카드 선택</strong>
+            <p><code>대기</code> 상태 예약만 직접 취소 가능합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong><kbd>예약 취소</kbd> 버튼 탭 → 확인 팝업에서 <kbd>취소 확인</kbd></strong>
+            <p>취소 후에는 되돌릴 수 없습니다. 재예약은 새로 신청하세요.</p>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="note-icon">ℹ️</div>
+        <div><code>확정</code> 상태 예약을 취소해야 한다면 매장에 직접 연락하여 취소를 요청하세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 4 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">4</div>
+      <h2>시술 이력 확인</h2>
+    </div>
+
+    <div class="section">
+      <h3>이력 목록</h3>
+      <p>하단 <kbd>시술 이력</kbd> 탭을 탭하면 나의 전체 시술 기록이 날짜 역순으로 표시됩니다. 각 카드에서 날짜, 시술 항목, 담당 디자이너를 한눈에 확인할 수 있습니다.</p>
+    </div>
+
+    <div class="section">
+      <h3>상세 보기</h3>
+      <p>목록의 이력 카드를 탭하면 해당 시술의 상세 화면이 열립니다.</p>
+      <table>
+        <thead><tr><th>항목</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>날짜 · 담당 스타일리스트</td><td>시술 날짜와 담당 디자이너명</td></tr>
+          <tr><td>시술 항목 · 금액</td><td>컷, 컬러 등 세부 항목 및 총 금액</td></tr>
+          <tr><td>Before / After 사진</td><td>시술 전·후 사진 (담당자가 등록한 경우에만 표시)</td></tr>
+          <tr><td>모발 · 두피 상태</td><td>시술 당시 기록된 모발/두피 정보</td></tr>
+          <tr><td>상담 메모</td><td>담당 스타일리스트의 메모</td></tr>
+          <tr><td>다음 방문 권장일</td><td>다음 방문 추천 날짜와 메모</td></tr>
+        </tbody>
+      </table>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>상세 화면 하단의 <strong>"이 날짜로 예약하기"</strong> 버튼을 탭하면 권장 재방문일을 기반으로 예약 폼이 미리 채워집니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>수정·삭제 요청</h3>
+      <p>시술 이력에 오류가 있다면 담당 디자이너에게 직접 연락하여 수정을 요청하세요. 공유 링크 페이지에서는 수정/삭제 요청 버튼이 별도로 제공됩니다.</p>
+    </div>
+  </div>
+
+  <!-- Chapter 5 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">5</div>
+      <h2>공유 링크로 이력 열기</h2>
+    </div>
+
+    <div class="section">
+      <p>담당 스타일리스트가 특정 시술 이력을 공유하면 링크(URL)를 받을 수 있습니다. 이 링크는 <strong>로그인 없이</strong> 열 수 있으므로, 가족이나 지인과도 간편하게 시술 내역을 확인할 수 있습니다.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>받은 링크를 브라우저에서 열기</strong>
+            <p>카카오톡, 문자 등으로 받은 URL을 탭합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>시술 상세 정보 확인</strong>
+            <p>Before/After 사진, 시술 항목, 포뮬러 정보 등을 볼 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>수정·삭제 요청 (선택)</strong>
+            <p>내용에 오류가 있으면 <kbd>수정 요청</kbd> 또는 <kbd>삭제 요청</kbd> 버튼으로 메시지를 전달할 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <div class="note-icon">ℹ️</div>
+        <div>공유 링크는 담당 스타일리스트가 비활성화하면 더 이상 열리지 않습니다. 공유가 끊긴 경우 직접 로그인하여 이력을 확인하세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 6 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">6</div>
+      <h2>앱 설치 (PWA)</h2>
+    </div>
+
+    <div class="section">
+      <p>Hair JJaL은 스마트폰 홈 화면에 앱처럼 설치할 수 있습니다.</p>
+
+      <h3>Android (크롬)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>크롬 주소창 오른쪽 <code>⋮</code> 메뉴 탭</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>"홈 화면에 추가" 선택 후 확인</strong></div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:4mm;">iPhone / iPad (사파리)</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body"><strong>하단 툴바의 공유 버튼 (□↑) 탭</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body"><strong>"홈 화면에 추가" 선택</strong></div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body"><strong>이름 확인 후 오른쪽 상단 "추가" 탭</strong></div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">💡</div>
+        <div>홈 화면에 설치하면 앱처럼 전체 화면으로 실행되며, 주소창이 사라져 훨씬 편리하게 사용할 수 있습니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chapter 7 -->
+  <div class="chapter">
+    <div class="chapter-header">
+      <div class="chapter-num">7</div>
+      <h2>자주 묻는 질문 (FAQ)</h2>
+    </div>
+
+    <div class="section">
+      <table>
+        <thead><tr><th>질문</th><th>답변</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>예약 신청 후 언제 확정되나요?</td>
+            <td>매장 담당자가 확인 후 상태를 <code>확정</code>으로 변경합니다. 보통 영업시간 내 처리됩니다.</td>
+          </tr>
+          <tr>
+            <td>이미 확정된 예약을 취소할 수 있나요?</td>
+            <td>앱에서는 <code>대기</code> 상태만 직접 취소 가능합니다. 확정 예약은 매장에 직접 연락하세요.</td>
+          </tr>
+          <tr>
+            <td>시술 이력이 보이지 않아요.</td>
+            <td>담당 스타일리스트가 아직 이력을 등록하지 않은 것입니다. 담당자에게 문의하세요.</td>
+          </tr>
+          <tr>
+            <td>비밀번호를 변경하고 싶어요.</td>
+            <td>현재 버전에서는 직원에게 요청하여 재설정합니다.</td>
+          </tr>
+          <tr>
+            <td>다른 지점에서 예약할 수 있나요?</td>
+            <td>예약 폼에서 지점을 선택할 수 있습니다. 여러 지점을 이용 중이라면 각 지점 예약이 한 화면에 통합 표시됩니다.</td>
+          </tr>
+          <tr>
+            <td>공유 링크가 열리지 않아요.</td>
+            <td>공유가 비활성화된 것입니다. 로그인 후 시술 이력 탭에서 직접 확인하거나 담당자에게 재공유를 요청하세요.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer">
+    <span>Hair JJaL — 고객 사용 매뉴얼 Rev. 1.0</span>
+    <span>© 2025 Hair JJaL. All rights reserved.</span>
+  </div>
+
+</div>
+</body>
+</html>

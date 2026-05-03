@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft } from 'lucide-react';
+import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft, BookOpen } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser } from '../../types';
 
@@ -222,6 +222,45 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
               />
             </>
           )}
+        </div>
+
+        {/* 사용 매뉴얼 */}
+        <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
+              <BookOpen size={14} className="text-white" />
+            </div>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>사용 매뉴얼</span>
+          </div>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            역할별 사용 방법을 안내합니다. 링크를 열고 브라우저에서 <strong>인쇄 → PDF로 저장</strong>하면 PDF로 보관할 수 있습니다.
+          </p>
+          <div className="space-y-2">
+            {[
+              { href: '/manuals/manual-customer.html',  label: '고객 매뉴얼',    sub: '예약 · 시술 이력 · 공유 링크',       color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+              { href: '/manuals/manual-designer.html', label: '디자이너 매뉴얼', sub: '고객 관리 · 이력 작성 · 예약 관리', color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+              { href: '/manuals/manual-owner.html',    label: '원장 매뉴얼',     sub: '직원 관리 · 분석 · 데이터 백업',    color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+            ].map(({ href, label, sub, color, bg, border }) => (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all hover:shadow-sm"
+                style={{ backgroundColor: bg, borderColor: border, textDecoration: 'none' }}
+              >
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: color }}>
+                  <BookOpen size={13} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold leading-none mb-0.5" style={{ color }}>{label}</p>
+                  <p className="text-xs" style={{ color: '#64748b' }}>{sub}</p>
+                </div>
+                <span className="text-xs flex-shrink-0 font-medium" style={{ color }}>열기 →</span>
+              </a>
+            ))}
+          </div>
         </div>
 
         {/* Demo accounts — DEV 환경 전용 */}

@@ -1,5 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useState } from 'react';
 import { Scissors, Calendar, ChevronRight, Clock, CalendarPlus, CheckCircle2, XCircle, HourglassIcon, MapPin, Phone as PhoneIcon, Store } from 'lucide-react';
 import { Client, Consultation, Booking, BookingStatus, Shop } from '../../types';
 import { SafeImg } from '../common/SafeImg';
@@ -12,6 +13,7 @@ interface Props {
   shops?: Shop[];
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
+  onCancelBooking?: (id: string) => void;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
@@ -22,7 +24,9 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.Element
   cancelled: { label: '취소됨', Icon: XCircle,       bg: 'var(--bg-neutral)', text: 'var(--text-neutral)' },
 };
 
-export function CustomerHome({ client, consultations, bookings, shops = [], onSelectConsultation, onNewBooking }: Props) {
+export function CustomerHome({ client, consultations, bookings, shops = [], onSelectConsultation, onNewBooking, onCancelBooking }: Props) {
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+
   if (!client) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -84,29 +88,65 @@ export function CustomerHome({ client, consultations, bookings, shops = [], onSe
           </h2>
           {myBookings.map(b => {
             const { label, Icon, bg, text } = BOOKING_STATUS[b.status];
+            const canCancel = b.status === 'pending' && onCancelBooking;
             return (
-              <div key={b.id} className="rounded-2xl border p-4 flex items-center gap-4" style={card}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: bg, color: text }}>
-                  <Icon size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {format(parseISO(b.requestedDate), 'M월 d일 (EEE)', { locale: ko })} {b.requestedTime}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {b.serviceTypes.map(s => (
-                      <span key={s} className={`text-xs px-1.5 py-0.5 rounded-full ${SERVICE_COLORS[s]}`}>
-                        {SERVICE_LABELS[s]}
-                      </span>
-                    ))}
+              <div key={b.id}>
+                <div className="rounded-2xl border p-4 flex items-center gap-4" style={card}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: bg, color: text }}>
+                    <Icon size={18} />
                   </div>
-                  {b.preferredDesigner && (
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{b.preferredDesigner} 디자이너</p>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {format(parseISO(b.requestedDate), 'M월 d일 (EEE)', { locale: ko })} {b.requestedTime}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {b.serviceTypes.map(s => (
+                        <span key={s} className={`text-xs px-1.5 py-0.5 rounded-full ${SERVICE_COLORS[s]}`}>
+                          {SERVICE_LABELS[s]}
+                        </span>
+                      ))}
+                    </div>
+                    {b.preferredDesigner && (
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{b.preferredDesigner} 디자이너</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <span className="text-xs font-semibold px-2 py-1 rounded-lg"
+                      style={{ backgroundColor: bg, color: text }}>{label}</span>
+                    {canCancel && (
+                      <button
+                        onClick={() => setConfirmCancelId(b.id)}
+                        className="text-xs px-2 py-1 rounded-lg border transition-colors hover:bg-red-50"
+                        style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}
+                      >
+                        취소
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <span className="text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0"
-                  style={{ backgroundColor: bg, color: text }}>{label}</span>
+                {/* 취소 확인 */}
+                {confirmCancelId === b.id && (
+                  <div className="mt-1 rounded-2xl border p-3 flex items-center justify-between gap-3"
+                    style={{ backgroundColor: 'var(--bg-danger-soft, #fff1f2)', borderColor: '#fecdd3' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-primary)' }}>예약을 취소할까요?</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmCancelId(null)}
+                        className="text-xs px-3 py-1.5 rounded-lg border"
+                        style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}
+                      >
+                        아니오
+                      </button>
+                      <button
+                        onClick={() => { onCancelBooking!(b.id); setConfirmCancelId(null); }}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium"
+                      >
+                        취소하기
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

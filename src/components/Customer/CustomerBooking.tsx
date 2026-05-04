@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, CalendarDays, Clock, Scissors, MessageSquare, CheckCircle2, MapPin } from 'lucide-react';
 import { Booking, ServiceType, Designer, Client, Shop } from '../../types';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
@@ -50,9 +50,12 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
   const [selectedShopId, setSelectedShopId] = useState(defaultShopId);
   const [date, setDate] = useState(() => {
     const prefill = sessionStorage.getItem(PREFILL_KEY) ?? '';
-    if (prefill) sessionStorage.removeItem(PREFILL_KEY);
     return prefill >= today ? prefill : '';
   });
+  // StrictMode에서 초기화함수가 2회 실행되므로 삭제는 useEffect에서 처리
+  useEffect(() => {
+    sessionStorage.removeItem(PREFILL_KEY);
+  }, []);
   const [time, setTime] = useState('');
   const [services, setServices] = useState<ServiceType[]>([]);
   const [designer, setDesigner] = useState('');

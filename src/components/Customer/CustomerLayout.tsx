@@ -432,6 +432,7 @@ export function CustomerLayout({
             shops={shops}
             onSelectConsultation={onSelectConsultation}
             onNewBooking={onNewBooking}
+            onCancelBooking={onCancelBooking}
           />
         )}
         {tab === 'bookings' && (

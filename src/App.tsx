@@ -47,12 +47,21 @@ export default function App() {
         address: data.shopAddress,
         phone:   data.shopPhone,
       });
-      // 2. 원장 계정 생성 (생성된 shopId 연결)
-      const err = await addOwnerAccount({
+      // 2. 원장을 디자이너로 등록 (1인샵 포함 — 원장도 헤어디자이너)
+      const designer = store.addDesigner({
         shopId:   shop.id,
         name:     data.name,
         email:    data.email,
-        password: data.password,
+        status:   'active',
+        joinedAt: new Date().toISOString().slice(0, 10),
+      });
+      // 3. 원장 계정 생성 (shopId + designerId 연결)
+      const err = await addOwnerAccount({
+        shopId:     shop.id,
+        name:       data.name,
+        email:      data.email,
+        password:   data.password,
+        designerId: designer.id,
       });
       if (err) {
         // 계정 생성 실패 시 생성된 지점도 롤백할 수 없으므로

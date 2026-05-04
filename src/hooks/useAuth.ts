@@ -178,12 +178,13 @@ export function useAuth() {
     localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, newUser]));
   }, []);
 
-  // ── 원장 계정 생성 (지점 ID는 store.addShop() 호출 후 전달) ───────
+  // ── 원장 계정 생성 (지점 ID·Designer ID는 store 호출 후 전달) ────
   const addOwnerAccount = useCallback(async (data: {
     shopId: string;
     name: string;
     email: string;
     password: string;
+    designerId?: string; // 원장의 Designer 레코드 ID
   }): Promise<string | null> => {
     const lowerEmail = data.email.toLowerCase().trim();
     const allUsers = [...demoUsers, ...loadExtraUsers()];
@@ -199,6 +200,7 @@ export function useAuth() {
       email: lowerEmail,
       passwordHash,
       designerName: data.name,
+      designerId: data.designerId,
     };
     const extras = loadExtraUsers();
     localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, newUser]));

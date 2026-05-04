@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
-  HardDrive, BookOpen,
+  HardDrive, BookOpen, CalendarDays, Plus, Trash2,
 } from 'lucide-react';
 import { getStorageUsage } from '../../utils/backup';
 import { format, parseISO, startOfMonth } from 'date-fns';
@@ -92,6 +92,50 @@ export function StaffProfile({
     setShopAddress(shop?.address ?? '');
     setShopPhone(shop?.phone ?? '');
     setEditShop(false);
+  };
+
+  /* ── 근무 스케줄 ── */
+  const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+  const [editSchedule, setEditSchedule] = useState(false);
+  const [draftWorkDays, setDraftWorkDays] = useState<number[]>(
+    designer?.workDays ?? [0, 1, 2, 3, 4, 5, 6]
+  );
+  const [draftDayOff, setDraftDayOff] = useState<string[]>(
+    designer?.dayOff ?? []
+  );
+  const [newDayOff, setNewDayOff] = useState('');
+
+  const toggleDow = (d: number) =>
+    setDraftWorkDays(prev =>
+      prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort()
+    );
+
+  const addDayOff = () => {
+    if (!newDayOff) return;
+    if (!draftDayOff.includes(newDayOff)) {
+      setDraftDayOff(prev => [...prev, newDayOff].sort());
+    }
+    setNewDayOff('');
+  };
+
+  const removeDayOff = (date: string) =>
+    setDraftDayOff(prev => prev.filter(d => d !== date));
+
+  const saveSchedule = () => {
+    if (designer) {
+      onUpdateDesigner(designer.id, {
+        workDays: draftWorkDays,
+        dayOff: draftDayOff,
+      });
+    }
+    setEditSchedule(false);
+  };
+
+  const cancelSchedule = () => {
+    setDraftWorkDays(designer?.workDays ?? [0, 1, 2, 3, 4, 5, 6]);
+    setDraftDayOff(designer?.dayOff ?? []);
+    setNewDayOff('');
+    setEditSchedule(false);
   };
 
   /* ── 저장공간 사용량 ── */
@@ -339,6 +383,110 @@ export function StaffProfile({
           )}
         </div>
       )}
+      {/* ── 근무 스케줄 ── */}
+      {designer && (
+        <div className="rounded-2xl border p-5 space-y-4" style={card}>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+              <CalendarDays size={14} style={{ color: '#6366f1' }} />
+              근무 스케줄
+            </h3>
+            {!editSchedule ? (
+              <button onClick={() => setEditSchedule(true)}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-hover)' }}
+                aria-label="근무 스케줄 수정">
+                <Edit2 size={12} /> 수정
+              </button>
+            ) : (
+              <div className="flex gap-1.5">
+                <button onClick={saveSchedule}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-medium text-white bg-rose-500 hover:bg-rose-600 transition-colors">
+                  <Check size={12} /> 저장
+                </button>
+                <button onClick={cancelSchedule}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+                  style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-hover)' }}>
+                  <X size={12} /> 취소
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 근무 요일 */}
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>근무 요일</p>
+            <div className="flex gap-1.5 flex-wrap">
+              {DOW_LABELS.map((label, idx) => {
+                const active = editSchedule
+                  ? draftWorkDays.includes(idx)
+                  : (designer.workDays ?? [0,1,2,3,4,5,6]).includes(idx);
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => editSchedule && toggleDow(idx)}
+                    disabled={!editSchedule}
+                    className="w-9 h-9 rounded-full text-sm font-semibold transition-all"
+                    style={{
+                      backgroundColor: active ? '#6366f1' : 'var(--bg-muted)',
+                      color: active ? '#fff' : 'var(--text-muted)',
+                      cursor: editSchedule ? 'pointer' : 'default',
+                      border: 'none',
+                    }}
+                    aria-label={`${label}요일 ${active ? '근무' : '휴무'}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 특정 휴무일 */}
+          <div>
+            <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>특정 휴무일</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {(editSchedule ? draftDayOff : (designer.dayOff ?? [])).map(date => (
+                <span key={date}
+                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
+                  style={{ backgroundColor: 'var(--bg-danger-soft, #fff1f2)', color: '#e11d48', border: '1px solid #fecdd3' }}>
+                  {date}
+                  {editSchedule && (
+                    <button onClick={() => removeDayOff(date)}
+                      className="ml-0.5 hover:text-red-700"
+                      aria-label={`${date} 휴무일 삭제`}>
+                      <X size={11} />
+                    </button>
+                  )}
+                </span>
+              ))}
+              {(editSchedule ? draftDayOff : (designer.dayOff ?? [])).length === 0 && (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>등록된 특정 휴무일이 없습니다.</p>
+              )}
+            </div>
+            {editSchedule && (
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={newDayOff}
+                  onChange={e => setNewDayOff(e.target.value)}
+                  className={inp + " flex-1"}
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  aria-label="휴무일 날짜 선택"
+                />
+                <button
+                  onClick={addDayOff}
+                  disabled={!newDayOff}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-40 transition-colors"
+                  aria-label="휴무일 추가">
+                  <Plus size={13} /> 추가
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── 데이터 관리 ── */}
       <div className="rounded-2xl border p-5 space-y-4" style={card}>
         <div className="flex items-center gap-2">

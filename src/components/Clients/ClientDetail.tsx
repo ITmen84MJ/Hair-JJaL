@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download } from 'lucide-react';
 import { exportClientHistory } from '../../utils/csv';
 import { format, parseISO, differenceInYears } from 'date-fns';
@@ -8,8 +8,10 @@ import { SafeImg } from '../common/SafeImg';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { ClientForm } from './ClientForm';
 import { ConsultationForm } from '../Consultations/ConsultationForm';
-import { ClientStats } from './ClientStats';
 import { Modal } from '../common/Modal';
+
+// recharts 의존 — 초기 번들에서 분리
+const ClientStats = lazy(() => import('./ClientStats').then(m => ({ default: m.ClientStats })));
 
 interface Props {
   client: Client;
@@ -204,7 +206,11 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
         ))}
       </div>
 
-      {activeTab === 'stats' && <ClientStats consultations={consultations} />}
+      {activeTab === 'stats' && (
+        <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>차트 로딩중…</div>}>
+          <ClientStats consultations={consultations} />
+        </Suspense>
+      )}
 
       {activeTab === 'gallery' && (
         <div>

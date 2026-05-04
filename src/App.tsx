@@ -5,19 +5,20 @@ import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { ToastContainer } from './components/common/ToastContainer';
 import { Sidebar } from './components/Layout/Sidebar';
-import { ClientList } from './components/Clients/ClientList';
-import { ClientDetail } from './components/Clients/ClientDetail';
-import { ConsultationDetail } from './components/Consultations/ConsultationDetail';
 import { ShareView } from './components/Share/ShareView';
 import { LoginPage, type OwnerRegisterData } from './components/Auth/LoginPage';
-import { CustomerLayout } from './components/Customer/CustomerLayout';
-import { CustomerBooking } from './components/Customer/CustomerBooking';
-import { BookingList } from './components/Bookings/BookingList';
-import { StaffProfile } from './components/Staff/StaffProfile';
 import { OnboardingTour } from './components/common/OnboardingTour';
-// P3-24: recharts 의존 컴포넌트는 lazy 로딩으로 초기 번들에서 분리
-const Dashboard     = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
-const OwnerDashboard = lazy(() => import('./components/Owner/OwnerDashboard').then(m => ({ default: m.OwnerDashboard })));
+
+// 라우트별 lazy 분리 — 초기 번들 최소화
+const Dashboard        = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
+const OwnerDashboard   = lazy(() => import('./components/Owner/OwnerDashboard').then(m => ({ default: m.OwnerDashboard })));
+const ClientList       = lazy(() => import('./components/Clients/ClientList').then(m => ({ default: m.ClientList })));
+const ClientDetail     = lazy(() => import('./components/Clients/ClientDetail').then(m => ({ default: m.ClientDetail })));
+const ConsultationDetail = lazy(() => import('./components/Consultations/ConsultationDetail').then(m => ({ default: m.ConsultationDetail })));
+const BookingList      = lazy(() => import('./components/Bookings/BookingList').then(m => ({ default: m.BookingList })));
+const StaffProfile     = lazy(() => import('./components/Staff/StaffProfile').then(m => ({ default: m.StaffProfile })));
+const CustomerLayout   = lazy(() => import('./components/Customer/CustomerLayout').then(m => ({ default: m.CustomerLayout })));
+const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBooking').then(m => ({ default: m.CustomerBooking })));
 
 export default function App() {
   const store = useStore();
@@ -101,10 +102,13 @@ export default function App() {
       ? store.bookings.filter(b => b.clientId === myClient.id)
       : [];
 
+    const fallback = <div className="flex items-center justify-center min-h-screen text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>;
+
     // Booking form
     if (store.currentView === 'customer-booking' && myClient) {
       return (
         <ErrorBoundary>
+        <Suspense fallback={fallback}>
         <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
           <CustomerBooking
             client={myClient}
@@ -119,6 +123,7 @@ export default function App() {
             onBack={() => store.navigate('customer-home')}
           />
         </div>
+        </Suspense>
         </ErrorBoundary>
       );
     }
@@ -126,6 +131,7 @@ export default function App() {
     return (
       <ErrorBoundary>
       <OnboardingTour role={user.role} />
+      <Suspense fallback={fallback}>
       <CustomerLayout
         user={user}
         client={myClient}
@@ -146,6 +152,7 @@ export default function App() {
         onUpdateConsultation={store.updateConsultation}
         onCancelBooking={id => store.updateBooking(id, { status: 'cancelled', cancelReason: '고객 취소' })}
       />
+      </Suspense>
       </ErrorBoundary>
     );
   }
@@ -275,44 +282,52 @@ export default function App() {
         )}
 
         {store.currentView === 'clients' && (
-          <ClientList
-            clients={visibleClients}
-            consultations={visibleConsultations}
-            onSelectClient={id => store.navigate('client-detail', id)}
-            onAddClient={data => store.addClient({ ...data, shopId })}
-            onDeleteClient={store.deleteClient}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <ClientList
+              clients={visibleClients}
+              consultations={visibleConsultations}
+              onSelectClient={id => store.navigate('client-detail', id)}
+              onAddClient={data => store.addClient({ ...data, shopId })}
+              onDeleteClient={store.deleteClient}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'client-detail' && selectedClient && (
-          <ClientDetail
-            client={selectedClient}
-            consultations={clientConsultations}
-            designers={shopDesigners}
-            onBack={() => store.navigate('clients')}
-            onUpdateClient={store.updateClient}
-            onAddConsultation={data => store.addConsultation({ ...data, shopId })}
-            onSelectConsultation={id => store.navigate('consultation-detail', selectedClient.id, id)}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <ClientDetail
+              client={selectedClient}
+              consultations={clientConsultations}
+              designers={shopDesigners}
+              onBack={() => store.navigate('clients')}
+              onUpdateClient={store.updateClient}
+              onAddConsultation={data => store.addConsultation({ ...data, shopId })}
+              onSelectConsultation={id => store.navigate('consultation-detail', selectedClient.id, id)}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'consultation-detail' && selectedConsultation && selectedClient && (
-          <ConsultationDetail
-            consultation={selectedConsultation}
-            client={selectedClient}
-            onBack={() => store.navigate('client-detail', selectedClient.id)}
-            onUpdate={store.updateConsultation}
-            onDelete={store.deleteConsultation}
-            onToggleShare={store.toggleShare}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <ConsultationDetail
+              consultation={selectedConsultation}
+              client={selectedClient}
+              onBack={() => store.navigate('client-detail', selectedClient.id)}
+              onUpdate={store.updateConsultation}
+              onDelete={store.deleteConsultation}
+              onToggleShare={store.toggleShare}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'bookings' && (
-          <BookingList
-            bookings={shopBookings}
-            user={user}
-            onUpdate={store.updateBooking}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <BookingList
+              bookings={shopBookings}
+              user={user}
+              onUpdate={store.updateBooking}
+            />
+          </Suspense>
         )}
 
         {store.currentView === 'owner-staff' && user.role === 'owner' && (
@@ -346,25 +361,27 @@ export default function App() {
         )}
 
         {store.currentView === 'profile' && (
-          <StaffProfile
-            user={user}
-            designer={myDesignerRecord}
-            shop={myShop}
-            myConsultations={myOwnConsultations}
-            shopConsultations={shopConsultations}
-            shopClients={shopClients}
-            shopDesigners={shopDesigners}
-            shopBookings={shopBookings}
-            onUpdateDesigner={(id, data) => {
-              store.updateDesigner(id, data);
-              // 3-3: 이름·이메일 변경 시 로그인 계정 동기화
-              if (data.name !== undefined || data.email !== undefined) {
-                updateExtraUser(id, { name: data.name, email: data.email });
-              }
-            }}
-            onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
-            onUpdateName={updateName}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+            <StaffProfile
+              user={user}
+              designer={myDesignerRecord}
+              shop={myShop}
+              myConsultations={myOwnConsultations}
+              shopConsultations={shopConsultations}
+              shopClients={shopClients}
+              shopDesigners={shopDesigners}
+              shopBookings={shopBookings}
+              onUpdateDesigner={(id, data) => {
+                store.updateDesigner(id, data);
+                // 3-3: 이름·이메일 변경 시 로그인 계정 동기화
+                if (data.name !== undefined || data.email !== undefined) {
+                  updateExtraUser(id, { name: data.name, email: data.email });
+                }
+              }}
+              onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
+              onUpdateName={updateName}
+            />
+          </Suspense>
         )}
 
       </main>

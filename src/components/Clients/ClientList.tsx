@@ -76,10 +76,21 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
     setFilterTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
   const hasFilter = filterServices.length > 0 || filterTags.length > 0;
 
-  const lastConsultation = (id: string) =>
-    consultations.filter(c => c.clientId === id).sort((a, b) => b.date.localeCompare(a.date))[0];
+  // 고객별 방문 수·최근 방문일·시술 종류 맵 (consultations 변경 시만 재계산)
+  const clientConsultationMap = useMemo(() => {
+    const map = new Map<string, { count: number; lastDate: string; serviceTypes: Set<string> }>();
+    consultations.forEach(con => {
+      const entry = map.get(con.clientId) ?? { count: 0, lastDate: '', serviceTypes: new Set<string>() };
+      entry.count++;
+      if (con.date > entry.lastDate) entry.lastDate = con.date;
+      con.services.forEach(s => entry.serviceTypes.add(s.type));
+      map.set(con.clientId, entry);
+    });
+    return map;
+  }, [consultations]);
 
-  const visitCount = (id: string) => consultations.filter(c => c.clientId === id).length;
+  const lastConsultationDate = (id: string) => clientConsultationMap.get(id)?.lastDate ?? '';
+  const visitCount = (id: string) => clientConsultationMap.get(id)?.count ?? 0;
 
   const filtered = useMemo(() => {
     const searched = clients.filter(c => {
@@ -93,9 +104,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
       if (filterTags.length > 0 && !filterTags.every(t => c.tags?.includes(t))) return false;
       // 서비스 필터: 해당 시술 이력이 있는 고객만
       if (filterServices.length > 0) {
-        const clientSvcTypes = new Set(
-          consultations.filter(con => con.clientId === c.id).flatMap(con => con.services.map(s => s.type))
-        );
+        const clientSvcTypes = clientConsultationMap.get(c.id)?.serviceTypes ?? new Set();
         if (!filterServices.every(s => clientSvcTypes.has(s))) return false;
       }
       return true;
@@ -104,11 +113,11 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
       if (sortKey === 'name') return a.name.localeCompare(b.name, 'ko');
       if (sortKey === 'visits') return visitCount(b.id) - visitCount(a.id);
       // 'recent': 최근 방문 기준
-      const la = lastConsultation(a.id)?.date ?? a.createdAt;
-      const lb = lastConsultation(b.id)?.date ?? b.createdAt;
+      const la = lastConsultationDate(a.id) || a.createdAt;
+      const lb = lastConsultationDate(b.id) || b.createdAt;
       return lb.localeCompare(la);
     });
-  }, [clients, consultations, search, sortKey]);
+  }, [clients, clientConsultationMap, search, sortKey, filterTags, filterServices]);
 
   return (
     <div className="p-6 space-y-5" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -217,7 +226,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
           </div>
         )}
         {filtered.map(client => {
-          const last = lastConsultation(client.id);
+          const lastDate = lastConsultationDate(client.id);
           const count = visitCount(client.id);
           return (
             <div key={client.id} className="rounded-xl border transition-all group" style={card}>
@@ -237,7 +246,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
                     <span>{client.phone}</span>
                     <span className="mx-1">·</span>
                     <span>방문 {count}회</span>
-                    {last && <><span className="mx-1">·</span><span>마지막 {format(parseISO(last.date), 'yy.MM.dd')}</span></>}
+                    {lastDate && <><span className="mx-1">·</span><span>마지막 {format(parseISO(lastDate), 'yy.MM.dd')}</span></>}
                   </div>
                 </div>
                 <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />

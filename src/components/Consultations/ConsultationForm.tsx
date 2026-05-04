@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown, RotateCcw } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
@@ -77,6 +77,36 @@ function PhotoUpload({
   );
 }
 
+function AccordionSection({ title, hint, defaultOpen = false, children }: {
+  title: string;
+  hint?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:opacity-80"
+        style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--bg-muted)' }}
+      >
+        <span>{title}</span>
+        <div className="flex items-center gap-2">
+          {!open && hint && <span className="text-[10px] font-normal truncate max-w-[120px]" style={{ color: 'var(--text-muted)' }}>{hint}</span>}
+          <ChevronDown size={14} className={`transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-3 space-y-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ConsultationForm({ clientId, clientName, initial, designers, lastConsultation, onSave, onClose }: Props) {
   const [showLastVisit, setShowLastVisit] = useState(false);
   const { templates, addTemplate, removeTemplate } = useFormulaTemplates();
@@ -100,6 +130,36 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
     nextVisitNote: initial?.nextVisitNote ?? '',
     isShared: initial?.isShared ?? false,
   });
+
+  // ── Q-5: Draft autosave ──────────────────────────────────────────────────
+  const DRAFT_KEY = `hairjjal_draft_${clientId}`;
+  const [hasDraft, setHasDraft] = useState(() => {
+    if (initial) return false; // 수정 모드에서는 드래프트 무시
+    try { return !!localStorage.getItem(`hairjjal_draft_${clientId}`); } catch { return false; }
+  });
+
+  // 1초 디바운스 자동 저장 (새 상담 전용)
+  useEffect(() => {
+    if (initial) return;
+    const id = setTimeout(() => {
+      if (!isDirty.current) return;
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [form, DRAFT_KEY, initial]);
+
+  const restoreDraft = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) { setForm(JSON.parse(raw)); isDirty.current = true; }
+    } catch {}
+    setHasDraft(false);
+  }, [DRAFT_KEY]);
+
+  const discardDraft = useCallback(() => {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    setHasDraft(false);
+  }, [DRAFT_KEY]);
 
   const setField = (key: string, val: unknown) => {
     isDirty.current = true;
@@ -134,6 +194,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     isDirty.current = false;
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
     onSave({
       clientId,
       date: form.date,
@@ -166,7 +227,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             <button onClick={() => setShowDirtyConfirm(false)}
               className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
               style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
-            <button onClick={() => { isDirty.current = false; onClose(); }}
+            <button onClick={() => { isDirty.current = false; try { localStorage.removeItem(DRAFT_KEY); } catch {} onClose(); }}
               className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
           </div>
         </div>
@@ -221,6 +282,28 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Q-5: Draft restore banner */}
+          {hasDraft && (
+            <div className="flex items-center justify-between rounded-xl px-4 py-2.5"
+              style={{ backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
+              <div className="flex items-center gap-2">
+                <RotateCcw size={13} />
+                <span className="text-xs font-medium">저장된 임시 작성 내용이 있습니다</span>
+              </div>
+              <div className="flex gap-2 ml-3 flex-shrink-0">
+                <button type="button" onClick={discardDraft}
+                  className="text-xs px-2 py-1 rounded-lg border transition-colors"
+                  style={{ borderColor: 'var(--border-warning)', color: 'var(--text-warning)' }}>
+                  버리기
+                </button>
+                <button type="button" onClick={restoreDraft}
+                  className="text-xs px-2 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium transition-colors">
+                  복원하기
+                </button>
+              </div>
             </div>
           )}
 
@@ -287,23 +370,36 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>모발 상태</label>
-                <VoiceNoteButton compact onAppend={text => setField('hairCondition', (form.hairCondition ? form.hairCondition + ' ' : '') + text.trim())} />
+          {/* Q-4: 모발·두피 상태 (accordion) */}
+          <AccordionSection
+            title="모발 · 두피 상태"
+            hint={[form.hairCondition, form.scalp].filter(Boolean).join(' / ')}
+            defaultOpen={!!(form.hairCondition || form.scalp)}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>모발 상태</label>
+                  <VoiceNoteButton compact onAppend={text => setField('hairCondition', (form.hairCondition ? form.hairCondition + ' ' : '') + text.trim())} />
+                </div>
+                <input value={form.hairCondition} onChange={e => setField('hairCondition', e.target.value)} className={inputCls} placeholder="예: 손상 보통, 건조함" />
               </div>
-              <input value={form.hairCondition} onChange={e => setField('hairCondition', e.target.value)} className={inputCls} placeholder="예: 손상 보통, 건조함" />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>두피 상태</label>
-                <VoiceNoteButton compact onAppend={text => setField('scalp', (form.scalp ? form.scalp + ' ' : '') + text.trim())} />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>두피 상태</label>
+                  <VoiceNoteButton compact onAppend={text => setField('scalp', (form.scalp ? form.scalp + ' ' : '') + text.trim())} />
+                </div>
+                <input value={form.scalp} onChange={e => setField('scalp', e.target.value)} className={inputCls} placeholder="예: 지성, 민감" />
               </div>
-              <input value={form.scalp} onChange={e => setField('scalp', e.target.value)} className={inputCls} placeholder="예: 지성, 민감" />
             </div>
-          </div>
+          </AccordionSection>
 
+          {/* Q-4: 시술 포뮬러 (accordion) */}
+          <AccordionSection
+            title="시술 포뮬러"
+            hint={[form.colorFormula, form.permFormula].filter(Boolean).map((f, i) => ['컬러', '펌'][i] + ': ' + (f as string).slice(0, 20)).join(' / ')}
+            defaultOpen={!!(form.colorFormula || form.permFormula)}
+          >
           <div className="grid grid-cols-2 gap-4">
             {/* 컬러 포뮬러 + 템플릿 */}
             <div>
@@ -399,13 +495,26 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
               )}
             </div>
           </div>
+          </AccordionSection>
 
-          {/* Photo Upload */}
+          {/* Q-4: Before/After 사진 (accordion) */}
+          <AccordionSection
+            title="Before / After 사진"
+            hint={(form.beforePhoto ? 'Before 있음' : '') + (form.afterPhoto ? (form.beforePhoto ? ' · ' : '') + 'After 있음' : '')}
+            defaultOpen={!!(form.beforePhoto || form.afterPhoto)}
+          >
           <div className="grid grid-cols-2 gap-4">
             <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} />
             <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} />
           </div>
+          </AccordionSection>
 
+          {/* Q-4: 메모 + 다음 방문 (accordion) */}
+          <AccordionSection
+            title="상담 메모 · 다음 방문"
+            hint={form.notes ? form.notes.slice(0, 30) + (form.notes.length > 30 ? '…' : '') : form.nextVisitDate ? `다음 방문 ${form.nextVisitDate}` : ''}
+            defaultOpen={!!(form.notes || form.nextVisitDate || form.nextVisitNote)}
+          >
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>상담 메모</label>
@@ -425,6 +534,7 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
               <input value={form.nextVisitNote} onChange={e => setField('nextVisitNote', e.target.value)} className={inputCls} placeholder="예: 뿌리 터치업" />
             </div>
           </div>
+          </AccordionSection>
 
           <div className="flex items-center gap-3 rounded-lg px-4 py-3" style={{ backgroundColor: 'var(--bg-muted)' }}>
             <input type="checkbox" id="isShared" checked={form.isShared} onChange={e => setField('isShared', e.target.checked)} className="w-4 h-4 rounded text-rose-500" />

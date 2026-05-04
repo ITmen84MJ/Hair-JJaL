@@ -8,8 +8,7 @@ interface SpeechOptions {
 export function useSpeechRecognition({ onResult, onError }: SpeechOptions) {
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const supported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
@@ -20,10 +19,9 @@ export function useSpeechRecognition({ onResult, onError }: SpeechOptions) {
       return;
     }
 
-    // ① 마이크 권한을 먼저 명시적으로 요청 — 브라우저 팝업을 띄운다
+    // ① 마이크 권한을 먼저 명시적으로 요청
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // 권한 확인 후 스트림은 즉시 해제 (실제 오디오는 SpeechRecognition이 사용)
       stream.getTracks().forEach(t => t.stop());
     } catch (err: unknown) {
       const name = (err as DOMException).name;
@@ -36,19 +34,19 @@ export function useSpeechRecognition({ onResult, onError }: SpeechOptions) {
     }
 
     // ② SpeechRecognition 시작
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognition: any = new SR();
+    const SR: SpeechRecognitionConstructor | undefined =
+      window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) { onError?.('not-supported'); return; }
+
+    const recognition = new SR();
     recognition.lang = 'ko-KR';
     recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => { setIsListening(false); setInterimText(''); };
+    recognition.onend   = () => { setIsListening(false); setInterimText(''); };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onerror = (e: any) => {
+    recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
       setIsListening(false);
       setInterimText('');
       if (e.error === 'not-allowed') {
@@ -58,8 +56,7 @@ export function useSpeechRecognition({ onResult, onError }: SpeechOptions) {
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (e: any) => {
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
       let interim = '';
       let final = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {

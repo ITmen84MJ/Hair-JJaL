@@ -1,5 +1,8 @@
 import { Client, Consultation, AuthUser, Designer, Booking, Shop } from '../types';
 
+// 데모 계정 비밀번호 — .env.local의 VITE_DEMO_PASSWORD 우선, 없으면 'demo1234'
+const DEMO_PASS = import.meta.env.VITE_DEMO_PASSWORD ?? 'demo1234';
+
 // ── 지점 (미용실) ──────────────────────────────────────────────
 export const mockShops: Shop[] = [
   {
@@ -27,7 +30,7 @@ export const demoUsers: AuthUser[] = [
     name: '김지수',
     role: 'customer',
     email: 'jisoo@example.com',
-    password: '1234',
+    password: DEMO_PASS,
     clientId: 'c1',
   },
   {
@@ -36,7 +39,7 @@ export const demoUsers: AuthUser[] = [
     name: '박스타일',
     role: 'designer',
     email: 'park@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '박스타일',
     designerId: 'd1',
   },
@@ -46,7 +49,7 @@ export const demoUsers: AuthUser[] = [
     name: '김헤어',
     role: 'designer',
     email: 'kim@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '김헤어',
     designerId: 'd2',
   },
@@ -56,7 +59,7 @@ export const demoUsers: AuthUser[] = [
     name: '홍원장',
     role: 'owner',
     email: 'owner@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '홍원장',
     designerId: 'd6',
   },
@@ -67,7 +70,7 @@ export const demoUsers: AuthUser[] = [
     name: '이소연',
     role: 'customer',
     email: 'soyeon@example.com',
-    password: '1234',
+    password: DEMO_PASS,
     clientId: 'c5',
   },
   {
@@ -76,7 +79,7 @@ export const demoUsers: AuthUser[] = [
     name: '정스타일',
     role: 'designer',
     email: 'jeong@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '정스타일',
     designerId: 'd4',
   },
@@ -86,7 +89,7 @@ export const demoUsers: AuthUser[] = [
     name: '오컬러',
     role: 'designer',
     email: 'oh@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '오컬러',
     designerId: 'd5',
   },
@@ -96,7 +99,7 @@ export const demoUsers: AuthUser[] = [
     name: '최원장',
     role: 'owner',
     email: 'owner2@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '최원장',
     designerId: 'd7',
   },
@@ -107,7 +110,7 @@ export const demoUsers: AuthUser[] = [
     name: '이드레스',
     role: 'designer',
     email: 'lee@hairjjal.com',
-    password: '1234',
+    password: DEMO_PASS,
     designerName: '이드레스',
     designerId: 'd3b',
   },

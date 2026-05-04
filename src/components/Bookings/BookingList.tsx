@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, addMonths, subMonths as subMo } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CalendarDays, Clock, CheckCircle2, XCircle, User, Scissors, MessageSquare, ChevronDown, ChevronLeft, ChevronRight, LayoutList } from 'lucide-react';
+import { CalendarDays, Clock, CheckCircle2, XCircle, User, MessageSquare, ChevronDown, ChevronLeft, ChevronRight, LayoutList, Search, Filter, X as XIcon } from 'lucide-react';
 import { Booking, BookingStatus, AuthUser } from '../../types';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { Modal } from '../common/Modal';
@@ -173,6 +173,10 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [calendarDateFilter, setCalendarDateFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   // Designer sees only bookings for their name (or no preference)
   const mine = user.role === 'designer' && user.designerName
@@ -180,10 +184,20 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
     : bookings;
 
   const filtered = useMemo(() => {
-    const byStatus = tab === 'all' ? mine : mine.filter(b => b.status === tab);
-    if (calendarDateFilter) return byStatus.filter(b => b.requestedDate === calendarDateFilter);
-    return byStatus;
-  }, [mine, tab, calendarDateFilter]);
+    let result = tab === 'all' ? mine : mine.filter(b => b.status === tab);
+    if (calendarDateFilter) result = result.filter(b => b.requestedDate === calendarDateFilter);
+    if (dateFrom) result = result.filter(b => b.requestedDate >= dateFrom);
+    if (dateTo)   result = result.filter(b => b.requestedDate <= dateTo);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(b =>
+        b.clientName.toLowerCase().includes(q) ||
+        (b.preferredDesigner ?? '').toLowerCase().includes(q) ||
+        (b.notes ?? '').toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [mine, tab, calendarDateFilter, dateFrom, dateTo, search]);
   const sorted = [...filtered].sort((a, b) => a.requestedDate.localeCompare(b.requestedDate));
 
   const confirm = (id: string) => {
@@ -221,6 +235,63 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
             <CalendarDays size={15} />
           </button>
         </div>
+      </div>
+
+      {/* 검색 + 날짜 필터 */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="고객명·디자이너·메모 검색"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border rounded-xl pl-8 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+              style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2"
+                aria-label="검색 초기화" style={{ color: 'var(--text-muted)' }}>
+                <XIcon size={13} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setShowDateFilter(v => !v)}
+            aria-label="날짜 필터"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-colors ${showDateFilter || dateFrom || dateTo ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+            style={!(showDateFilter || dateFrom || dateTo) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+            <Filter size={14} />
+            {(dateFrom || dateTo) ? '날짜 적용 중' : '날짜'}
+          </button>
+        </div>
+
+        {showDateFilter && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <label className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>시작</label>
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="flex-1 border rounded-xl px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+            </div>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>~</span>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <label className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>종료</label>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="flex-1 border rounded-xl px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+                style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+            </div>
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="text-xs px-2.5 py-1.5 rounded-xl border"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                초기화
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 캘린더 뷰 */}

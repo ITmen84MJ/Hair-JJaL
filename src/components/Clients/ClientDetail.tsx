@@ -1,5 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download, Search, Filter } from 'lucide-react';
 import { exportClientHistory } from '../../utils/csv';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -65,22 +65,47 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
   const [showAddCon, setShowAddCon] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'gallery' | 'stats'>('history');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [monthFilter, setMonthFilter] = useState('');   // P2-16: 'YYYY-MM' 또는 ''(전체)
+  const [monthFilter, setMonthFilter] = useState('');   // 'YYYY-MM' 또는 ''(전체)
+  const [historySearch, setHistorySearch] = useState('');  // 텍스트 검색
+  const [historyServiceFilter, setHistoryServiceFilter] = useState<string[]>([]); // 시술 종류 필터
+  const [showHistoryFilter, setShowHistoryFilter] = useState(false);
   const [tagInput, setTagInput] = useState('');         // P2-21: 인라인 태그 입력
 
   const allSorted = useMemo(
     () => [...consultations].sort((a, b) => b.date.localeCompare(a.date)),
     [consultations],
   );
-  const sorted = useMemo(
-    () => monthFilter ? allSorted.filter(c => c.date.startsWith(monthFilter)) : allSorted,
-    [allSorted, monthFilter],
-  );
 
-  // P2-16: 이력에 있는 연월 목록 추출
+  const sorted = useMemo(() => {
+    return allSorted.filter(c => {
+      if (monthFilter && !c.date.startsWith(monthFilter)) return false;
+      if (historySearch) {
+        const q = historySearch.toLowerCase();
+        const inServices = c.services.some(s =>
+          SERVICE_LABELS[s.type].includes(historySearch) || s.description?.toLowerCase().includes(q)
+        );
+        const inNote = c.notes?.toLowerCase().includes(q);
+        const inDesigner = c.stylistName.toLowerCase().includes(q);
+        if (!inServices && !inNote && !inDesigner) return false;
+      }
+      if (historyServiceFilter.length > 0) {
+        const types = new Set(c.services.map(s => s.type));
+        if (!historyServiceFilter.every(t => types.has(t as never))) return false;
+      }
+      return true;
+    });
+  }, [allSorted, monthFilter, historySearch, historyServiceFilter]);
+
+  // 이력에 있는 연월 목록 추출
   const monthOptions = useMemo(() => {
     const set = new Set(allSorted.map(c => c.date.slice(0, 7)));
     return [...set].sort((a, b) => b.localeCompare(a));
+  }, [allSorted]);
+
+  // 이 고객의 시술 종류 목록
+  const usedServiceTypes = useMemo(() => {
+    const set = new Set(allSorted.flatMap(c => c.services.map(s => s.type)));
+    return [...set];
   }, [allSorted]);
   const age = client.birthDate ? differenceInYears(new Date(), parseISO(client.birthDate)) : null;
   const totalSpend = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
@@ -242,28 +267,64 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
 
       {activeTab === 'history' && (
         <div>
-          <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              상담 이력 ({sorted.length}{monthFilter ? `/${allSorted.length}` : ''})
-            </h3>
+          {/* 검색 + 필터 헤더 */}
+          <div className="space-y-2 mb-3">
             <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  placeholder="시술명, 메모, 디자이너 검색"
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
+                />
+              </div>
               {monthOptions.length > 1 && (
                 <select
                   value={monthFilter}
                   onChange={e => setMonthFilter(e.target.value)}
-                  className="border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300"
+                  className="border rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-300 flex-shrink-0"
                   style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
                 >
-                  <option value="">전체</option>
+                  <option value="">전체 월</option>
                   {monthOptions.map(m => (
                     <option key={m} value={m}>{m.replace('-', '년 ')}월</option>
                   ))}
                 </select>
               )}
-              <button onClick={() => setShowAddCon(true)} className="flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
-                <Plus size={13} /> 상담 추가
+              {usedServiceTypes.length > 0 && (
+                <button
+                  onClick={() => setShowHistoryFilter(v => !v)}
+                  aria-label="시술 필터"
+                  className={`flex-shrink-0 p-2 rounded-lg border transition-colors ${historyServiceFilter.length > 0 ? 'bg-rose-500 border-rose-500 text-white' : ''}`}
+                  style={historyServiceFilter.length === 0 ? { borderColor: 'var(--border-input)', color: 'var(--text-muted)' } : {}}>
+                  <Filter size={13} />
+                </button>
+              )}
+              <button onClick={() => setShowAddCon(true)} className="flex-shrink-0 flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors">
+                <Plus size={13} /> 추가
               </button>
             </div>
+            {showHistoryFilter && usedServiceTypes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+                {usedServiceTypes.map(t => (
+                  <button key={t}
+                    onClick={() => setHistoryServiceFilter(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}
+                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${historyServiceFilter.includes(t) ? 'bg-rose-500 text-white border-rose-500' : ''}`}
+                    style={!historyServiceFilter.includes(t) ? { borderColor: 'var(--border)', color: 'var(--text-secondary)' } : {}}>
+                    {SERVICE_LABELS[t as keyof typeof SERVICE_LABELS]}
+                  </button>
+                ))}
+                {historyServiceFilter.length > 0 && (
+                  <button onClick={() => setHistoryServiceFilter([])} className="text-xs px-2 py-1 rounded-full" style={{ color: 'var(--text-muted)' }}>초기화</button>
+                )}
+              </div>
+            )}
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {sorted.length !== allSorted.length ? `${sorted.length} / ${allSorted.length}건` : `총 ${allSorted.length}건`}
+            </p>
           </div>
           {sorted.length === 0 && (
             <div className="rounded-xl py-12 text-center text-sm border-2 border-dashed" style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>

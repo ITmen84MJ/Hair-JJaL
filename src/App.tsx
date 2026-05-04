@@ -151,6 +151,7 @@ export default function App() {
         onUpdateClient={(id, data) => store.updateClient(id, data)}
         onUpdateConsultation={store.updateConsultation}
         onCancelBooking={id => store.updateBooking(id, { status: 'cancelled', cancelReason: '고객 취소' })}
+        onRescheduleBooking={(id, date, time) => store.updateBooking(id, { requestedDate: date, requestedTime: time, status: 'pending' })}
       />
       </Suspense>
       </ErrorBoundary>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown, Filter } from 'lucide-react';
 import { Client, Consultation, ServiceType } from '../../types';
 import { ClientForm } from './ClientForm';
@@ -62,6 +62,8 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
   const [filterServices, setFilterServices] = useState<ServiceType[]>([]);
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // 사용 중인 태그 목록
   const allTags = useMemo(() => {
@@ -119,12 +121,20 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
     });
   }, [clients, clientConsultationMap, search, sortKey, filterTags, filterServices]);
 
+  // 필터/검색 변경 시 페이지 초기화
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search, sortKey, filterTags, filterServices]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visibleCount;
+
   return (
     <div className="p-6 space-y-5" style={{ backgroundColor: 'var(--bg-app)' }}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>고객 관리</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>총 {clients.length}명</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+            총 {clients.length}명{filtered.length < clients.length ? ` · 검색 결과 ${filtered.length}명` : ''}
+          </p>
         </div>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
@@ -225,7 +235,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
             )}
           </div>
         )}
-        {filtered.map(client => {
+        {visible.map(client => {
           const lastDate = lastConsultationDate(client.id);
           const count = visitCount(client.id);
           return (
@@ -261,6 +271,15 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
           );
         })}
       </div>
+
+      {hasMore && (
+        <button
+          onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+          className="w-full py-3 rounded-xl border text-sm font-medium transition-colors hover:border-rose-400 hover:text-rose-500"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          더 보기 ({filtered.length - visibleCount}명 남음)
+        </button>
+      )}
 
       {showForm && <ClientForm onSave={data => { onAddClient(data); setShowForm(false); }} onClose={() => setShowForm(false)} />}
       {deleteTarget && (

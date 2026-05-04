@@ -235,6 +235,7 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
+    sessionStorage.clear();   // 로그인 시도 횟수 등 세션 데이터 초기화
     setUser(null);
   }, []);
 

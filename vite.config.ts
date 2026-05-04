@@ -5,6 +5,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 // GitHub Pages 저장소 이름과 동일하게 base 경로 설정
 // 개발 서버(preview 포함)에서는 루트(/)로 서빙하고 빌드 시에만 /Hair-JJaL/ 적용
 export default defineConfig(({ mode }) => {
+  // 테스트 환경에서는 플러그인 최소화
+  if (mode === 'test') {
+    return {
+      plugins: [react()],
+      test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./src/test/setup.ts'],
+      },
+    };
+  }
   const isProd = mode === 'production';
   const base = isProd ? '/Hair-JJaL/' : '/';
 

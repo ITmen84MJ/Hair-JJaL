@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Client, Consultation } from '../../types';
 import { SafeImg } from '../common/SafeImg';
+import { Lightbox } from '../common/Lightbox';
 import { SERVICE_LABELS, SERVICE_COLORS } from './serviceLabels';
 import { ConsultationForm } from './ConsultationForm';
 import { Modal } from '../common/Modal';
@@ -58,6 +59,7 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
   const [copied, setCopied] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const con = consultation;
   const shareUrl = `${window.location.origin}${window.location.pathname}?share=${con.shareToken}`;
 
@@ -142,15 +144,53 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
         </div>
       </div>
 
-      {(con.beforePhoto || con.afterPhoto) && (
-        <div className="rounded-2xl border p-5" style={card}>
-          <div className="flex items-center gap-2 mb-3"><Camera size={14} style={{ color: 'var(--text-muted)' }} /><p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Before / After</p></div>
-          <div className="grid grid-cols-2 gap-3">
-            {con.beforePhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>Before</p><SafeImg src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
-            {con.afterPhoto && <div><p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>After</p><SafeImg src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl" /></div>}
+      {(con.beforePhoto || con.afterPhoto) && (() => {
+        const photos = [
+          con.beforePhoto ? { src: con.beforePhoto, alt: 'Before', caption: 'Before' } : null,
+          con.afterPhoto  ? { src: con.afterPhoto,  alt: 'After',  caption: 'After'  } : null,
+        ].filter(Boolean) as { src: string; alt: string; caption: string }[];
+        return (
+          <div className="rounded-2xl border p-5" style={card}>
+            <div className="flex items-center gap-2 mb-3">
+              <Camera size={14} style={{ color: 'var(--text-muted)' }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Before / After</p>
+              <span className="text-[11px] ml-auto" style={{ color: 'var(--text-muted)' }}>사진을 탭하면 확대됩니다</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {con.beforePhoto && (
+                <div>
+                  <p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>Before</p>
+                  <button
+                    onClick={() => setLightboxIndex(photos.findIndex(p => p.caption === 'Before'))}
+                    className="w-full focus:outline-none focus:ring-2 focus:ring-rose-300 rounded-xl"
+                    aria-label="Before 사진 확대">
+                    <SafeImg src={con.beforePhoto} alt="before" className="w-full aspect-[4/5] object-cover rounded-xl hover:opacity-90 transition-opacity cursor-zoom-in" />
+                  </button>
+                </div>
+              )}
+              {con.afterPhoto && (
+                <div>
+                  <p className="text-xs text-center mb-1.5" style={{ color: 'var(--text-muted)' }}>After</p>
+                  <button
+                    onClick={() => setLightboxIndex(photos.findIndex(p => p.caption === 'After'))}
+                    className="w-full focus:outline-none focus:ring-2 focus:ring-rose-300 rounded-xl"
+                    aria-label="After 사진 확대">
+                    <SafeImg src={con.afterPhoto} alt="after" className="w-full aspect-[4/5] object-cover rounded-xl hover:opacity-90 transition-opacity cursor-zoom-in" />
+                  </button>
+                </div>
+              )}
+            </div>
+            {lightboxIndex !== null && (
+              <Lightbox
+                images={photos}
+                index={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onChangeIndex={setLightboxIndex}
+              />
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {(con.hairCondition || con.scalp) && (
         <div className="rounded-2xl border p-5 space-y-3" style={card}>

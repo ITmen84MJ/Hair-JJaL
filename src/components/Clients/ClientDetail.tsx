@@ -127,7 +127,7 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
                 </div>
                 {age !== null && <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{age}세 · {client.birthDate}</p>}
               </div>
-              <button onClick={() => setShowEditClient(true)} className="p-1 hover:text-rose-500" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
+              <button onClick={() => setShowEditClient(true)} aria-label="고객 정보 수정" className="p-1 hover:text-rose-500" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
             </div>
             <div className="mt-3 space-y-1.5">
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Phone size={13} style={{ color: 'var(--text-muted)' }} />{client.phone}</div>
@@ -168,7 +168,7 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
                     className="w-20 text-xs border rounded-full px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-rose-300"
                     style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-input)', color: 'var(--text-primary)' }}
                   />
-                  <button type="submit" className="text-rose-500 hover:text-rose-700"><Plus size={13} /></button>
+                  <button type="submit" aria-label="태그 추가" className="text-rose-500 hover:text-rose-700"><Plus size={13} /></button>
                 </form>
               </div>
             </div>

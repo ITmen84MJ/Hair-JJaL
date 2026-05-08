@@ -43,13 +43,13 @@ export default function App() {
   if (!user) {
     const registerOwner = async (data: OwnerRegisterData): Promise<string | null> => {
       // 1. 지점 생성
-      const shop = store.addShop({
+      const shop = await store.addShop({
         name:    data.shopName,
         address: data.shopAddress,
         phone:   data.shopPhone,
       });
       // 2. 원장을 디자이너로 등록 (1인샵 포함 — 원장도 헤어디자이너)
-      const designer = store.addDesigner({
+      const designer = await store.addDesigner({
         shopId:   shop.id,
         name:     data.name,
         email:    data.email,
@@ -339,7 +339,7 @@ export default function App() {
               consultations={shopConsultations}
               designers={shopDesigners}
               onAddDesigner={async (data, password) => {
-                const designer = store.addDesigner({ ...data, shopId });
+                const designer = await store.addDesigner({ ...data, shopId });
                 await addDesignerAccount({
                   shopId,
                   name: designer.name,

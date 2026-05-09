@@ -12,13 +12,14 @@ interface Props {
   designers: Designer[];
   bookings?: Booking[];
   onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>, password: string) => Promise<void> | void;
+  onLinkDesigner?: (authUserId: string, data: Omit<Designer, 'id' | 'shopId'>) => Promise<void> | void;
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
   onUpdateShop: (data: Partial<Shop>) => void;
 }
 
 type Tab = 'stats' | 'staff' | 'shop';
 
-export function OwnerDashboard({ shop, clients, consultations, designers, bookings = [], onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
+export function OwnerDashboard({ shop, clients, consultations, designers, bookings = [], onAddDesigner, onLinkDesigner, onUpdateDesigner, onUpdateShop }: Props) {
   const [tab, setTab] = useState<Tab>('stats');
   const [periodKey, setPeriodKey] = useState<PeriodKey>('6months');
 
@@ -61,6 +62,7 @@ export function OwnerDashboard({ shop, clients, consultations, designers, bookin
           designers={designers}
           consultations={consultations}
           onAddDesigner={onAddDesigner}
+          onLinkDesigner={onLinkDesigner}
           onUpdateDesigner={onUpdateDesigner}
         />
       )}

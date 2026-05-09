@@ -243,16 +243,36 @@ function useSupabaseAuth() {
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email: email.toLowerCase().trim(),
       password,
     });
     if (error) {
-      // Supabase 에러 메시지를 한국어로 매핑
       if (error.message.includes('Invalid login credentials')) return '이메일 또는 비밀번호가 올바르지 않습니다.';
       if (error.message.includes('Email not confirmed'))       return '이메일 인증이 필요합니다. 메일함을 확인해 주세요.';
       if (error.message.includes('Too many requests'))         return '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.';
       return error.message;
+    }
+    // DB의 designers 테이블을 source of truth로 사용 — 메타데이터가 오래됐을 경우 동기화
+    if (authData.user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: designer } = await (supabase as any)
+        .from('designers')
+        .select('shop_id, role, id, name')
+        .eq('auth_user_id', authData.user.id)
+        .eq('status', 'active')
+        .maybeSingle() as { data: { shop_id: string; role: string; id: string; name: string } | null };
+      if (designer) {
+        await supabase.auth.updateUser({
+          data: {
+            shopId:       designer.shop_id,
+            role:         designer.role,
+            designerId:   designer.id,
+            name:         designer.name,
+            designerName: designer.name,
+          } satisfies Partial<SupabaseMeta>,
+        });
+      }
     }
     return null;
   }, []);

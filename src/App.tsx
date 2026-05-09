@@ -352,6 +352,11 @@ export default function App() {
                   password,
                 });
               }}
+              onLinkDesigner={async (authUserId: string, data: Omit<import('./types').Designer, 'id' | 'shopId'>) => {
+                // 기존 Supabase 계정을 검색해서 연결하는 경우 — 새 Auth 계정 생성 불필요
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await store.addDesigner({ ...data, shopId, authUserId } as any);
+              }}
               onUpdateDesigner={(id, data) => {
                 store.updateDesigner(id, data);
                 // 3-3: 이름·이메일 변경 시 로그인 계정 동기화

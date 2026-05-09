@@ -219,8 +219,9 @@ export function useSupabaseStore() {
 
   // ── Designers ─────────────────────────────────────────────────────────────
 
-  const addDesigner = useCallback(async (data: Omit<Designer, 'id'>): Promise<Designer> => {
-    const insert = toSnake({ ...data });
+  const addDesigner = useCallback(async (data: Omit<Designer, 'id'> & { authUserId?: string }): Promise<Designer> => {
+    const { authUserId, ...rest } = data;
+    const insert = { ...toSnake(rest), ...(authUserId ? { auth_user_id: authUserId } : {}) };
     const { data: row, error } = await db('designers').insert(insert).select().single();
     if (error || !row) { toast.error('디자이너 등록에 실패했습니다.'); throw error; }
     const designer = rowToDesigner(row as DesignerRow);

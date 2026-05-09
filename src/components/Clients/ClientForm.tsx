@@ -52,6 +52,20 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) return;
+
+    // 형식 오류 시 저장 차단
+    if (phoneWarning === 'format') return;
+
+    // 중복 전화번호: submit 시점에도 재확인 후 차단
+    if (clients) {
+      const p = form.phone.trim();
+      const dup = clients.find(c => c.id !== initial?.id && c.phone.replace(/-/g, '') === p.replace(/-/g, ''));
+      if (dup) {
+        setPhoneWarning(`dup:${dup.name}`);
+        return;
+      }
+    }
+
     isDirty.current = false;
     onSave({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, birthDate: form.birthDate || undefined, gender: form.gender, notes: form.notes.trim() || undefined, tags: form.tags.length ? form.tags : undefined });
   };
@@ -146,7 +160,13 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={handleClose} className="flex-1 border rounded-lg py-2.5 text-sm font-medium transition-colors" style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>취소</button>
-            <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">{initial ? '수정 완료' : '고객 추가'}</button>
+            <button
+              type="submit"
+              disabled={phoneWarning === 'format' || phoneWarning.startsWith('dup:')}
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {initial ? '수정 완료' : '고객 추가'}
+            </button>
           </div>
         </form>
       </Modal>

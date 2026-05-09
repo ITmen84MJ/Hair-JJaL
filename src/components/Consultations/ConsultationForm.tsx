@@ -25,17 +25,25 @@ function PhotoUpload({
   label,
   value,
   onChange,
+  onUploadingChange,
   shopId,
   clientId,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   shopId?: string;
   clientId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  // 업로드 상태 변경 시 부모에게 알림
+  const setUploadingState = (v: boolean) => {
+    setUploading(v);
+    onUploadingChange?.(v);
+  };
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -57,7 +65,7 @@ function PhotoUpload({
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
+    setUploadingState(true);
     setImgError(false);
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -65,11 +73,11 @@ function PhotoUpload({
       // 압축 + Storage 업로드 (Supabase 모드) 또는 base64 압축 (localStorage 모드)
       const result = await uploadOrCompressPhoto(raw, shopId ?? '', clientId);
       onChange(result);
-      setUploading(false);
+      setUploadingState(false);
       // input 초기화 — 같은 파일 재선택 허용
       if (inputRef.current) inputRef.current.value = '';
     };
-    reader.onerror = () => setUploading(false);
+    reader.onerror = () => setUploadingState(false);
     reader.readAsDataURL(file);
   };
 
@@ -176,6 +184,10 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
   const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
   const [serviceError, setServiceError] = useState('');
   const isDirty = useRef(false);
+  // 사진 업로드 진행 중인 개수 — 0 이상이면 submit 차단
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const handlePhotoUploading = (uploading: boolean) =>
+    setUploadingCount(n => uploading ? n + 1 : Math.max(0, n - 1));
 
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
@@ -230,9 +242,15 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
 
   const updateService = (i: number, key: keyof Service, val: string | number) => {
     setServiceError('');
-    const updated = form.services.map((s, idx) =>
-      idx === i ? { ...s, [key]: key === 'price' ? (val === '' ? undefined : Number(val)) : val } : s
-    );
+    const updated = form.services.map((s, idx) => {
+      if (idx !== i) return s;
+      if (key === 'price') {
+        if (val === '' || val === undefined) return { ...s, price: undefined };
+        const n = Number(val);
+        return { ...s, price: isNaN(n) ? undefined : Math.max(0, n) }; // 음수 방지
+      }
+      return { ...s, [key]: val };
+    });
     setField('services', updated);
   };
 
@@ -406,10 +424,18 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                   <div className="flex gap-1.5 flex-1">
                     <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
                       className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
-                    <input type="number" min={0} value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
+                    <input
+                      type="number" min={0} inputMode="numeric"
+                      value={svc.price ?? ''}
+                      onChange={e => updateService(i, 'price', e.target.value)}
+                      onBlur={e => {
+                        // 포커스를 잃을 때 음수면 0으로 교정
+                        const n = Number(e.target.value);
+                        if (!isNaN(n) && n < 0) updateService(i, 'price', 0);
+                      }}
                       className="w-24 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
                       style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
-                      placeholder="금액" />
+                      placeholder="금액(선택)" />
                     {form.services.length > 1 && (
                       <button type="button" onClick={() => removeService(i)} aria-label="시술 항목 삭제"
                         className="hover:text-red-500 py-2 transition-colors flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
@@ -563,8 +589,8 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
             defaultOpen={!!initial || !!(form.beforePhoto || form.afterPhoto)}
           >
           <div className="grid grid-cols-2 gap-4">
-            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} shopId={shopId} clientId={clientId} />
-            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} shopId={shopId} clientId={clientId} />
+            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} onUploadingChange={handlePhotoUploading} shopId={shopId} clientId={clientId} />
+            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} onUploadingChange={handlePhotoUploading} shopId={shopId} clientId={clientId} />
           </div>
           </AccordionSection>
 
@@ -602,14 +628,21 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
             </label>
           </div>
 
+          {uploadingCount > 0 && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              사진 업로드 중입니다. 완료 후 저장할 수 있습니다.
+            </p>
+          )}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={handleClose}
               className="flex-1 border rounded-lg py-2.5 text-sm font-medium transition-colors"
               style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>
               취소
             </button>
-            <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
-              {initial ? '수정 완료' : '상담 저장'}
+            <button type="submit"
+              disabled={uploadingCount > 0}
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              {uploadingCount > 0 ? '업로드 중…' : initial ? '수정 완료' : '상담 저장'}
             </button>
           </div>
         </form>

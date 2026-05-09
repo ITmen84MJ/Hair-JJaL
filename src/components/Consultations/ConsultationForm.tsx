@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown, RotateCcw } from 'lucide-react';
+import { X, Plus, Trash2, Image, Camera, Bookmark, ChevronDown, RotateCcw } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
@@ -34,7 +34,8 @@ function PhotoUpload({
   shopId?: string;
   clientId: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);       // 갤러리
+  const cameraRef = useRef<HTMLInputElement>(null);      // 카메라 직접 촬영
   const [uploading, setUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -76,7 +77,10 @@ function PhotoUpload({
   return (
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      {/* 갤러리 선택 */}
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      {/* 카메라 직접 촬영 */}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
           {imgError ? (
@@ -104,10 +108,17 @@ function PhotoUpload({
               onError={() => setImgError(true)} />
           )}
           <div className="absolute top-2 right-2 flex gap-1">
-            <button type="button" onClick={() => inputRef.current?.click()} aria-label="사진 변경"
+            <button type="button" onClick={() => inputRef.current?.click()} aria-label="갤러리에서 변경"
               className="p-1.5 rounded-lg shadow transition-colors"
-              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
-              <Upload size={12} />
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}
+              title="갤러리">
+              <Image size={12} />
+            </button>
+            <button type="button" onClick={() => cameraRef.current?.click()} aria-label="카메라로 재촬영"
+              className="p-1.5 rounded-lg shadow transition-colors"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}
+              title="카메라">
+              <Camera size={12} />
             </button>
             <button type="button" onClick={() => { onChange(''); setImgError(false); }} aria-label="사진 삭제"
               className="p-1.5 rounded-lg shadow transition-colors text-red-500"
@@ -117,21 +128,33 @@ function PhotoUpload({
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-rose-300 hover:text-rose-400 transition-colors disabled:opacity-60"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+        <div className="w-full h-24 border-2 border-dashed rounded-xl flex items-center justify-center gap-3 disabled:opacity-60"
+          style={{ borderColor: 'var(--border)' }}>
           {uploading ? (
-            <>
+            <div className="flex flex-col items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
               <div className="w-5 h-5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
               <span className="text-xs">업로드 중…</span>
-            </>
+            </div>
           ) : (
             <>
-              <Image size={20} />
-              <span className="text-xs">클릭하여 사진 업로드</span>
+              {/* 갤러리 */}
+              <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+                className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors hover:bg-rose-50 hover:text-rose-400"
+                style={{ color: 'var(--text-muted)' }}>
+                <Image size={20} />
+                <span className="text-xs">갤러리</span>
+              </button>
+              <div className="h-8 w-px" style={{ backgroundColor: 'var(--border)' }} />
+              {/* 카메라 */}
+              <button type="button" onClick={() => cameraRef.current?.click()} disabled={uploading}
+                className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors hover:bg-rose-50 hover:text-rose-400"
+                style={{ color: 'var(--text-muted)' }}>
+                <Camera size={20} />
+                <span className="text-xs">카메라</span>
+              </button>
             </>
           )}
-        </button>
+        </div>
       )}
     </div>
   );

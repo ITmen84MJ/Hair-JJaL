@@ -124,7 +124,10 @@ CREATE POLICY "push_upsert" ON push_subscriptions
 -- STEP 5 ▸ RLS-07: search_unassigned_users 마이그레이션 등록
 --   StaffTab 직원 추가 검색에서 사용하는 RPC 함수.
 --   기존 계정(퇴직 포함 모든 상태)을 제외하여 중복 방지.
+--   기존 함수가 다른 파라미터 이름으로 존재할 수 있으므로 먼저 DROP.
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DROP FUNCTION IF EXISTS search_unassigned_users(text);
 
 CREATE OR REPLACE FUNCTION search_unassigned_users(search_query TEXT)
 RETURNS TABLE(auth_user_id UUID, email TEXT, display_name TEXT)

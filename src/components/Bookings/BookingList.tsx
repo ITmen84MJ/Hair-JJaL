@@ -5,6 +5,7 @@ import { CalendarDays, Clock, CheckCircle2, XCircle, User, MessageSquare, Chevro
 import { Booking, BookingStatus, AuthUser } from '../../types';
 import { SERVICE_LABELS, SERVICE_COLORS } from '../Consultations/serviceLabels';
 import { Modal } from '../common/Modal';
+import { toast } from '../../hooks/useToast';
 
 interface Props {
   bookings: Booking[];
@@ -203,10 +204,12 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
   const confirm = (id: string) => {
     onUpdate(id, { status: 'confirmed', confirmedBy: user.designerName ?? user.name });
     setConfirmTarget(null);
+    toast.success('예약이 확정되었습니다.');
   };
   const cancel = (id: string, reason: string) => {
     onUpdate(id, { status: 'cancelled', cancelReason: reason || undefined });
     setCancelTarget(null);
+    toast.info('예약이 취소되었습니다.');
   };
 
   const counts = {
@@ -339,9 +342,23 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
 
       {/* Booking cards */}
       {sorted.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed py-16 text-center"
+        <div className="rounded-2xl border-2 border-dashed py-16 flex flex-col items-center gap-2"
           style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-          해당 예약이 없습니다.
+          <p className="text-sm">
+            {search.trim() || dateFrom || dateTo || calendarDateFilter
+              ? '검색 또는 필터 조건에 맞는 예약이 없습니다.'
+              : tab === 'pending'   ? '대기 중인 예약이 없습니다.'
+              : tab === 'confirmed' ? '확정된 예약이 없습니다.'
+              : tab === 'cancelled' ? '취소된 예약이 없습니다.'
+              : '예약이 없습니다.'}
+          </p>
+          {(search.trim() || dateFrom || dateTo || calendarDateFilter) && (
+            <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setCalendarDateFilter(null); }}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+              필터 초기화
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

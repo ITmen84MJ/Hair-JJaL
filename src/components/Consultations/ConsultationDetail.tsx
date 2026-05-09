@@ -8,6 +8,7 @@ import { Lightbox } from '../common/Lightbox';
 import { SERVICE_LABELS, SERVICE_COLORS } from './serviceLabels';
 import { ConsultationForm } from './ConsultationForm';
 import { Modal } from '../common/Modal';
+import { toast } from '../../hooks/useToast';
 
 interface Props {
   consultation: Consultation;
@@ -260,7 +261,11 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
         <DeleteConsultationModal
           isShared={con.isShared}
           onClose={() => setShowDeleteModal(false)}
-          onConfirm={() => { onDelete(con.id); onBack(); }}
+          onConfirm={() => {
+            onDelete(con.id);
+            toast.success('상담 기록이 삭제되었습니다.');
+            onBack();
+          }}
         />
       )}
     </div>

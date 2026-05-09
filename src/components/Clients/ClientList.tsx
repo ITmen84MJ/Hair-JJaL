@@ -6,6 +6,7 @@ import { Modal } from '../common/Modal';
 import { format, parseISO } from 'date-fns';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
 import { USE_SUPABASE, supabase } from '../../lib/supabase';
+import { toast } from '../../hooks/useToast';
 
 const ALL_SERVICE_TYPES: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
 
@@ -559,7 +560,12 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
           client={deleteTarget}
           visitCount={visitCount(deleteTarget.id)}
           onClose={() => setDeleteTarget(null)}
-          onConfirm={() => { onDeleteClient(deleteTarget.id); setDeleteTarget(null); }}
+          onConfirm={() => {
+            const name = deleteTarget.name;
+            onDeleteClient(deleteTarget.id);
+            setDeleteTarget(null);
+            toast.success(`${name} 고객이 삭제되었습니다.`);
+          }}
         />
       )}
     </div>

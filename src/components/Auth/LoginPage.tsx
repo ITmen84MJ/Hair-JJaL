@@ -128,7 +128,7 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
       <input placeholder="주소 (선택)" value={form.shopAddress} onChange={f('shopAddress')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-      <input placeholder="전화번호 (선택)" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
+      <input placeholder="전화번호 (선택)" inputMode="tel" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
 
       {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
@@ -220,7 +220,7 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
       )}
       <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-      <input required placeholder="전화번호 * (010-1234-5678)" value={form.phone} onChange={f('phone')} className={inp}
+      <input required inputMode="tel" placeholder="전화번호 * (010-1234-5678)" value={form.phone} onChange={f('phone')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
       <input required type="email" placeholder="이메일 (로그인 ID) *" value={form.email} onChange={f('email')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />

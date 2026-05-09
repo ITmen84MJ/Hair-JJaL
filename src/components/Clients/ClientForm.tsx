@@ -6,11 +6,16 @@ import { Modal } from '../common/Modal';
 
 interface Props {
   initial?: Partial<Client>;
+  clients?: Client[];
   onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onClose: () => void;
 }
 
-export function ClientForm({ initial, onSave, onClose }: Props) {
+const isValidPhone = (p: string) =>
+  /^(010|011|016|017|018|019)[-\s]?\d{3,4}[-\s]?\d{4}$/.test(p.replace(/\s/g, '')) || p.length === 0;
+
+export function ClientForm({ initial, clients, onSave, onClose }: Props) {
+  const [phoneWarning, setPhoneWarning] = useState('');
   const [form, setForm] = useState({
     name: initial?.name ?? '',
     phone: initial?.phone ?? '',
@@ -73,7 +78,32 @@ export function ClientForm({ initial, onSave, onClose }: Props) {
             </div>
             <div>
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>전화번호 *</label>
-              <input required value={form.phone} onChange={e => set('phone', e.target.value)} className={cls} style={inputStyle} placeholder="010-0000-0000" />
+              <input
+                required
+                value={form.phone}
+                onChange={e => { set('phone', e.target.value); setPhoneWarning(''); }}
+                onBlur={() => {
+                  const p = form.phone.trim();
+                  if (p && !isValidPhone(p)) {
+                    setPhoneWarning('format');
+                    return;
+                  }
+                  if (p && clients) {
+                    const dup = clients.find(c => c.id !== initial?.id && c.phone.replace(/-/g, '') === p.replace(/-/g, ''));
+                    if (dup) { setPhoneWarning(`dup:${dup.name}`); return; }
+                  }
+                  setPhoneWarning('');
+                }}
+                className={cls}
+                style={inputStyle}
+                placeholder="010-0000-0000"
+              />
+              {phoneWarning === 'format' && (
+                <p className="text-xs text-red-500 mt-1">전화번호 형식을 확인해 주세요. (예: 010-1234-5678)</p>
+              )}
+              {phoneWarning.startsWith('dup:') && (
+                <p className="text-xs mt-1" style={{ color: '#d97706' }}>⚠️ {phoneWarning.slice(4)} 고객과 전화번호가 동일합니다. 중복 등록 여부를 확인해 주세요.</p>
+              )}
             </div>
             <div>
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>성별</label>

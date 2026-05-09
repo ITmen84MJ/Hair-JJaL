@@ -63,9 +63,13 @@ function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
   );
 }
 
+const isValidPhone = (p: string) =>
+  /^(010|011|016|017|018|019)[-\s]?\d{3,4}[-\s]?\d{4}$/.test(p.replace(/\s/g, '')) || p.length === 0;
+
 // ── AddClientModal ────────────────────────────────────────────────────────────
-function AddClientModal({ shopId, onClose, onAdd, onLink }: {
+function AddClientModal({ shopId, clients, onClose, onAdd, onLink }: {
   shopId?: string;
+  clients?: Client[];
   onClose: () => void;
   onAdd:  (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onLink?: (authUserId: string, data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => Promise<void>;
@@ -207,6 +211,7 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
           <ClientFormInline
             initialName={defaultName}
             initialEmail={defaultEmail}
+            clients={clients}
             onSave={data => { onAdd(data); onClose(); }}
             onCancel={onClose}
           />
@@ -217,14 +222,16 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
 }
 
 // ClientForm을 모달 없이 인라인으로 사용하기 위한 래퍼
-function ClientFormInline({ onSave, onCancel, initialName = '', initialEmail = '' }: {
+function ClientFormInline({ onSave, onCancel, initialName = '', initialEmail = '', clients }: {
   onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onCancel: () => void;
   initialName?: string;
   initialEmail?: string;
+  clients?: Client[];
 }) {
   const [form, setForm] = useState({ name: initialName, phone: '', email: initialEmail, birthDate: '', gender: 'female' as Client['gender'], notes: '', tags: [] as string[] });
   const [tagInput, setTagInput] = useState('');
+  const [phoneWarning, setPhoneWarning] = useState('');
   const cls2 = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
   const inpSt = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };
   const lbl = "block text-xs font-medium mb-1";
@@ -235,6 +242,15 @@ function ClientFormInline({ onSave, onCancel, initialName = '', initialEmail = '
     if (!form.name.trim() || !form.phone.trim()) return;
     onSave({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, birthDate: form.birthDate || undefined, gender: form.gender, notes: form.notes.trim() || undefined, tags: form.tags.length ? form.tags : undefined });
   };
+  const handlePhoneBlur = () => {
+    const p = form.phone.trim();
+    if (p && !isValidPhone(p)) { setPhoneWarning('format'); return; }
+    if (p && clients) {
+      const dup = clients.find(c => c.phone.replace(/-/g, '') === p.replace(/-/g, ''));
+      if (dup) { setPhoneWarning(`dup:${dup.name}`); return; }
+    }
+    setPhoneWarning('');
+  };
   return (
     <form onSubmit={submit} className="space-y-3 max-h-[60vh] overflow-y-auto">
       <div className="grid grid-cols-2 gap-3">
@@ -244,7 +260,13 @@ function ClientFormInline({ onSave, onCancel, initialName = '', initialEmail = '
         </div>
         <div>
           <label className={lbl} style={{ color: 'var(--text-secondary)' }}>전화번호 *</label>
-          <input required value={form.phone} onChange={e => set('phone', e.target.value)} className={cls2} style={inpSt} placeholder="010-0000-0000" />
+          <input required value={form.phone} onChange={e => { set('phone', e.target.value); setPhoneWarning(''); }} onBlur={handlePhoneBlur} className={cls2} style={inpSt} placeholder="010-0000-0000" />
+          {phoneWarning === 'format' && (
+            <p className="text-xs text-red-500 mt-1">전화번호 형식을 확인해 주세요. (예: 010-1234-5678)</p>
+          )}
+          {phoneWarning.startsWith('dup:') && (
+            <p className="text-xs mt-1" style={{ color: '#d97706' }}>⚠️ {phoneWarning.slice(4)} 고객과 전화번호가 동일합니다. 중복 등록 여부를 확인해 주세요.</p>
+          )}
         </div>
         <div>
           <label className={lbl} style={{ color: 'var(--text-secondary)' }}>성별</label>
@@ -492,7 +514,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
                   </div>
                   <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <Phone size={11} />
-                    <span>{client.phone}</span>
+                    <a href={`tel:${client.phone.replace(/-/g, '')}`} onClick={e => e.stopPropagation()} className="hover:underline" style={{ color: 'inherit' }}>{client.phone}</a>
                     <span className="mx-1">·</span>
                     <span>방문 {count}회</span>
                     {lastDate && <><span className="mx-1">·</span><span>마지막 {format(parseISO(lastDate), 'yy.MM.dd')}</span></>}
@@ -523,6 +545,7 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
       {showForm && (
         <AddClientModal
           shopId={shopId}
+          clients={clients}
           onClose={() => setShowForm(false)}
           onAdd={data => { onAddClient(data); setShowForm(false); }}
           onLink={onLinkClient}

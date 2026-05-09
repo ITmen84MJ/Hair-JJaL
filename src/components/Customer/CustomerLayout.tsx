@@ -273,14 +273,37 @@ export function CustomerLayout({
                           시간 변경
                         </button>
                       )}
-                      <button
-                        onClick={() => { setConfirmCancelId(b.id); setRescheduleId(null); }}
-                        className="text-xs transition-colors"
-                        style={{ color: 'var(--text-muted)' }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')}
-                        onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}>
-                        예약 취소
-                      </button>
+                      {isConfirmed ? (
+                        <div className="space-y-1.5">
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>확정된 예약입니다. 취소 시 매장에 연락 부탁드립니다.</p>
+                          {shop?.phone && (
+                            <a href={`tel:${shop.phone.replace(/-/g, '')}`}
+                              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl border transition-colors hover:bg-rose-50"
+                              style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
+                              <Phone size={11} /> 매장 연락 후 취소
+                            </a>
+                          )}
+                          {!shop?.phone && (
+                            <button
+                              onClick={() => { setConfirmCancelId(b.id); setRescheduleId(null); }}
+                              className="text-xs transition-colors"
+                              style={{ color: 'var(--text-muted)' }}
+                              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')}
+                              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}>
+                              예약 취소
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setConfirmCancelId(b.id); setRescheduleId(null); }}
+                          className="text-xs transition-colors"
+                          style={{ color: 'var(--text-muted)' }}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#ef4444')}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}>
+                          예약 취소
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

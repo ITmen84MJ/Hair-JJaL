@@ -186,9 +186,15 @@ function useLocalAuth() {
     return '고객 계정은 Supabase 모드에서만 지원됩니다.';
   }, []);
 
-  /** 비밀번호 재설정 — localStorage 모드 미지원 */
-  const resetPassword = useCallback(async (_email: string): Promise<string | null> => {
-    return 'localStorage 모드에서는 비밀번호 재설정이 지원되지 않습니다.';
+  /** 비밀번호 재설정 — 이름+이메일 일치 확인 후 (localStorage는 실제 발송 불가) */
+  const resetPassword = useCallback(async (email: string, name: string): Promise<string | null> => {
+    const lower = email.toLowerCase().trim();
+    const lowerName = name.trim().toLowerCase();
+    const found = [...demoUsers, ...loadExtraUsers()].find(
+      u => u.email.toLowerCase() === lower && u.name.trim().toLowerCase() === lowerName
+    );
+    if (!found) return '이메일 또는 이름이 일치하는 계정이 없습니다.';
+    return 'localStorage 모드에서는 이메일 발송이 지원되지 않습니다.\nSupabase 모드에서 사용해 주세요.';
   }, []);
 
   /** 비밀번호 변경 — 현재 로그인된 사용자 */
@@ -446,13 +452,33 @@ function useSupabaseAuth() {
 
   /**
    * 비밀번호 재설정 이메일 발송.
-   * Supabase가 재설정 링크가 담긴 이메일을 자동 발송한다.
+   * 이름+이메일 일치 확인(verify_reset_identity RPC) 후 재설정 링크 발송.
    */
-  const resetPassword = useCallback(async (email: string): Promise<string | null> => {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.toLowerCase().trim(),
-      { redirectTo: window.location.origin + '/' },
-    );
+  const resetPassword = useCallback(async (email: string, name: string): Promise<string | null> => {
+    const lower = email.toLowerCase().trim();
+    const lowerName = name.trim();
+
+    // 1. 이름+이메일 일치 확인 (SECURITY DEFINER RPC)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: matched, error: rpcError } = await (supabase as any).rpc('verify_reset_identity', {
+        p_email: lower,
+        p_name:  lowerName,
+      });
+      if (rpcError) {
+        // RPC 미배포 환경 — 이메일만으로 발송 (폴백)
+        console.warn('[resetPassword] verify_reset_identity RPC 미배포. 이메일만으로 발송합니다.');
+      } else if (!matched) {
+        return '이메일 또는 이름이 일치하는 계정이 없습니다. 다시 확인해 주세요.';
+      }
+    } catch {
+      // 네트워크 오류 등 — 폴백으로 그냥 발송
+    }
+
+    // 2. 재설정 링크 이메일 발송
+    const { error } = await supabase.auth.resetPasswordForEmail(lower, {
+      redirectTo: window.location.origin + '/',
+    });
     if (error) return error.message;
     return null;
   }, []);

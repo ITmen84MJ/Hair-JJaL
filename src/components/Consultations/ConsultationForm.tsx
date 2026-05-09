@@ -359,7 +359,7 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                   <div className="flex gap-1.5 flex-1">
                     <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
                       className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
-                    <input type="number" value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
+                    <input type="number" min={0} value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
                       className="w-24 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
                       style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
                       placeholder="금액" />

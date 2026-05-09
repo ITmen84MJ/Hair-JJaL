@@ -159,7 +159,7 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
               <button onClick={() => setShowEditClient(true)} aria-label="고객 정보 수정" className="p-1 hover:text-rose-500" style={{ color: 'var(--text-muted)' }}><Edit2 size={16} /></button>
             </div>
             <div className="mt-3 space-y-1.5">
-              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Phone size={13} style={{ color: 'var(--text-muted)' }} />{client.phone}</div>
+              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Phone size={13} style={{ color: 'var(--text-muted)' }} /><a href={`tel:${client.phone.replace(/-/g, '')}`} className="hover:underline" style={{ color: 'inherit' }}>{client.phone}</a></div>
               {client.email && <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Mail size={13} style={{ color: 'var(--text-muted)' }} />{client.email}</div>}
             </div>
             {client.tags?.length && (

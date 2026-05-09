@@ -25,7 +25,7 @@ interface Props {
   onLoginAs: (userId: string) => void;
   onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
   onRegisterCustomer?: (data: CustomerRegisterData) => Promise<string | null>;
-  onResetPassword?: (email: string) => Promise<string | null>;
+  onResetPassword?: (email: string, name: string) => Promise<string | null>;
   shops?: Shop[];
 }
 
@@ -256,6 +256,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [resetName, setResetName]   = useState('');
   const [resetSent, setResetSent]   = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -387,7 +388,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
           ) : mode === 'reset-password' && onResetPassword ? (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => { setMode('login'); setResetSent(false); setError(''); }} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={() => { setMode('login'); setResetSent(false); setResetName(''); setError(''); }} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
                   <ArrowLeft size={18} />
                 </button>
                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>비밀번호 재설정</h2>
@@ -401,7 +402,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                     <strong>{resetEmail}</strong>로 발송된 링크를 클릭하면<br />새 비밀번호를 설정할 수 있습니다.
                   </p>
-                  <button onClick={() => { setMode('login'); setResetSent(false); }}
+                  <button onClick={() => { setMode('login'); setResetSent(false); setResetName(''); }}
                     className="w-full mt-2 py-2.5 rounded-xl border text-sm font-medium"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
                     로그인으로 돌아가기
@@ -410,17 +411,24 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
               ) : (
                 <form onSubmit={async e => {
                   e.preventDefault();
+                  if (!resetEmail.trim() || !resetName.trim()) return;
                   setLoading(true); setError('');
-                  const err = await onResetPassword(resetEmail);
+                  const err = await onResetPassword(resetEmail, resetName);
                   setLoading(false);
                   if (err) setError(err);
                   else setResetSent(true);
                 }} className="space-y-3">
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    가입한 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.
+                    가입 시 등록한 이름과 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.
                   </p>
                   <input
-                    type="email" required placeholder="이메일" value={resetEmail}
+                    required placeholder="이름 *" value={resetName}
+                    onChange={e => { setResetName(e.target.value); setError(''); }}
+                    className={inp}
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                  <input
+                    type="email" required placeholder="이메일 *" value={resetEmail}
                     onChange={e => { setResetEmail(e.target.value); setError(''); }}
                     className={inp}
                     style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
@@ -428,7 +436,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                   {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
                   <button type="submit" disabled={loading}
                     className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
-                    {loading ? '발송 중...' : '재설정 이메일 보내기'}
+                    {loading ? '확인 중...' : '재설정 이메일 보내기'}
                   </button>
                 </form>
               )}

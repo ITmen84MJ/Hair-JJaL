@@ -3,6 +3,16 @@
 #
 # 트리거: main 브랜치 push 또는 수동 실행(workflow_dispatch)
 # 흐름:  코드 체크아웃 → Node 설치 → npm ci → tsc → build → Pages 배포
+#
+# ── Supabase 모드 전환 방법 ─────────────────────────────────────
+# GitHub 저장소 → Settings → Secrets and variables → Actions → New secret
+#
+#   VITE_USE_SUPABASE       = true
+#   VITE_SUPABASE_URL       = https://xxxx.supabase.co
+#   VITE_SUPABASE_ANON_KEY  = eyJ...
+#   VITE_VAPID_PUBLIC_KEY   = B...  (선택 — Web Push 사용 시)
+#
+# Secret이 등록되어 있지 않으면 VITE_USE_SUPABASE=false(localStorage 모드)로 빌드됨.
 # ══════════════════════════════════════════════════════════════════
 
 name: Deploy to GitHub Pages
@@ -45,7 +55,13 @@ jobs:
         run: npx tsc --noEmit
 
       - name: 프로덕션 빌드
+        # Secret이 없으면 각 변수는 빈 문자열 → VITE_USE_SUPABASE=false 동작(localStorage 모드)
         run: npm run build
+        env:
+          VITE_USE_SUPABASE:      ${{ secrets.VITE_USE_SUPABASE }}
+          VITE_SUPABASE_URL:      ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY:  ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Pages 아티팩트 업로드
         uses: actions/upload-pages-artifact@v3

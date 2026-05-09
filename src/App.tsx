@@ -24,7 +24,7 @@ const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBookin
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, updateName, updateExtraUser } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -76,7 +76,15 @@ export default function App() {
 
     return (
       <ErrorBoundary>
-        <LoginPage onLogin={login} onLoginAs={loginAs} onRegisterOwner={registerOwner} />
+        <LoginPage
+          onLogin={login}
+          onLoginAs={loginAs}
+          onRegisterOwner={registerOwner}
+          onRegisterCustomer={async (data) => {
+            return await addCustomerAccount(data);
+          }}
+          shops={store.shops}
+        />
       </ErrorBoundary>
     );
   }
@@ -117,8 +125,8 @@ export default function App() {
             allDesigners={store.designers}
             allBookings={store.bookings}
             defaultShopId={shopId}
-            onSubmit={data => {
-              store.addBooking(data);
+            onSubmit={async data => {
+              await store.addBooking(data);
               store.navigate('customer-home');
             }}
             onBack={() => store.navigate('customer-home')}
@@ -354,18 +362,19 @@ export default function App() {
               }}
               onLinkDesigner={async (authUserId: string, data: Omit<import('./types').Designer, 'id' | 'shopId'>) => {
                 // 같은 이메일의 기존 레코드(퇴직 포함)가 있으면 재활성화 — 중복 생성 방지
+                // DATA-07: authUserId 도 함께 업데이트하여 로그인 연결 복원
                 const existing = store.designers.find(
-                  d => d.email.toLowerCase() === data.email.toLowerCase()
+                  d => d.shopId === shopId && d.email.toLowerCase() === data.email.toLowerCase()
                 );
                 if (existing) {
-                  store.updateDesigner(existing.id, {
-                    status: 'active',
-                    leftAt: undefined,
+                  await store.updateDesigner(existing.id, {
+                    status:     'active',
+                    leftAt:     undefined,
                     leftReason: undefined,
-                  });
+                    authUserId,  // 재활성화 시 Auth 계정 재연결
+                  } as Parameters<typeof store.updateDesigner>[1]);
                 } else {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  await store.addDesigner({ ...data, shopId, authUserId } as any);
+                  await store.addDesigner({ ...data, shopId, authUserId });
                 }
               }}
               onUpdateDesigner={(id, data) => {

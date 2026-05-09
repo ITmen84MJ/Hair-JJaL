@@ -179,13 +179,24 @@ function useLocalAuth() {
     });
   }, []);
 
+  // AUTH-05: localStorage 모드에서는 고객 계정 미지원 (Supabase 전용)
+  const addCustomerAccount = useCallback(async (_data: {
+    shopId: string; name: string; phone: string; email: string; password: string;
+  }): Promise<string | null> => {
+    return '고객 계정은 Supabase 모드에서만 지원됩니다.';
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
     sessionStorage.clear();
     setUser(null);
   }, []);
 
-  return { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, updateName, updateExtraUser };
+  return {
+    user, login, loginAs, logout,
+    addDesignerAccount, addOwnerAccount, addCustomerAccount,
+    updateName, updateExtraUser,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,7 +298,8 @@ function useSupabaseAuth() {
   /**
    * 디자이너 계정 생성.
    * Supabase Auth admin.createUser() 는 서비스 키 필요 → Edge Function 경유.
-   * Edge Function 미배포 시 초대 이메일 방식으로 폴백.
+   * AUTH-04: signUp() 폴백 제거 — 중복 계정 생성 및 이메일 확인 대기 문제 방지.
+   * Edge Function 미배포 환경에서는 "기존 계정 연결(search_unassigned_users)" 방식 사용.
    */
   const addDesignerAccount = useCallback(async (data: {
     shopId: string; name: string; email: string;
@@ -295,34 +307,21 @@ function useSupabaseAuth() {
   }): Promise<void> => {
     const lower = data.email.toLowerCase().trim();
 
-    // Option A: Edge Function 호출 (배포된 경우)
     const { error: fnError } = await supabase.functions.invoke('create-designer-account', {
       body: {
-        email:       lower,
-        password:    data.password,
-        shopId:      data.shopId,
-        name:        data.name,
+        email:        lower,
+        password:     data.password,
+        shopId:       data.shopId,
+        name:         data.name,
         designerName: data.designerName,
-        designerId:  data.designerId,
+        designerId:   data.designerId,
       },
     });
 
     if (fnError) {
-      // Option B: 폴백 — signUp(초대 이메일) 방식
-      // 디자이너가 이메일로 받은 링크를 클릭해 비밀번호를 직접 설정
-      await supabase.auth.signUp({
-        email:    lower,
-        password: data.password,
-        options: {
-          data: {
-            shopId:       data.shopId,
-            name:         data.name,
-            role:         'designer',
-            designerName: data.designerName,
-            designerId:   data.designerId,
-          } satisfies SupabaseMeta,
-        },
-      });
+      // Edge Function 미배포 — 관리자가 별도로 Auth 계정을 생성해야 함
+      // (signUp 폴백 제거: 이메일 미확인 계정이 생성되어 로그인 불가 → 혼란 야기)
+      console.warn('[addDesignerAccount] create-designer-account Edge Function 미배포:', fnError.message);
     }
   }, []);
 
@@ -379,12 +378,66 @@ function useSupabaseAuth() {
     });
   }, []);
 
+  /**
+   * AUTH-05: 고객 계정 생성 + client 레코드 생성/연결.
+   * 1. supabase.auth.signUp() 으로 Auth 계정 생성
+   * 2. register_customer() RPC 로 clients 테이블에 레코드 생성 및 auth_user_id 연결
+   */
+  const addCustomerAccount = useCallback(async (data: {
+    shopId: string;
+    name:   string;
+    phone:  string;
+    email:  string;
+    password: string;
+  }): Promise<string | null> => {
+    const lower = data.email.toLowerCase().trim();
+
+    // 1. Auth 계정 생성 (이메일 확인 없이 즉시 로그인 가능 — Supabase 프로젝트 설정에 따름)
+    const { data: authData, error } = await supabase.auth.signUp({
+      email:    lower,
+      password: data.password,
+      options: {
+        data: {
+          name:   data.name,
+          role:   'customer',
+          shopId: data.shopId,
+        } satisfies Partial<SupabaseMeta>,
+      },
+    });
+
+    if (error) {
+      if (error.message.includes('already registered')) return '이미 사용 중인 이메일입니다.';
+      return error.message;
+    }
+
+    // 2. client 레코드 생성 / 기존 레코드 연결
+    if (authData.user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcError } = await (supabase as any).rpc('register_customer', {
+        p_shop_id: data.shopId,
+        p_name:    data.name,
+        p_phone:   data.phone,
+        p_email:   lower,
+      });
+      if (rpcError) {
+        console.error('[addCustomerAccount] register_customer RPC 오류:', rpcError);
+        return '고객 정보 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      }
+    }
+
+    return null;
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  return { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, updateName, updateExtraUser };
+  return {
+    user, login, loginAs, logout,
+    addDesignerAccount, addOwnerAccount, addCustomerAccount,
+    updateName, updateExtraUser,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

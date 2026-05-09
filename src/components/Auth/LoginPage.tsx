@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
-import { AuthUser } from '../../types';
+import { AuthUser, Shop } from '../../types';
 
 export interface OwnerRegisterData {
   name: string;
@@ -12,10 +12,20 @@ export interface OwnerRegisterData {
   shopPhone?: string;
 }
 
+export interface CustomerRegisterData {
+  shopId: string;
+  name:   string;
+  phone:  string;
+  email:  string;
+  password: string;
+}
+
 interface Props {
   onLogin: (email: string, password: string) => Promise<string | null>;
   onLoginAs: (userId: string) => void;
   onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
+  onRegisterCustomer?: (data: CustomerRegisterData) => Promise<string | null>;
+  shops?: Shop[];
 }
 
 const roleInfo = {
@@ -130,9 +140,114 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
   );
 }
 
+// ── 고객 회원가입 폼 ───────────────────────────────────────────────
+function CustomerRegisterForm({ shops, onBack, onSubmit }: {
+  shops: Shop[];
+  onBack: () => void;
+  onSubmit: (data: CustomerRegisterData) => Promise<string | null>;
+}) {
+  const [form, setForm] = useState({
+    shopId: shops[0]?.id ?? '',
+    name: '', phone: '', email: '', password: '', confirmPassword: '',
+  });
+  const [showPw, setShowPw]   = useState(false);
+  const [error, setError]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone]       = useState(false);
+
+  const f = (k: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const inp = "w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.'); return;
+    }
+    if (form.password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.'); return;
+    }
+    if (!form.shopId) {
+      setError('지점을 선택해 주세요.'); return;
+    }
+    setLoading(true);
+    const err = await onSubmit({
+      shopId:   form.shopId,
+      name:     form.name.trim(),
+      phone:    form.phone.trim(),
+      email:    form.email.trim(),
+      password: form.password,
+    });
+    if (err) { setError(err); setLoading(false); }
+    else      { setDone(true); setLoading(false); }
+  };
+
+  if (done) {
+    return (
+      <div className="text-center space-y-3 py-4">
+        <div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto">
+          <User size={24} className="text-white" />
+        </div>
+        <h3 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>가입 완료!</h3>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          이메일과 비밀번호로 로그인해 주세요.
+        </p>
+        <button onClick={onBack}
+          className="w-full mt-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
+          로그인 화면으로
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {shops.length > 1 && (
+        <div>
+          <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>방문 지점 *</label>
+          <select
+            required value={form.shopId} onChange={f('shopId')}
+            className={inp}
+            style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+          >
+            <option value="">지점 선택</option>
+            {shops.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+      )}
+      <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <input required placeholder="전화번호 * (010-1234-5678)" value={form.phone} onChange={f('phone')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <input required type="email" placeholder="이메일 (로그인 ID) *" value={form.email} onChange={f('email')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+      <div className="relative">
+        <input required type={showPw ? 'text' : 'password'} placeholder="비밀번호 (6자 이상) *"
+          value={form.password} onChange={f('password')} className={`${inp} pr-10`}
+          style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+        <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+          className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+          {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+      <input required type="password" placeholder="비밀번호 확인 *" value={form.confirmPassword} onChange={f('confirmPassword')} className={inp}
+        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+
+      {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
+
+      <button type="submit" disabled={loading}
+        className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-blue-200">
+        {loading ? '처리 중...' : '고객 회원가입'}
+      </button>
+    </form>
+  );
+}
+
 // ── 메인 LoginPage ─────────────────────────────────────────────────
-export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
-  const [mode, setMode]       = useState<'login' | 'register'>('login');
+export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, shops = [] }: Props) {
+  const [mode, setMode]       = useState<'login' | 'register' | 'customer-register'>('login');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]   = useState(false);
@@ -198,8 +313,16 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
                 </button>
               </form>
 
-              {/* 원장 가입 유도 */}
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+              {/* 가입 유도 */}
+              <div className="mt-4 pt-4 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
+                {onRegisterCustomer && (
+                  <button onClick={() => setMode('customer-register')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                    <User size={15} className="text-blue-500" />
+                    고객으로 회원가입하기
+                  </button>
+                )}
                 <button onClick={() => setMode('register')}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
                   style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
@@ -207,6 +330,20 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
                   원장으로 신규 지점 개설하기
                 </button>
               </div>
+            </>
+          ) : mode === 'customer-register' && onRegisterCustomer ? (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => setMode('login')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                  <ArrowLeft size={18} />
+                </button>
+                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>고객 회원가입</h2>
+              </div>
+              <CustomerRegisterForm
+                shops={shops}
+                onBack={() => setMode('login')}
+                onSubmit={onRegisterCustomer}
+              />
             </>
           ) : (
             <>

@@ -124,13 +124,21 @@ export function useLocalStore() {
   }, []);
 
   // ── Designers ────────────────────────────────────────────────────────────
-  const addDesigner = useCallback(async (data: Omit<Designer, 'id'>): Promise<Designer> => {
-    const designer: Designer = { ...data, id: uuidv4() };
+  // DATA-07: authUserId 파라미터 수용 (localStorage 모드에서는 무시 — 인터페이스 통일)
+  const addDesigner = useCallback(async (
+    data: Omit<Designer, 'id'> & { authUserId?: string },
+  ): Promise<Designer> => {
+    const { authUserId: _ignored, ...rest } = data; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const designer: Designer = { ...rest, id: uuidv4() };
     setDesigners(prev => [...prev, designer]);
     return designer;
   }, []);
 
-  const updateDesigner = useCallback(async (id: string, data: Partial<Designer>): Promise<void> => {
+  // DATA-07: authUserId 파라미터 수용 (localStorage 모드에서는 무시)
+  const updateDesigner = useCallback(async (
+    id: string,
+    data: Partial<Designer> & { authUserId?: string },
+  ): Promise<void> => {
     if (data.name !== undefined) {
       setDesigners(prev => {
         const oldName = prev.find(d => d.id === id)?.name;

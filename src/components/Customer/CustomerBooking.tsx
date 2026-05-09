@@ -10,7 +10,7 @@ interface Props {
   allDesigners: Designer[];
   allBookings: Booking[];
   defaultShopId: string;
-  onSubmit: (data: Omit<Booking, 'id' | 'createdAt'>) => void;
+  onSubmit: (data: Omit<Booking, 'id' | 'createdAt'>) => void | Promise<void>;
   onBack: () => void;
 }
 
@@ -60,8 +60,9 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
   const [services, setServices] = useState<ServiceType[]>([]);
   const [designer, setDesigner] = useState('');
   const [notes, setNotes] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [dupWarning, setDupWarning] = useState(false);
+  const [submitted,   setSubmitted]   = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [dupWarning,  setDupWarning]  = useState(false);
 
   // 선택된 지점 정보
   const selectedShop = shops.find(s => s.id === selectedShopId);
@@ -87,7 +88,8 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
     setServices(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // UI-05: async onSubmit 지원 — 서버 저장 완료 후 완료 화면 전환
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !time || services.length === 0) return;
 
@@ -104,18 +106,23 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
       return;
     }
 
-    onSubmit({
-      shopId: selectedShopId,
-      clientId: client.id,
-      clientName: client.name,
-      requestedDate: date,
-      requestedTime: time,
-      serviceTypes: services,
-      preferredDesigner: designer || undefined,
-      notes: notes.trim() || undefined,
-      status: 'pending',
-    });
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        shopId: selectedShopId,
+        clientId: client.id,
+        clientName: client.name,
+        requestedDate: date,
+        requestedTime: time,
+        serviceTypes: services,
+        preferredDesigner: designer || undefined,
+        notes: notes.trim() || undefined,
+        status: 'pending',
+      });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -343,10 +350,10 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
         )}
         <button
           type="submit"
-          disabled={!date || !time || services.length === 0}
+          disabled={!date || !time || services.length === 0 || submitting}
           className="w-full py-3.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-40 text-white rounded-2xl font-semibold text-sm transition-colors shadow-sm shadow-rose-200"
         >
-          예약 신청하기
+          {submitting ? '신청 중...' : '예약 신청하기'}
         </button>
       </form>
     </div>

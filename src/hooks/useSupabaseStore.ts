@@ -98,14 +98,17 @@ export function useSupabaseStore() {
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
-
-  // ── 로그인/로그아웃 시 데이터 재로드 ─────────────────────────────────────
-  // useStore는 !user 분기 전에 호출되므로 로그인 전(익명) 에 loadAll이 먼저 실행됨.
-  // Auth 상태가 바뀌면(SIGNED_IN) RLS가 활성화되므로 데이터를 다시 불러와야 한다.
+  // ── AUTH-02: INITIAL_SESSION 포함 — double-loadAll 경쟁 조건 제거 ────────
+  // 기존: useEffect(() => loadAll(), [loadAll]) + onAuthStateChange(SIGNED_IN → loadAll)
+  //       → 로그인 상태로 진입 시 loadAll 이 두 번 호출되는 경쟁 조건 발생
+  // 개선: INITIAL_SESSION 이벤트를 첫 번째 로드로 활용 → 단일 호출 보장
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (
+        event === 'INITIAL_SESSION' ||
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED'
+      ) {
         loadAll();
       } else if (event === 'SIGNED_OUT') {
         setShops([]);
@@ -113,31 +116,41 @@ export function useSupabaseStore() {
         setClients([]);
         setConsultations([]);
         setBookings([]);
+        setIsLoading(false);
       }
     });
     return () => subscription.unsubscribe();
   }, [loadAll]);
 
   // ── B4 Realtime 구독 ─────────────────────────────────────────────────────
+  // PERF-02: 채널 이름을 shopId 기반으로 동적 생성 (이 effect 는 loadAll 완료 후 실행)
   useEffect(() => {
+    const channelName = shopIdRef.current
+      ? `hairjjal_${shopIdRef.current}`
+      : 'hairjjal_public';
+
     const channel = supabase
-      .channel('hairjjal_store')
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
         () => db('clients').select('*')
-          .then((r: {data: import('../lib/database.types').ClientRow[] | null}) => r.data && setClients(r.data.map(rowToClient))))
+          .then((r: {data: import('../lib/database.types').ClientRow[] | null}) =>
+            r.data && setClients(r.data.map(rowToClient))))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consultations' },
         () => db('consultations').select('*').order('date', { ascending: false })
-          .then((r: {data: import('../lib/database.types').ConsultationRow[] | null}) => r.data && setConsultations(r.data.map(rowToConsultation))))
+          .then((r: {data: import('../lib/database.types').ConsultationRow[] | null}) =>
+            r.data && setConsultations(r.data.map(rowToConsultation))))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'designers' },
         () => db('designers').select('*').eq('status', 'active')
-          .then((r: {data: import('../lib/database.types').DesignerRow[] | null}) => r.data && setDesigners(r.data.map(rowToDesigner))))
+          .then((r: {data: import('../lib/database.types').DesignerRow[] | null}) =>
+            r.data && setDesigners(r.data.map(rowToDesigner))))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' },
         () => db('bookings').select('*').order('created_at', { ascending: false })
-          .then((r: {data: import('../lib/database.types').BookingRow[] | null}) => r.data && setBookings(r.data.map(rowToBooking))))
+          .then((r: {data: import('../lib/database.types').BookingRow[] | null}) =>
+            r.data && setBookings(r.data.map(rowToBooking))))
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [shops]); // shops state 변화(=loadAll 완료) 시 채널 재구성
 
   // ── Clients ───────────────────────────────────────────────────────────────
 
@@ -158,15 +171,36 @@ export function useSupabaseStore() {
     setClients(prev => prev.map(c => c.id === id ? { ...c, ...data } : c));
   }, []);
 
+  // DATA-02: 고객 삭제 시 Storage 사진 함께 정리
   const deleteClient = useCallback(async (id: string): Promise<void> => {
     const target = clients.find(c => c.id === id);
+
+    // Storage에 저장된 사진 URL 수집 후 삭제
+    const clientConsultations = consultations.filter(c => c.clientId === id);
+    const photoPaths: string[] = [];
+    for (const con of clientConsultations) {
+      for (const urlField of [con.beforePhoto, con.afterPhoto]) {
+        if (urlField?.includes('/consultation-photos/')) {
+          // URL에서 버킷 이름 이후 경로 추출
+          const match = urlField.match(/consultation-photos\/(.+)$/);
+          if (match) photoPaths.push(decodeURIComponent(match[1]));
+        }
+      }
+    }
+    if (photoPaths.length > 0) {
+      await supabase.storage
+        .from('consultation-photos')
+        .remove(photoPaths)
+        .catch(err => console.warn('[deleteClient] Storage 사진 삭제 실패:', err));
+    }
+
     const { error } = await db('clients').delete().eq('id', id);
     if (error) { toast.error('삭제에 실패했습니다.'); return; }
     if (target) toast.info(`${target.name} 고객 정보가 삭제되었습니다.`);
     setClients(prev => prev.filter(c => c.id !== id));
     setConsultations(prev => prev.filter(c => c.clientId !== id));
     setBookings(prev => prev.filter(b => b.clientId !== id));
-  }, [clients]);
+  }, [clients, consultations]);
 
   // ── Consultations ─────────────────────────────────────────────────────────
 
@@ -208,20 +242,29 @@ export function useSupabaseStore() {
     toast.info('상담이 삭제되었습니다.');
   }, []);
 
+  // DATA-01: 에러 처리 추가 — 실패 시 로컬 상태를 변경하지 않음
   const toggleShare = useCallback(async (id: string): Promise<void> => {
     const target = consultations.find(c => c.id === id);
     if (!target) return;
     const newVal = !target.isShared;
-    const update = { is_shared: newVal };
-    await db('consultations').update(update).eq('id', id);
+    const { error } = await db('consultations')
+      .update({ is_shared: newVal })
+      .eq('id', id);
+    if (error) { toast.error('저장에 실패했습니다.'); return; }
     setConsultations(prev => prev.map(c => c.id === id ? { ...c, isShared: newVal } : c));
   }, [consultations]);
 
   // ── Designers ─────────────────────────────────────────────────────────────
 
-  const addDesigner = useCallback(async (data: Omit<Designer, 'id'> & { authUserId?: string }): Promise<Designer> => {
+  // DATA-07: authUserId 를 명시적 파라미터로 통합 (as any 제거)
+  const addDesigner = useCallback(async (
+    data: Omit<Designer, 'id'> & { authUserId?: string },
+  ): Promise<Designer> => {
     const { authUserId, ...rest } = data;
-    const insert = { ...toSnake(rest), ...(authUserId ? { auth_user_id: authUserId } : {}) };
+    const insert = {
+      ...toSnake(rest),
+      ...(authUserId ? { auth_user_id: authUserId } : {}),
+    };
     const { data: row, error } = await db('designers').insert(insert).select().single();
     if (error || !row) { toast.error('디자이너 등록에 실패했습니다.'); throw error; }
     const designer = rowToDesigner(row as DesignerRow);
@@ -229,23 +272,42 @@ export function useSupabaseStore() {
     return designer;
   }, []);
 
-  const updateDesigner = useCallback(async (id: string, data: Partial<Designer>): Promise<void> => {
+  // DATA-07: authUserId 를 updateDesigner 에도 지원 (재활성화 시 계정 연결)
+  const updateDesigner = useCallback(async (
+    id: string,
+    data: Partial<Designer> & { authUserId?: string },
+  ): Promise<void> => {
+    // DATA-03: 이름 변경 시 같은 지점(shop_id) 범위 내 상담만 업데이트
     if (data.name !== undefined) {
-      const oldName = designers.find(d => d.id === id)?.name;
-      if (oldName && oldName !== data.name) {
-        const nameUpdate = { stylist_name: data.name };
-        await db('consultations').update(nameUpdate).eq('stylist_name', oldName);
+      const targetDesigner = designers.find(d => d.id === id);
+      const oldName = targetDesigner?.name;
+      if (oldName && oldName !== data.name && targetDesigner?.shopId) {
+        await db('consultations')
+          .update({ stylist_name: data.name })
+          .eq('stylist_name', oldName)
+          .eq('shop_id', targetDesigner.shopId);  // 같은 지점만 — 동명 타 지점 디자이너 영향 없음
         setConsultations(prev => prev.map(c =>
-          c.stylistName === oldName ? { ...c, stylistName: data.name as string } : c
+          c.stylistName === oldName && c.shopId === targetDesigner.shopId
+            ? { ...c, stylistName: data.name as string }
+            : c
         ));
       }
     }
-    const update = toSnake({ ...data });
+
+    const { authUserId, ...rest } = data;
+    const update = {
+      ...toSnake({ ...rest }),
+      ...(authUserId !== undefined ? { auth_user_id: authUserId } : {}),
+    };
     const { error } = await db('designers').update(update).eq('id', id);
     if (error) { toast.error('저장에 실패했습니다.'); return; }
-    setDesigners(prev => prev.map(d => d.id === id ? { ...d, ...data } : d));
+    setDesigners(prev => prev.map(d => d.id === id ? { ...d, ...rest } : d));
+
     if (data.status === 'inactive') toast.info('퇴직 처리되었습니다.');
-    else if (data.status === 'active' && !Object.keys(data).some(k => !['status', 'leftAt', 'leftReason'].includes(k))) toast.success('재활성화되었습니다.');
+    else if (
+      data.status === 'active' &&
+      !Object.keys(data).some(k => !['status', 'leftAt', 'leftReason', 'authUserId'].includes(k))
+    ) toast.success('재활성화되었습니다.');
     else toast.success('디자이너 정보가 저장되었습니다.');
   }, [designers]);
 

@@ -1,8 +1,9 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useStore } from './hooks/useStore';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
+import { USE_SUPABASE } from './lib/supabase';
 import { ToastContainer } from './components/common/ToastContainer';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ShareView } from './components/Share/ShareView';
@@ -24,7 +25,7 @@ const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBookin
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword, disableDesignerAccount } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -32,6 +33,18 @@ export default function App() {
     const token = params.get('share');
     if (token) store.navigate('share', undefined, undefined, token);
   }, []);
+
+  // ── 세션 만료 15분 전 경고 (localStorage 모드만) ──
+  const [showExpiryWarning, setShowExpiryWarning] = useState(false);
+  useEffect(() => {
+    if (USE_SUPABASE || !user?.loginAt) return;
+    const expiresAt = new Date(user.loginAt).getTime() + 8 * 60 * 60 * 1000;
+    const warnAt = expiresAt - 15 * 60 * 1000;
+    const delay = warnAt - Date.now();
+    if (delay <= 0) return; // 이미 경고 시간 지남
+    const tid = setTimeout(() => setShowExpiryWarning(true), delay);
+    return () => clearTimeout(tid);
+  }, [user?.loginAt]);
 
   // ── Share view (public) ──
   if (store.currentView === 'share') {
@@ -140,6 +153,12 @@ export default function App() {
 
     return (
       <ErrorBoundary>
+      {showExpiryWarning && !USE_SUPABASE && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: '#f59e0b', color: 'white', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', fontWeight: 500 }}>
+          <span>⏰ 세션이 15분 후 만료됩니다. 계속 사용하려면 다시 로그인해 주세요.</span>
+          <button onClick={() => setShowExpiryWarning(false)} style={{ marginLeft: 16, background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 6, padding: '3px 10px', color: 'white', cursor: 'pointer', fontSize: '12px' }}>닫기</button>
+        </div>
+      )}
       <OnboardingTour role={user.role} />
       <Suspense fallback={fallback}>
       <CustomerLayout
@@ -243,6 +262,12 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+    {showExpiryWarning && !USE_SUPABASE && (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: '#f59e0b', color: 'white', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', fontWeight: 500 }}>
+        <span>⏰ 세션이 15분 후 만료됩니다. 계속 사용하려면 다시 로그인해 주세요.</span>
+        <button onClick={() => setShowExpiryWarning(false)} style={{ marginLeft: 16, background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: 6, padding: '3px 10px', color: 'white', cursor: 'pointer', fontSize: '12px' }}>닫기</button>
+      </div>
+    )}
     <OnboardingTour role={user.role} />
     <ToastContainer />
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
@@ -320,6 +345,7 @@ export default function App() {
               onUpdateClient={store.updateClient}
               onAddConsultation={data => store.addConsultation({ ...data, shopId })}
               onSelectConsultation={id => store.navigate('consultation-detail', selectedClient.id, id)}
+              onDeleteConsultation={store.deleteConsultation}
             />
           </Suspense>
         )}
@@ -388,6 +414,10 @@ export default function App() {
                 // 3-3: 이름·이메일 변경 시 로그인 계정 동기화
                 if (data.name !== undefined || data.email !== undefined) {
                   updateExtraUser(id, { name: data.name, email: data.email });
+                }
+                // 퇴직 처리 시 Auth 계정 비활성화
+                if (data.status === 'inactive') {
+                  disableDesignerAccount(id);
                 }
               }}
               onUpdateShop={(data) => myShop && store.updateShop(myShop.id, data)}

@@ -255,7 +255,7 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
       </div>
 
       {showEdit && <ConsultationForm clientId={con.clientId} clientName={client.name} shopId={con.shopId} initial={con}
-        onSave={data => { onUpdate(con.id, data); setShowEdit(false); }} onClose={() => setShowEdit(false)} />}
+        onSave={data => { onUpdate(con.id, { ...data, shopId: con.shopId }); setShowEdit(false); }} onClose={() => setShowEdit(false)} />}
       {showDeleteModal && (
         <DeleteConsultationModal
           isShared={con.isShared}

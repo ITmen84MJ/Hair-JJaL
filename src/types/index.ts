@@ -95,6 +95,8 @@ export interface AuthUser {
   passwordHash?: string;
   /** 세션 발급 시각 (ISO string). 8시간 후 만료 */
   loginAt?: string;
+  /** 비활성화된 계정 (퇴직 디자이너 등). true 이면 로그인 불가 */
+  disabled?: boolean;
   avatar?: string;
   clientId?: string;     // customer: linked client record
   designerName?: string; // designer/owner: matches stylistName in consultations

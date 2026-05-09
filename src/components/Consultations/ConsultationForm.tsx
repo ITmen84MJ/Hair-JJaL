@@ -35,35 +35,54 @@ function PhotoUpload({
   clientId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploading(true);
+    setImgError(false);
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const raw = ev.target?.result as string;
       // 압축 + Storage 업로드 (Supabase 모드) 또는 base64 압축 (localStorage 모드)
       const result = await uploadOrCompressPhoto(raw, shopId ?? '', clientId);
       onChange(result);
+      setUploading(false);
+      // input 초기화 — 같은 파일 재선택 허용
+      if (inputRef.current) inputRef.current.value = '';
     };
+    reader.onerror = () => setUploading(false);
     reader.readAsDataURL(file);
   };
 
   return (
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
-          <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+          {imgError ? (
+            /* 이미지 로드 실패 시 — 재업로드 유도 */
+            <div className="w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"
+              style={{ borderColor: '#fca5a5', backgroundColor: '#fff1f2', color: '#ef4444' }}
+              onClick={() => inputRef.current?.click()}>
+              <Image size={18} />
+              <span className="text-xs">이미지 로드 실패 — 클릭하여 다시 업로드</span>
+            </div>
+          ) : (
+            <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
+              onLoad={() => setImgError(false)}
+              onError={() => setImgError(true)} />
+          )}
           <div className="absolute top-2 right-2 flex gap-1">
             <button type="button" onClick={() => inputRef.current?.click()} aria-label="사진 변경"
               className="p-1.5 rounded-lg shadow transition-colors"
               style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
               <Upload size={12} />
             </button>
-            <button type="button" onClick={() => onChange('')} aria-label="사진 삭제"
+            <button type="button" onClick={() => { onChange(''); setImgError(false); }} aria-label="사진 삭제"
               className="p-1.5 rounded-lg shadow transition-colors text-red-500"
               style={{ backgroundColor: 'var(--bg-card)' }}>
               <X size={12} />
@@ -71,11 +90,20 @@ function PhotoUpload({
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => inputRef.current?.click()}
-          className="w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-rose-300 hover:text-rose-400 transition-colors"
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+          className="w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-rose-300 hover:text-rose-400 transition-colors disabled:opacity-60"
           style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-          <Image size={20} />
-          <span className="text-xs">클릭하여 사진 업로드</span>
+          {uploading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs">업로드 중…</span>
+            </>
+          ) : (
+            <>
+              <Image size={20} />
+              <span className="text-xs">클릭하여 사진 업로드</span>
+            </>
+          )}
         </button>
       )}
     </div>
@@ -118,6 +146,7 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
   const [showColorTpl, setShowColorTpl] = useState(false);
   const [showPermTpl,  setShowPermTpl]  = useState(false);
   const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
+  const [serviceError, setServiceError] = useState('');
   const isDirty = useRef(false);
 
   const [form, setForm] = useState({
@@ -172,13 +201,14 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
   };
 
   const updateService = (i: number, key: keyof Service, val: string | number) => {
+    setServiceError('');
     const updated = form.services.map((s, idx) =>
       idx === i ? { ...s, [key]: key === 'price' ? (val === '' ? undefined : Number(val)) : val } : s
     );
     setField('services', updated);
   };
 
-  const addService = () => setField('services', [...form.services, { ...EMPTY_SERVICE }]);
+  const addService = () => { setServiceError(''); setField('services', [...form.services, { ...EMPTY_SERVICE }]); };
   const removeService = (i: number) => setField('services', form.services.filter((_, idx) => idx !== i));
 
   // beforeunload 이벤트로 브라우저 닫기/새로고침 방어
@@ -198,6 +228,11 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const filledServices = form.services.filter(s => s.description.trim());
+    if (filledServices.length === 0) {
+      setServiceError('최소 하나의 시술 항목을 입력해 주세요.');
+      return;
+    }
     isDirty.current = false;
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
     onSave({
@@ -328,8 +363,8 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                   style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', borderColor: 'var(--border-input)' }}
                 >
                   <option value="">선택하세요</option>
-                  {designers.filter(d => d.status === 'active').map(d => (
-                    <option key={d.id} value={d.name}>{d.name}</option>
+                  {designers.filter(d => d.status === 'active' || d.name === form.stylistName).map(d => (
+                    <option key={d.id} value={d.name}>{d.name}{d.status === 'inactive' ? ' (퇴직)' : ''}</option>
                   ))}
                 </select>
               ) : (
@@ -375,6 +410,10 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
             </div>
           </div>
 
+          {serviceError && (
+            <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{serviceError}</p>
+          )}
+
           {/* Q-4: 모발·두피 상태 (accordion) */}
           <AccordionSection
             title="모발 · 두피 상태"
@@ -402,7 +441,10 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
           {/* Q-4: 시술 포뮬러 (accordion) */}
           <AccordionSection
             title="시술 포뮬러"
-            hint={[form.colorFormula, form.permFormula].filter(Boolean).map((f, i) => ['컬러', '펌'][i] + ': ' + (f as string).slice(0, 20)).join(' / ')}
+            hint={[
+              form.colorFormula ? '컬러: ' + form.colorFormula.slice(0, 20) : '',
+              form.permFormula  ? '펌: '   + form.permFormula.slice(0, 20)  : '',
+            ].filter(Boolean).join(' / ')}
             defaultOpen={!!(form.colorFormula || form.permFormula)}
           >
           <div className="grid grid-cols-2 gap-4">
@@ -502,11 +544,11 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
           </div>
           </AccordionSection>
 
-          {/* Q-4: Before/After 사진 (accordion) */}
+          {/* Q-4: Before/After 사진 (accordion) — 수정 모드이거나 기존 사진 있을 때 항상 열림 */}
           <AccordionSection
             title="Before / After 사진"
             hint={(form.beforePhoto ? 'Before 있음' : '') + (form.afterPhoto ? (form.beforePhoto ? ' · ' : '') + 'After 있음' : '')}
-            defaultOpen={!!(form.beforePhoto || form.afterPhoto)}
+            defaultOpen={!!initial || !!(form.beforePhoto || form.afterPhoto)}
           >
           <div className="grid grid-cols-2 gap-4">
             <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} shopId={shopId} clientId={clientId} />

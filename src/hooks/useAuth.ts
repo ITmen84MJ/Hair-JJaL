@@ -90,6 +90,8 @@ function useLocalAuth() {
     const candidate = [...demoUsers, ...loadExtraUsers()].find(u => u.email.toLowerCase() === lower);
     if (!candidate) { recordAttempt(lower); return '이메일 또는 비밀번호가 올바르지 않습니다.'; }
 
+    if (candidate.disabled) return '이 계정은 비활성화되었습니다. 관리자에게 문의해 주세요.';
+
     let ok = false;
     if (candidate.passwordHash) {
       ok = (await hashPassword(lower, password)) === candidate.passwordHash;
@@ -197,16 +199,37 @@ function useLocalAuth() {
     return 'localStorage 모드에서는 이메일 발송이 지원되지 않습니다.\nSupabase 모드에서 사용해 주세요.';
   }, []);
 
-  /** 비밀번호 변경 — 현재 로그인된 사용자 */
-  const changePassword = useCallback(async (newPassword: string): Promise<string | null> => {
+  /** 비밀번호 변경 — 현재 로그인된 사용자 (현재 비밀번호 확인 포함) */
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<string | null> => {
     if (!user) return '로그인이 필요합니다.';
-    const newHash = await hashPassword(user.email, newPassword);
+    // 현재 비밀번호 검증
+    const candidate = [...demoUsers, ...loadExtraUsers()].find(
+      u => u.email.toLowerCase() === user.email.toLowerCase()
+    );
+    if (candidate) {
+      let currentOk = false;
+      if (candidate.passwordHash) {
+        currentOk = (await hashPassword(user.email.toLowerCase(), currentPassword)) === candidate.passwordHash;
+      } else if (candidate.password) {
+        currentOk = candidate.password === currentPassword;
+      }
+      if (!currentOk) return '현재 비밀번호가 올바르지 않습니다.';
+    }
+    const newHash = await hashPassword(user.email.toLowerCase(), newPassword);
     const extras = loadExtraUsers().map(u =>
       u.email.toLowerCase() === user.email.toLowerCase() ? { ...u, passwordHash: newHash } : u
     );
     localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(extras));
     return null;
   }, [user]);
+
+  /** 디자이너 계정 비활성화 (퇴직 처리) */
+  const disableDesignerAccount = useCallback((designerId: string) => {
+    const extras = loadExtraUsers().map(u =>
+      u.designerId === designerId ? { ...u, disabled: true } : u
+    );
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(extras));
+  }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
@@ -218,6 +241,7 @@ function useLocalAuth() {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
     updateName, updateExtraUser, resetPassword, changePassword,
+    disableDesignerAccount,
   };
 }
 
@@ -483,11 +507,27 @@ function useSupabaseAuth() {
     return null;
   }, []);
 
-  /** 현재 로그인된 사용자의 비밀번호 변경 */
-  const changePassword = useCallback(async (newPassword: string): Promise<string | null> => {
+  /** 현재 로그인된 사용자의 비밀번호 변경 (현재 비밀번호 확인 포함) */
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<string | null> => {
+    if (!user) return '로그인이 필요합니다.';
+    // 현재 비밀번호 검증 — Supabase updateUser 는 old password 를 검증하지 않으므로 재로그인으로 확인
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (signInError) return '현재 비밀번호가 올바르지 않습니다.';
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) return error.message;
     return null;
+  }, [user]);
+
+  /** 디자이너 계정 비활성화 (퇴직 처리) — Edge Function 경유 (미배포 시 무시) */
+  const disableDesignerAccount = useCallback(async (designerId: string) => {
+    await supabase.functions.invoke('update-designer-account', {
+      body: { designerId, disabled: true },
+    }).catch(() => {
+      console.warn('[useAuth] update-designer-account Edge Function 미배포. 계정 비활성화를 건너뜁니다.');
+    });
   }, []);
 
   const logout = useCallback(async () => {
@@ -499,6 +539,7 @@ function useSupabaseAuth() {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
     updateName, updateExtraUser, resetPassword, changePassword,
+    disableDesignerAccount,
   };
 }
 

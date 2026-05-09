@@ -40,7 +40,7 @@ export function CustomerHome({ client, consultations, bookings, shops = [], onSe
   }
 
   const sorted = [...consultations].sort((a, b) => b.date.localeCompare(a.date));
-  const next = sorted.find(c => c.nextVisitDate && c.nextVisitDate > new Date().toISOString().slice(0, 10));
+  const next = sorted.find(c => c.nextVisitDate && c.nextVisitDate >= new Date().toISOString().slice(0, 10));
   const totalSpend = consultations.reduce((s, c) => s + c.services.reduce((ss, svc) => ss + (svc.price ?? 0), 0), 0);
 
   // 가장 최근 시술이 이뤄진 지점

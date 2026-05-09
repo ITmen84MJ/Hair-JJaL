@@ -1,5 +1,5 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
-import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Plus, Edit2, Scissors, BarChart2, X, Tag, Image, ChevronLeft, ChevronRight as ChevronRightIcon, Camera, Download, Search, Filter, Trash2, AlertTriangle } from 'lucide-react';
 import { exportClientHistory } from '../../utils/csv';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -22,6 +22,7 @@ interface Props {
   onUpdateClient: (id: string, data: Partial<Client>) => void;
   onAddConsultation: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
   onSelectConsultation: (id: string) => void;
+  onDeleteConsultation?: (id: string) => void;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
@@ -61,9 +62,10 @@ function Lightbox({ photos, startIndex, onClose }: {
   );
 }
 
-export function ClientDetail({ client, consultations, designers, shopId, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
+export function ClientDetail({ client, consultations, designers, shopId, onBack, onUpdateClient, onAddConsultation, onSelectConsultation, onDeleteConsultation }: Props) {
   const [showEditClient, setShowEditClient] = useState(false);
   const [showAddCon, setShowAddCon] = useState(false);
+  const [deleteConId, setDeleteConId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'history' | 'gallery' | 'stats'>('history');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [monthFilter, setMonthFilter] = useState('');   // 'YYYY-MM' 또는 ''(전체)
@@ -162,11 +164,6 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Phone size={13} style={{ color: 'var(--text-muted)' }} /><a href={`tel:${client.phone.replace(/-/g, '')}`} className="hover:underline" style={{ color: 'inherit' }}>{client.phone}</a></div>
               {client.email && <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}><Mail size={13} style={{ color: 'var(--text-muted)' }} />{client.email}</div>}
             </div>
-            {client.tags?.length && (
-              <div className="flex gap-1.5 mt-3 flex-wrap">
-                {client.tags.map(tag => <span key={tag} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-tag)', color: 'var(--text-tag)' }}>{tag}</span>)}
-              </div>
-            )}
             {/* P2-21: 인라인 태그 관리 */}
             <div className="mt-3">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -338,29 +335,42 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
             {sorted.length > 0 && <div className="absolute left-5 top-0 bottom-0 w-px" style={{ backgroundColor: 'var(--border)' }} />}
             <div className="space-y-3">
               {sorted.map(con => (
-                <button key={con.id} onClick={() => onSelectConsultation(con.id)} className="relative w-full flex gap-4 text-left">
+                <div key={con.id} className="relative flex gap-4">
                   <div className="relative z-10 w-10 h-10 rounded-full border-2 border-rose-200 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: 'var(--bg-card)' }}>
                     <Scissors size={14} className="text-rose-400" />
                   </div>
                   <div className="flex-1 rounded-xl p-4 border transition-all" style={card}>
                     <div className="flex items-start justify-between mb-2">
-                      <div>
+                      <button onClick={() => onSelectConsultation(con.id)} className="flex-1 text-left min-w-0">
                         <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                           {format(parseISO(con.date), 'yyyy년 M월 d일 (EEE)', { locale: ko })}
                         </p>
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{con.stylistName} 스타일리스트</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {con.isShared && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-success)', color: 'var(--text-success)' }}>공유중</span>}
-                        <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{con.services.reduce((s, svc) => s + (svc.price ?? 0), 0).toLocaleString()}원</p>
+                      </button>
+                      <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                        <div className="flex flex-col items-end gap-1">
+                          {con.isShared && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-success)', color: 'var(--text-success)' }}>공유중</span>}
+                          <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{con.services.reduce((s, svc) => s + (svc.price ?? 0), 0).toLocaleString()}원</p>
+                        </div>
+                        {onDeleteConsultation && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setDeleteConId(con.id); }}
+                            aria-label="상담 이력 삭제"
+                            className="p-1.5 rounded-lg transition-colors hover:text-red-500"
+                            style={{ color: 'var(--text-muted)' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {con.services.map((svc, i) => <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${SERVICE_COLORS[svc.type]}`}>{SERVICE_LABELS[svc.type]}</span>)}
-                    </div>
-                    {con.afterPhoto && <SafeImg src={con.afterPhoto} alt="after" className="mt-3 w-16 h-16 object-cover rounded-lg" />}
+                    <button onClick={() => onSelectConsultation(con.id)} className="w-full text-left">
+                      <div className="flex flex-wrap gap-1.5">
+                        {con.services.map((svc, i) => <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${SERVICE_COLORS[svc.type]}`}>{SERVICE_LABELS[svc.type]}</span>)}
+                      </div>
+                      {con.afterPhoto && <SafeImg src={con.afterPhoto} alt="after" className="mt-3 w-16 h-16 object-cover rounded-lg" />}
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -378,6 +388,38 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
           onSave={data => { onAddConsultation(data); setShowAddCon(false); }}
           onClose={() => setShowAddCon(false)}
         />
+      )}
+
+      {/* 상담 이력 삭제 확인 모달 */}
+      {deleteConId && (
+        <Modal onClose={() => setDeleteConId(null)}>
+          <div className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: 'var(--bg-danger)' }}>
+                <AlertTriangle size={18} style={{ color: 'var(--text-danger)' }} />
+              </div>
+              <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>상담 이력 삭제</h3>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              이 상담 이력을 삭제할까요? 삭제 후에는 복구할 수 없습니다.
+            </p>
+            {consultations.find(c => c.id === deleteConId)?.isShared && (
+              <div className="rounded-xl px-4 py-3 text-sm flex items-start gap-2"
+                style={{ backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>현재 고객에게 공유 중인 상담입니다. 삭제하면 공유 링크가 즉시 만료됩니다.</span>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => setDeleteConId(null)}
+                className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>취소</button>
+              <button onClick={() => { onDeleteConsultation?.(deleteConId); setDeleteConId(null); }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">삭제</button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

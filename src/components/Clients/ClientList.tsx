@@ -147,6 +147,9 @@ function AddClientModal({ shopId, clients, onClose, onAdd, onLink }: {
               <div className="text-3xl">✅</div>
               <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>연결 완료!</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{selected?.display_name} 고객이 추가되었습니다.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-warning)' }}>
+                ⚠️ 전화번호 등 추가 정보는 고객 상세 화면에서 입력해 주세요.
+              </p>
               <button onClick={onClose} className="mt-3 px-5 py-2 bg-rose-500 text-white rounded-xl text-sm font-semibold">닫기</button>
             </div>
           ) : (

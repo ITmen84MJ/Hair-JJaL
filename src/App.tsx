@@ -298,8 +298,12 @@ export default function App() {
             <ClientList
               clients={visibleClients}
               consultations={visibleConsultations}
+              shopId={shopId}
               onSelectClient={id => store.navigate('client-detail', id)}
               onAddClient={data => store.addClient({ ...data, shopId })}
+              onLinkClient={async (authUserId, data) => {
+                await store.addClient({ ...data, shopId, authUserId } as Parameters<typeof store.addClient>[0]);
+              }}
               onDeleteClient={store.deleteClient}
             />
           </Suspense>

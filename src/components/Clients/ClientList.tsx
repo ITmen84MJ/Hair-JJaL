@@ -1,19 +1,28 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown, Filter } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Plus, Phone, ChevronRight, Trash2, AlertTriangle, ArrowUpDown, Filter, UserSearch, UserPlus } from 'lucide-react';
 import { Client, Consultation, ServiceType } from '../../types';
 import { ClientForm } from './ClientForm';
 import { Modal } from '../common/Modal';
 import { format, parseISO } from 'date-fns';
 import { SERVICE_LABELS } from '../Consultations/serviceLabels';
+import { USE_SUPABASE, supabase } from '../../lib/supabase';
 
 const ALL_SERVICE_TYPES: ServiceType[] = ['cut', 'color', 'bleach', 'perm', 'straightening', 'treatment', 'scalp', 'styling', 'other'];
+
+interface CustomerSearchResult {
+  auth_user_id: string;
+  email: string;
+  display_name: string;
+}
 
 interface Props {
   clients: Client[];
   consultations: Consultation[];
   onSelectClient: (id: string) => void;
   onAddClient: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
+  onLinkClient?: (authUserId: string, data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => Promise<void>;
   onDeleteClient: (id: string) => void;
+  shopId?: string;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
@@ -54,7 +63,215 @@ function DeleteClientModal({ client, visitCount, onClose, onConfirm }: {
   );
 }
 
-export function ClientList({ clients, consultations, onSelectClient, onAddClient, onDeleteClient }: Props) {
+// ── AddClientModal ────────────────────────────────────────────────────────────
+function AddClientModal({ shopId, onClose, onAdd, onLink }: {
+  shopId?: string;
+  onClose: () => void;
+  onAdd:  (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
+  onLink?: (authUserId: string, data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => Promise<void>;
+}) {
+  const [tab, setTab] = useState<'search' | 'new'>(USE_SUPABASE && onLink ? 'search' : 'new');
+  const [query, setQuery]       = useState('');
+  const [results, setResults]   = useState<CustomerSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState<CustomerSearchResult | null>(null);
+  const [linking, setLinking]   = useState(false);
+  const [linkDone, setLinkDone] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 검색 디바운스
+  useEffect(() => {
+    if (!USE_SUPABASE || tab !== 'search') return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < 1) { setResults([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase as any).rpc('search_customer_accounts', {
+        p_shop_id: shopId,
+        search_query: query.trim(),
+      });
+      setResults((data as CustomerSearchResult[] | null) ?? []);
+      setSearching(false);
+    }, 350);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, tab, shopId]);
+
+  const handleLink = async () => {
+    if (!selected || !onLink) return;
+    setLinking(true);
+    await onLink(selected.auth_user_id, {
+      name: selected.display_name,
+      phone: '',
+      email: selected.email,
+      gender: 'female',
+      authUserId: selected.auth_user_id,
+    });
+    setLinking(false);
+    setLinkDone(true);
+  };
+
+  const inp = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
+  const inpStyle = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };
+  const card2 = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
+
+  return (
+    <Modal onClose={onClose} maxWidth="max-w-md">
+      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>고객 추가</h2>
+      </div>
+
+      {/* 탭 — Supabase + onLink 있을 때만 표시 */}
+      {USE_SUPABASE && onLink && (
+        <div className="flex border-b" style={{ borderColor: 'var(--border)' }}>
+          {([['search', '기존 계정 연결', UserSearch], ['new', '새 고객 추가', UserPlus]] as const).map(([id, label, Icon]) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === id ? 'border-rose-500' : 'border-transparent'}`}
+              style={{ color: tab === id ? '#f43f5e' : 'var(--text-muted)' }}>
+              <Icon size={14} /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="p-5">
+        {tab === 'search' ? (
+          linkDone ? (
+            <div className="text-center py-8 space-y-2">
+              <div className="text-3xl">✅</div>
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>연결 완료!</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{selected?.display_name} 고객이 추가되었습니다.</p>
+              <button onClick={onClose} className="mt-3 px-5 py-2 bg-rose-500 text-white rounded-xl text-sm font-semibold">닫기</button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>앱에 가입된 고객 계정을 이름 또는 이메일로 검색합니다.</p>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={query} onChange={e => { setQuery(e.target.value); setSelected(null); }}
+                  placeholder="이름 또는 이메일 검색"
+                  className={`${inp} pl-9`} style={inpStyle} autoFocus />
+              </div>
+              {searching && <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>검색 중…</p>}
+              {!searching && results.length === 0 && query.trim().length > 0 && (
+                <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</p>
+              )}
+              <div className="space-y-2 max-h-52 overflow-y-auto">
+                {results.map(r => (
+                  <button key={r.auth_user_id} onClick={() => setSelected(r)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${selected?.auth_user_id === r.auth_user_id ? 'bg-rose-500 border-rose-500' : ''}`}
+                    style={selected?.auth_user_id !== r.auth_user_id ? card2 : {}}>
+                    <p className={`text-sm font-semibold ${selected?.auth_user_id === r.auth_user_id ? 'text-white' : ''}`}
+                      style={selected?.auth_user_id !== r.auth_user_id ? { color: 'var(--text-primary)' } : {}}>
+                      {r.display_name}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${selected?.auth_user_id === r.auth_user_id ? 'text-white/80' : ''}`}
+                      style={selected?.auth_user_id !== r.auth_user_id ? { color: 'var(--text-muted)' } : {}}>
+                      {r.email}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              {selected && (
+                <div className="pt-2 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <strong>{selected.display_name}</strong>을 고객으로 추가합니다.<br/>
+                    추가 후 고객 상세에서 전화번호 등 정보를 입력해 주세요.
+                  </p>
+                  <button onClick={handleLink} disabled={linking}
+                    className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-sm font-semibold">
+                    {linking ? '연결 중…' : '이 계정으로 추가'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        ) : (
+          /* 새 고객 추가 — 기존 ClientForm 인라인 */
+          <ClientFormInline onSave={data => { onAdd(data); onClose(); }} onCancel={onClose} />
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+// ClientForm을 모달 없이 인라인으로 사용하기 위한 래퍼
+function ClientFormInline({ onSave, onCancel }: {
+  onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', birthDate: '', gender: 'female' as Client['gender'], notes: '', tags: [] as string[] });
+  const [tagInput, setTagInput] = useState('');
+  const cls2 = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
+  const inpSt = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };
+  const lbl = "block text-xs font-medium mb-1";
+  const set = (k: string, v: string | string[]) => setForm(f => ({ ...f, [k]: v }));
+  const addTag = () => { const t = tagInput.trim(); if (t && !form.tags.includes(t)) set('tags', [...form.tags, t]); setTagInput(''); };
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim()) return;
+    onSave({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, birthDate: form.birthDate || undefined, gender: form.gender, notes: form.notes.trim() || undefined, tags: form.tags.length ? form.tags : undefined });
+  };
+  return (
+    <form onSubmit={submit} className="space-y-3 max-h-[60vh] overflow-y-auto">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <label className={lbl} style={{ color: 'var(--text-secondary)' }}>이름 *</label>
+          <input required value={form.name} onChange={e => set('name', e.target.value)} className={cls2} style={inpSt} placeholder="홍길동" />
+        </div>
+        <div>
+          <label className={lbl} style={{ color: 'var(--text-secondary)' }}>전화번호 *</label>
+          <input required value={form.phone} onChange={e => set('phone', e.target.value)} className={cls2} style={inpSt} placeholder="010-0000-0000" />
+        </div>
+        <div>
+          <label className={lbl} style={{ color: 'var(--text-secondary)' }}>성별</label>
+          <select value={form.gender} onChange={e => set('gender', e.target.value)} className={cls2} style={inpSt}>
+            <option value="female">여성</option>
+            <option value="male">남성</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+        <div>
+          <label className={lbl} style={{ color: 'var(--text-secondary)' }}>이메일</label>
+          <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={cls2} style={inpSt} placeholder="example@email.com" />
+        </div>
+        <div>
+          <label className={lbl} style={{ color: 'var(--text-secondary)' }}>생년월일</label>
+          <input type="date" value={form.birthDate} onChange={e => set('birthDate', e.target.value)} className={cls2} style={inpSt} />
+        </div>
+      </div>
+      <div>
+        <label className={lbl} style={{ color: 'var(--text-secondary)' }}>메모</label>
+        <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} className={`${cls2} resize-none`} style={inpSt} placeholder="두피 특이사항, 알레르기 등" />
+      </div>
+      <div>
+        <label className={lbl} style={{ color: 'var(--text-secondary)' }}>태그</label>
+        <div className="flex gap-1.5 mb-1.5 flex-wrap">
+          {form.tags.map(tag => (
+            <span key={tag} className="flex items-center gap-1 text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--bg-tag)', color: 'var(--text-tag)' }}>
+              {tag}<button type="button" onClick={() => set('tags', form.tags.filter(t => t !== tag))} className="hover:text-red-500">×</button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input value={tagInput} onChange={e => setTagInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
+            className={cls2} style={inpSt} placeholder="태그 입력 후 Enter" />
+          <button type="button" onClick={addTag} className="px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+            <Plus size={14} />
+          </button>
+        </div>
+      </div>
+      <div className="flex gap-3 pt-1">
+        <button type="button" onClick={onCancel} className="flex-1 border rounded-xl py-2.5 text-sm font-medium" style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>취소</button>
+        <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl py-2.5 text-sm font-medium">고객 추가</button>
+      </div>
+    </form>
+  );
+}
+
+export function ClientList({ clients, consultations, onSelectClient, onAddClient, onLinkClient, onDeleteClient, shopId }: Props) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<'name' | 'recent' | 'visits'>('recent');
   const [showForm, setShowForm] = useState(false);
@@ -281,7 +498,14 @@ export function ClientList({ clients, consultations, onSelectClient, onAddClient
         </button>
       )}
 
-      {showForm && <ClientForm onSave={data => { onAddClient(data); setShowForm(false); }} onClose={() => setShowForm(false)} />}
+      {showForm && (
+        <AddClientModal
+          shopId={shopId}
+          onClose={() => setShowForm(false)}
+          onAdd={data => { onAddClient(data); setShowForm(false); }}
+          onLink={onLinkClient}
+        />
+      )}
       {deleteTarget && (
         <DeleteClientModal
           client={deleteTarget}

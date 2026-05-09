@@ -23,6 +23,8 @@ export interface Client {
   notes?: string;
   createdAt: string;
   tags?: string[];
+  /** Supabase Auth 계정 연결 ID */
+  authUserId?: string;
 }
 
 export type ServiceType =

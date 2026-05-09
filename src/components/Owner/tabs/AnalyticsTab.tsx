@@ -5,8 +5,8 @@ import {
 } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Users, Scissors, TrendingUp } from 'lucide-react';
-import { Client, Consultation, Designer, ServiceType } from '../../../types';
+import { Users, Scissors, TrendingUp, Clock } from 'lucide-react';
+import { Booking, Client, Consultation, Designer, ServiceType } from '../../../types';
 import { SERVICE_LABELS } from '../../Consultations/serviceLabels';
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
@@ -33,15 +33,20 @@ export function getPeriodRange(key: PeriodKey): { start: string; end: string } {
   return { start: '2000-01-01', end: '2099-12-31' };
 }
 
+// 시간대 히트맵 셀 구성: 요일(0=일~6=토) × 시간대(6~22시)
+const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06~22시
+
 interface Props {
   clients: Client[];
   consultations: Consultation[];
   designers: Designer[];
+  bookings?: Booking[];
   periodKey: PeriodKey;
   onPeriodChange: (key: PeriodKey) => void;
 }
 
-export function AnalyticsTab({ clients, consultations, designers, periodKey, onPeriodChange }: Props) {
+export function AnalyticsTab({ clients, consultations, designers, bookings = [], periodKey, onPeriodChange }: Props) {
   const { start: pStart, end: pEnd } = useMemo(() => getPeriodRange(periodKey), [periodKey]);
 
   const periodConsultations = useMemo(
@@ -76,6 +81,25 @@ export function AnalyticsTab({ clients, consultations, designers, periodKey, onP
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
   }, [periodConsultations]);
+
+  // 시간대 히트맵: 기간 내 예약의 요일×시간대 집계
+  const heatmapData = useMemo(() => {
+    const periodBookings = bookings.filter(b =>
+      b.requestedDate >= pStart && b.requestedDate <= pEnd && b.status !== 'cancelled'
+    );
+    // grid[day][hourIndex] = count
+    const grid: number[][] = Array.from({ length: 7 }, () => Array(HOURS.length).fill(0));
+    periodBookings.forEach(b => {
+      const d = new Date(b.requestedDate + 'T00:00:00');
+      const day = d.getDay(); // 0=일 ~ 6=토
+      const hourStr = b.requestedTime?.slice(0, 2);
+      const hour = hourStr ? parseInt(hourStr, 10) : -1;
+      const hIdx = HOURS.indexOf(hour);
+      if (hIdx >= 0) grid[day][hIdx] += 1;
+    });
+    const max = Math.max(1, ...grid.flat());
+    return { grid, max, total: periodBookings.length };
+  }, [bookings, pStart, pEnd]);
 
   const designerRevenue = useMemo(() =>
     designers.map(d => {
@@ -203,6 +227,84 @@ export function AnalyticsTab({ clients, consultations, designers, periodKey, onP
                 </div>
               ));
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* 시간대 히트맵 — 예약 집중도 */}
+      {heatmapData.total > 0 && (
+        <div className="rounded-2xl border p-5" style={card}>
+          <div className="flex items-center gap-2 mb-1">
+            <Clock size={14} style={{ color: 'var(--text-muted)' }} />
+            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+              시간대별 예약 집중도
+            </p>
+            <span className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
+              {PERIOD_OPTIONS.find(p => p.id === periodKey)?.label} · 총 {heatmapData.total}건
+            </span>
+          </div>
+          <p className="text-[11px] mb-4" style={{ color: 'var(--text-muted)' }}>
+            색이 진할수록 예약이 많은 시간대입니다.
+          </p>
+
+          {/* 시간 축 헤더 */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[480px]">
+              <div className="flex items-center gap-0.5 mb-0.5 pl-6">
+                {HOURS.map(h => (
+                  <div key={h} className="flex-1 text-center"
+                    style={{ fontSize: 9, color: 'var(--text-muted)', minWidth: 20 }}>
+                    {h % 3 === 0 ? `${h}시` : ''}
+                  </div>
+                ))}
+              </div>
+
+              {/* 요일 × 시간 그리드 */}
+              <div
+                className="space-y-0.5"
+                role="img"
+                aria-label={`시간대별 예약 히트맵: ${DAYS.map((d, i) =>
+                  `${d}요일 최대 ${Math.max(...heatmapData.grid[i])}건`).join(', ')}`}
+              >
+                {DAYS.map((day, dIdx) => (
+                  <div key={day} className="flex items-center gap-0.5">
+                    <span className="w-5 text-right flex-shrink-0 mr-1"
+                      style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                      {day}
+                    </span>
+                    {HOURS.map((_, hIdx) => {
+                      const cnt = heatmapData.grid[dIdx][hIdx];
+                      const intensity = cnt / heatmapData.max;
+                      return (
+                        <div
+                          key={hIdx}
+                          className="flex-1 rounded-sm transition-colors"
+                          style={{
+                            minWidth: 20,
+                            height: 18,
+                            backgroundColor: cnt === 0
+                              ? 'var(--bg-muted)'
+                              : `rgba(244,63,94,${0.15 + intensity * 0.85})`,
+                            cursor: cnt > 0 ? 'default' : undefined,
+                          }}
+                          title={cnt > 0 ? `${day}요일 ${HOURS[hIdx]}시: ${cnt}건` : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* 범례 */}
+              <div className="flex items-center gap-1.5 mt-3 justify-end">
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>적음</span>
+                {[0.15, 0.35, 0.55, 0.75, 1.0].map(v => (
+                  <div key={v} className="w-4 h-3 rounded-sm"
+                    style={{ backgroundColor: `rgba(244,63,94,${v})` }} />
+                ))}
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>많음</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

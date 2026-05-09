@@ -121,8 +121,8 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
   if (submitted) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-          <CheckCircle2 size={32} className="text-emerald-500" />
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-icon-green)' }}>
+          <CheckCircle2 size={32} style={{ color: 'var(--text-success)' }} />
         </div>
         <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>예약 신청 완료!</h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -169,7 +169,7 @@ export function CustomerBooking({ client, shops, allDesigners, allBookings, defa
                   }`}
                   style={selectedShopId !== shop.id ? { borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'var(--bg-input)' } : {}}
                 >
-                  <p className="text-sm font-semibold">{shop.name}</p>
+                  <p className="text-sm font-semibold truncate">{shop.name}</p>
                   {shop.address && (
                     <p className={`text-xs mt-0.5 ${selectedShopId === shop.id ? 'text-white/80' : ''}`}
                       style={selectedShopId !== shop.id ? { color: 'var(--text-muted)' } : {}}>

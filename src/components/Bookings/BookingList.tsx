@@ -328,9 +328,8 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
           >
             {label}
             {counts[id] > 0 && (
-              <span className={`text-xs px-1.5 rounded-full font-bold ml-0.5 ${
-                tab === id ? 'bg-white/30 text-white' : 'bg-rose-100 text-rose-600'
-              }`}>
+              <span className={`text-xs px-1.5 rounded-full font-bold ml-0.5 ${tab === id ? 'bg-white/30 text-white' : ''}`}
+                style={tab !== id ? { backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' } : {}}>
                 {counts[id]}
               </span>
             )}

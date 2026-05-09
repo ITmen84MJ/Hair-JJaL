@@ -101,7 +101,10 @@ export function Dashboard({ clients, consultations, bookings, designerName, onNa
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{b.requestedTime ?? '-'}</p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${b.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                      style={b.status === 'confirmed'
+                        ? { backgroundColor: 'var(--bg-success)', color: 'var(--text-success)' }
+                        : { backgroundColor: 'var(--bg-warning)', color: 'var(--text-warning)' }}>
                       {b.status === 'confirmed' ? '확정' : '대기'}
                     </span>
                   </div>
@@ -136,8 +139,8 @@ export function Dashboard({ clients, consultations, bookings, designerName, onNa
                   style={{ borderColor: 'var(--divider)' }}
                   onMouseEnter={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)')}
                   onMouseLeave={e => ((e.currentTarget as HTMLElement).style.backgroundColor = '')}>
-                  <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-semibold text-rose-600">{client?.name.charAt(0)}</span>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-icon-rose)' }}>{client?.name.charAt(0)}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{client?.name}</p>

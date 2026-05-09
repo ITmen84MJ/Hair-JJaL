@@ -270,7 +270,7 @@ export function ShopTab({ shop, clients, consultations, onUpdateShop }: Props) {
             <div className="space-y-3">
               <div>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>지점명</p>
-                <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>{shop.name}</p>
+                <p className="text-sm font-semibold mt-0.5 truncate" style={{ color: 'var(--text-primary)' }}>{shop.name}</p>
               </div>
               {shop.address && (
                 <div>

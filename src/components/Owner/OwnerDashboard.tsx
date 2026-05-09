@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Crown } from 'lucide-react';
-import { Client, Consultation, Designer, Shop } from '../../types';
+import { Booking, Client, Consultation, Designer, Shop } from '../../types';
 import { AnalyticsTab, PeriodKey } from './tabs/AnalyticsTab';
 import { StaffTab } from './tabs/StaffTab';
 import { ShopTab } from './tabs/ShopTab';
@@ -10,6 +10,7 @@ interface Props {
   clients: Client[];
   consultations: Consultation[];
   designers: Designer[];
+  bookings?: Booking[];
   onAddDesigner: (data: Omit<Designer, 'id' | 'shopId'>, password: string) => Promise<void> | void;
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
   onUpdateShop: (data: Partial<Shop>) => void;
@@ -17,7 +18,7 @@ interface Props {
 
 type Tab = 'stats' | 'staff' | 'shop';
 
-export function OwnerDashboard({ shop, clients, consultations, designers, onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
+export function OwnerDashboard({ shop, clients, consultations, designers, bookings = [], onAddDesigner, onUpdateDesigner, onUpdateShop }: Props) {
   const [tab, setTab] = useState<Tab>('stats');
   const [periodKey, setPeriodKey] = useState<PeriodKey>('6months');
 
@@ -49,6 +50,7 @@ export function OwnerDashboard({ shop, clients, consultations, designers, onAddD
           clients={clients}
           consultations={consultations}
           designers={designers}
+          bookings={bookings}
           periodKey={periodKey}
           onPeriodChange={setPeriodKey}
         />

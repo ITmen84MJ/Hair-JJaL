@@ -72,8 +72,8 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
         {/* User info */}
         <div className="px-4 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-rose-600 font-bold text-sm">{user.name.charAt(0)}</span>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+              <span className="font-bold text-sm" style={{ color: 'var(--text-icon-rose)' }}>{user.name.charAt(0)}</span>
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{user.name}</p>
@@ -96,7 +96,7 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {items.map(({ id, label, Icon }) => (
-            <button key={id} onClick={() => onNavigate(id)}
+            <button key={id} onClick={() => onNavigate(id)} aria-current={isActive(id) ? 'page' : undefined}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
               style={isActive(id)
                 ? { backgroundColor: 'var(--nav-active-bg)', color: 'var(--role-designer-text)' }
@@ -151,7 +151,7 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t flex items-stretch"
         style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {items.map(({ id, label, Icon }) => (
-          <button key={id} onClick={() => onNavigate(id)}
+          <button key={id} onClick={() => onNavigate(id)} aria-label={label} aria-current={isActive(id) ? 'page' : undefined}
             className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs font-medium transition-colors relative ${isActive(id) ? 'text-rose-500' : ''}`}
             style={!isActive(id) ? { color: 'var(--text-muted)' } : {}}>
             <div className="relative">
@@ -169,13 +169,13 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
           </button>
         ))}
         {/* 다크모드 + 로그아웃 */}
-        <button onClick={onToggleTheme}
+        <button onClick={onToggleTheme} aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
           className="flex-none flex flex-col items-center justify-center px-3 py-2 gap-0.5 text-xs transition-colors"
           style={{ color: 'var(--text-muted)' }}>
           {isDark ? <Sun size={20} className="text-amber-400" /> : <Moon size={20} />}
           <span className="text-[10px]">{isDark ? '라이트' : '다크'}</span>
         </button>
-        <button onClick={onLogout}
+        <button onClick={onLogout} aria-label="로그아웃"
           className="flex-none flex flex-col items-center justify-center px-3 py-2 gap-0.5 text-xs transition-colors"
           style={{ color: 'var(--text-muted)' }}>
           <LogOut size={20} />

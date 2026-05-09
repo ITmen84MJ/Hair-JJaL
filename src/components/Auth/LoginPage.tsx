@@ -120,7 +120,7 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
       <input placeholder="전화번호 (선택)" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
 
-      {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+      {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
 
       <button type="submit" disabled={loading}
         className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-amber-200">
@@ -191,7 +191,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner }: Props) {
                     {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+                {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
                 <button type="submit" disabled={loading}
                   className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-rose-200">
                   {loading ? '로그인 중...' : '로그인'}

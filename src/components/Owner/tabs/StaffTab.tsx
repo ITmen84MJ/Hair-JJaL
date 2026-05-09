@@ -38,8 +38,8 @@ function AddDesignerModal({ onClose, onAdd }: {
         {done ? (
           <>
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <Check size={18} className="text-emerald-600" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--bg-icon-green)' }}>
+                <Check size={18} style={{ color: 'var(--text-success)' }} />
               </div>
               <h3 className="font-bold text-lg" style={{ color: 'var(--text-primary)' }}>디자이너 추가 완료</h3>
             </div>

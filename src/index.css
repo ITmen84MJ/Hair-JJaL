@@ -20,6 +20,7 @@ body {
   --bg-input:      #ffffff;
   --bg-hover:      #f9fafb;
   --bg-muted:      #f3f4f6;
+  --bg-skeleton:   #e5e7eb;
   --bg-tag:        #fef3c7;
   --bg-tag-rose:   #fff1f2;
   --bg-icon-blue:  #eff6ff;
@@ -96,6 +97,7 @@ body {
   --bg-input:      #334155;
   --bg-hover:      #334155;
   --bg-muted:      #334155;
+  --bg-skeleton:   #475569;
   --bg-tag:        #451a0340;
   --bg-tag-rose:   #4c051540;
   --bg-icon-blue:  #1e3a5f40;

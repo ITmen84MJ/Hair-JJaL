@@ -142,16 +142,17 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
       {/* Profile */}
       <div className="rounded-2xl border p-5" style={card}>
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-rose-600">{client.name.charAt(0)}</span>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: 'var(--bg-icon-rose)' }}>
+            <span className="text-2xl font-bold" style={{ color: 'var(--text-icon-rose)' }}>{client.name.charAt(0)}</span>
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{client.name}</h2>
-                  {client.gender === 'female' && <span className="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">여성</span>}
-                  {client.gender === 'male' && <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">남성</span>}
+                  <h2 className="text-xl font-bold truncate max-w-[200px]" style={{ color: 'var(--text-primary)' }}>{client.name}</h2>
+                  {client.gender === 'female' && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-tag-rose)', color: 'var(--text-icon-rose)' }}>여성</span>}
+                  {client.gender === 'male' && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-icon-blue)', color: 'var(--text-icon-blue)' }}>남성</span>}
                 </div>
                 {age !== null && <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{age}세 · {client.birthDate}</p>}
               </div>
@@ -176,6 +177,7 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
                     {tag}
                     <button
                       onClick={() => onUpdateClient(client.id, { tags: client.tags?.filter(t => t !== tag) })}
+                      aria-label={`태그 '${tag}' 삭제`}
                       className="ml-0.5 hover:opacity-60"><X size={10} /></button>
                   </span>
                 ))}
@@ -349,7 +351,7 @@ export function ClientDetail({ client, consultations, designers, shopId, onBack,
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{con.stylistName} 스타일리스트</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        {con.isShared && <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">공유중</span>}
+                        {con.isShared && <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-success)', color: 'var(--text-success)' }}>공유중</span>}
                         <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{con.services.reduce((s, svc) => s + (svc.price ?? 0), 0).toLocaleString()}원</p>
                       </div>
                     </div>

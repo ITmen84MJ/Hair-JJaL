@@ -344,7 +344,7 @@ export function CustomerLayout({
                 <span className="text-2xl font-bold" style={{ color: 'var(--text-icon-rose)' }}>{client.name.charAt(0)}</span>
               </div>
               <div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{client.name}</h2>
+                <h2 className="text-lg font-bold truncate max-w-[180px]" style={{ color: 'var(--text-primary)' }}>{client.name}</h2>
                 {age !== null && (
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {age}세 · {client.gender === 'female' ? '여성' : client.gender === 'male' ? '남성' : '기타'}
@@ -464,7 +464,7 @@ export function CustomerLayout({
             {shopName ?? 'Hair JJaL'}
           </span>
         </div>
-        <button onClick={onToggleTheme} className="p-2 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+        <button onClick={onToggleTheme} aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'} className="p-2 rounded-lg" style={{ color: 'var(--text-muted)' }}>
           {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} />}
         </button>
       </header>

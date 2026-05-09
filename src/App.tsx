@@ -8,6 +8,7 @@ import { Sidebar } from './components/Layout/Sidebar';
 import { ShareView } from './components/Share/ShareView';
 import { LoginPage, type OwnerRegisterData } from './components/Auth/LoginPage';
 import { OnboardingTour } from './components/common/OnboardingTour';
+import { SkeletonList } from './components/common/Skeleton';
 
 // 라우트별 lazy 분리 — 초기 번들 최소화
 const Dashboard        = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -271,7 +272,7 @@ export default function App() {
         )}
 
         {store.currentView === 'dashboard' && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <Dashboard
               clients={visibleClients}
               consultations={visibleConsultations}
@@ -283,7 +284,7 @@ export default function App() {
         )}
 
         {store.currentView === 'clients' && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <ClientList
               clients={visibleClients}
               consultations={visibleConsultations}
@@ -295,7 +296,7 @@ export default function App() {
         )}
 
         {store.currentView === 'client-detail' && selectedClient && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <ClientDetail
               client={selectedClient}
               consultations={clientConsultations}
@@ -310,7 +311,7 @@ export default function App() {
         )}
 
         {store.currentView === 'consultation-detail' && selectedConsultation && selectedClient && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <ConsultationDetail
               consultation={selectedConsultation}
               client={selectedClient}
@@ -323,7 +324,7 @@ export default function App() {
         )}
 
         {store.currentView === 'bookings' && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <BookingList
               bookings={shopBookings}
               user={user}
@@ -333,12 +334,13 @@ export default function App() {
         )}
 
         {store.currentView === 'owner-staff' && user.role === 'owner' && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <OwnerDashboard
               shop={myShop}
               clients={shopClients}
               consultations={shopConsultations}
               designers={shopDesigners}
+              bookings={shopBookings}
               onAddDesigner={async (data, password) => {
                 const designer = await store.addDesigner({ ...data, shopId });
                 await addDesignerAccount({
@@ -363,7 +365,7 @@ export default function App() {
         )}
 
         {store.currentView === 'profile' && (
-          <Suspense fallback={<div className="flex items-center justify-center p-16 text-sm" style={{ color: 'var(--text-muted)' }}>로딩중…</div>}>
+          <Suspense fallback={<div className="p-6"><SkeletonList rows={3} /></div>}>
             <StaffProfile
               user={user}
               designer={myDesignerRecord}

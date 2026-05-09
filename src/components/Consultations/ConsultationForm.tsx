@@ -443,7 +443,7 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                         style={{ color: 'var(--text-secondary)' }}>
                         {t}
                       </button>
-                      <button type="button" onClick={() => removeTemplate('color', t)}
+                      <button type="button" onClick={() => removeTemplate('color', t)} aria-label="컬러 포뮬러 템플릿 삭제"
                         className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity flex-shrink-0">
                         <X size={10} />
                       </button>
@@ -490,7 +490,7 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                         style={{ color: 'var(--text-secondary)' }}>
                         {t}
                       </button>
-                      <button type="button" onClick={() => removeTemplate('perm', t)}
+                      <button type="button" onClick={() => removeTemplate('perm', t)} aria-label="펌 포뮬러 템플릿 삭제"
                         className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity flex-shrink-0">
                         <X size={10} />
                       </button>

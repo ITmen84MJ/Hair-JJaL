@@ -44,6 +44,8 @@ export function SafeImg({ src, alt, className, fallbackClassName, onError, ...re
       src={src}
       alt={alt}
       className={className}
+      loading="lazy"
+      decoding="async"
       onLoad={() => setLoaded(true)}
       onError={e => {
         setFailed(true);

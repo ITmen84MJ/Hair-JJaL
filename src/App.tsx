@@ -10,6 +10,7 @@ import { ShareView } from './components/Share/ShareView';
 import { LoginPage, type OwnerRegisterData } from './components/Auth/LoginPage';
 import { OnboardingTour } from './components/common/OnboardingTour';
 import { SkeletonList } from './components/common/Skeleton';
+import { usePWAUpdate } from './hooks/usePWAUpdate';
 
 // 라우트별 lazy 분리 — 초기 번들 최소화
 const Dashboard        = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -26,6 +27,7 @@ export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
   const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword, disableDesignerAccount } = useAuth();
+  const { needsUpdate, applyUpdate, dismiss } = usePWAUpdate();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -287,6 +289,14 @@ export default function App() {
     )}
     <OnboardingTour role={user.role} />
     <ToastContainer />
+    {/* PWA 업데이트 배너 */}
+    {needsUpdate && (
+      <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 9998, backgroundColor: '#1e293b', color: 'white', padding: '10px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, fontSize: '13px', fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap', maxWidth: 'calc(100vw - 32px)' }}>
+        <span>🔄 새 버전이 있습니다</span>
+        <button onClick={applyUpdate} style={{ backgroundColor: '#e11d48', border: 'none', borderRadius: 8, padding: '5px 12px', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>업데이트</button>
+        <button onClick={dismiss} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '12px' }}>나중에</button>
+      </div>
+    )}
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar
         currentView={store.currentView}

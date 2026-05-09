@@ -4,6 +4,7 @@ import { Consultation, Designer, DesignerRole, ServiceType } from '../../../type
 import { Modal } from '../../common/Modal';
 import { SERVICE_LABELS } from '../../Consultations/serviceLabels';
 import { USE_SUPABASE, supabase } from '../../../lib/supabase';
+import { toast } from '../../../hooks/useToast';
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -474,16 +475,20 @@ export function StaffTab({ designers, consultations, onAddDesigner, onLinkDesign
 
   const handleLeave = (reason: string) => {
     if (!leavingDesigner) return;
+    const name = leavingDesigner.name;
     onUpdateDesigner(leavingDesigner.id, {
       status: 'inactive',
       leftAt: new Date().toISOString().slice(0, 10),
       leftReason: reason,
     });
     setLeavingDesigner(null);
+    toast.info(`${name} 디자이너가 퇴직 처리되었습니다.`);
   };
 
   const handleReactivate = (id: string) => {
+    const designer = designers.find(d => d.id === id);
     onUpdateDesigner(id, { status: 'active', leftAt: undefined, leftReason: undefined });
+    if (designer) toast.success(`${designer.name} 디자이너가 재활성화되었습니다.`);
   };
 
   return (
@@ -595,13 +600,28 @@ export function StaffTab({ designers, consultations, onAddDesigner, onLinkDesign
         ))}
       </div>
 
-      {showAdd && <AddDesignerModal onClose={() => setShowAdd(false)} onAdd={onAddDesigner} onLink={onLinkDesigner} />}
+      {showAdd && (
+        <AddDesignerModal
+          onClose={() => setShowAdd(false)}
+          onAdd={async (data, password) => {
+            await onAddDesigner(data, password);
+            toast.success(`${data.name} 디자이너 계정이 생성되었습니다.`);
+          }}
+          onLink={onLinkDesigner ? async (authUserId, data) => {
+            await onLinkDesigner(authUserId, data);
+            toast.success(`${data.name} 디자이너가 연결되었습니다.`);
+          } : undefined}
+        />
+      )}
       {leavingDesigner && <LeaveModal designer={leavingDesigner} onClose={() => setLeavingDesigner(null)} onConfirm={handleLeave} />}
       {editingDesigner && (
         <DesignerEditModal
           designer={editingDesigner}
           onClose={() => setEditingDesigner(null)}
-          onSave={data => onUpdateDesigner(editingDesigner.id, data)}
+          onSave={data => {
+            onUpdateDesigner(editingDesigner.id, data);
+            toast.success(`${data.name ?? editingDesigner.name} 정보가 수정되었습니다.`);
+          }}
         />
       )}
     </div>

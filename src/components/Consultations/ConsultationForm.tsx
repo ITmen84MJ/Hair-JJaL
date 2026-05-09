@@ -37,20 +37,22 @@ function PhotoUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
-  // value 가 바뀌면 에러 상태 초기화 (새 업로드 또는 삭제 후)
+  // value 가 바뀌면 에러·로드 상태 초기화 (새 업로드 또는 삭제 후)
   useEffect(() => {
     setImgError(false);
+    setImgLoaded(false);
   }, [value]);
 
   // HTTP URL(Storage)은 느린 응답·연결 실패 시 onError가 오래 걸릴 수 있음.
-  // 8초 타임아웃 — 그 안에 onLoad가 안 오면 에러 UI로 전환
+  // 8초 타임아웃 — onLoad가 이미 성공했거나 에러 상태면 타이머 설정 안 함
   useEffect(() => {
-    if (!value || imgError) return;
+    if (!value || imgError || imgLoaded) return;
     if (!value.startsWith('http')) return; // base64는 즉시 렌더링, 타임아웃 불필요
     const tid = setTimeout(() => setImgError(true), 8000);
     return () => clearTimeout(tid);
-  }, [value, imgError]);
+  }, [value, imgError, imgLoaded]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -98,7 +100,7 @@ function PhotoUpload({
             </div>
           ) : (
             <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
-              onLoad={() => setImgError(false)}
+              onLoad={() => { setImgError(false); setImgLoaded(true); }}
               onError={() => setImgError(true)} />
           )}
           <div className="absolute top-2 right-2 flex gap-1">

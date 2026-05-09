@@ -44,7 +44,7 @@ function AddDesignerModal({ onClose, onAdd, onLink }: {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data } = await (supabase as any).rpc('search_unassigned_users', { search_term: query.trim() });
+      const { data } = await (supabase as any).rpc('search_unassigned_users', { search_query: query.trim() });
       setResults((data as SearchResult[] | null) ?? []);
       setSearching(false);
     }, 350);

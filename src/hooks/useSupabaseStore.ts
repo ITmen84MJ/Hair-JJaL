@@ -78,7 +78,7 @@ export function useSupabaseStore() {
       const [shopsRes, designersRes, clientsRes, consultationsRes, bookingsRes] =
         await Promise.all([
           db('shops').select('*'),
-          db('designers').select('*').eq('status', 'active'),
+          db('designers').select('*'),  // active + inactive 모두 로드 (퇴직자 표시·재활성화 지원)
           db('clients').select('*'),
           db('consultations').select('*').order('date', { ascending: false }),
           db('bookings').select('*').order('created_at', { ascending: false }),
@@ -140,7 +140,7 @@ export function useSupabaseStore() {
           .then((r: {data: import('../lib/database.types').ConsultationRow[] | null}) =>
             r.data && setConsultations(r.data.map(rowToConsultation))))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'designers' },
-        () => db('designers').select('*').eq('status', 'active')
+        () => db('designers').select('*')  // active + inactive 모두
           .then((r: {data: import('../lib/database.types').DesignerRow[] | null}) =>
             r.data && setDesigners(r.data.map(rowToDesigner))))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' },

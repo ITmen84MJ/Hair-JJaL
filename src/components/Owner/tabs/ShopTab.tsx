@@ -1,10 +1,91 @@
 import { useState } from 'react';
-import { Store, Edit2, Check, X, Download, Upload, Database, FileText } from 'lucide-react';
+import { Store, Edit2, Check, X, Download, Upload, Database, FileText, Cloud, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { Client, Consultation, Shop } from '../../../types';
 import { getStorageUsage, exportData, importData } from '../../../utils/backup';
 import { exportAllClients } from '../../../utils/csv';
+import { USE_SUPABASE } from '../../../lib/supabase';
+import {
+  migrateLocalStorageToSupabase,
+  hasMigratableData,
+  isMigrationDone,
+  type MigrationResult,
+} from '../../../utils/dataMigration';
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
+
+// ── CloudMigrationSection ────────────────────────────────────────────────────
+/** Supabase 모드에서만 표시: localStorage → Supabase 일회성 데이터 이전 UI */
+function CloudMigrationSection({ shopId }: { shopId: string }) {
+  const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>(() =>
+    isMigrationDone() ? 'done' : 'idle'
+  );
+  const [result, setResult] = useState<MigrationResult | null>(null);
+  const hasData = hasMigratableData();
+
+  const run = async () => {
+    setStatus('running');
+    const res = await migrateLocalStorageToSupabase(shopId);
+    setResult(res);
+    setStatus(res.success ? 'done' : 'error');
+  };
+
+  return (
+    <div className="rounded-2xl border p-5 space-y-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' }}>
+      <div className="flex items-center gap-2">
+        <Cloud size={16} style={{ color: 'var(--text-muted)' }} />
+        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>클라우드 데이터 이전</h3>
+        {status === 'done' && <span className="ml-auto text-xs text-emerald-500 flex items-center gap-1"><CheckCircle size={12} /> 완료</span>}
+      </div>
+
+      {status === 'done' && result ? (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-emerald-600">이전이 완료되었습니다.</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>고객</span>       <span className="font-semibold">{result.counts.clients}명</span>
+            <span>상담 기록</span>  <span className="font-semibold">{result.counts.consultations}건</span>
+            <span>디자이너</span>   <span className="font-semibold">{result.counts.designers}명</span>
+            <span>예약</span>       <span className="font-semibold">{result.counts.bookings}건</span>
+          </div>
+          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            기존 로컬 데이터는 그대로 유지됩니다. 확인 후 수동으로 삭제하세요.
+          </p>
+        </div>
+      ) : status === 'done' ? (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>이미 클라우드로 데이터를 이전했습니다.</p>
+      ) : status === 'error' && result ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-red-500 text-xs">
+            <AlertCircle size={13} /> 이전 실패: {result.error}
+          </div>
+          <button onClick={run}
+            className="text-xs px-3 py-2 rounded-xl border border-rose-400 text-rose-500 hover:bg-rose-50 transition-colors">
+            다시 시도
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            기기의 로컬 데이터를 Supabase 클라우드로 이전합니다.
+            이전 완료 후 여러 기기·여러 디자이너가 동시에 데이터를 공유할 수 있습니다.
+          </p>
+          {!hasData && (
+            <p className="text-xs text-amber-500">이전할 로컬 데이터가 없습니다.</p>
+          )}
+          <button
+            onClick={run}
+            disabled={status === 'running' || !hasData}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {status === 'running' ? (
+              <><Loader size={13} className="animate-spin" /> 이전 중…</>
+            ) : (
+              <><Cloud size={13} /> 클라우드로 데이터 이전</>
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── DataManagementSection ────────────────────────────────────────────────────
 function DataManagementSection({ clients, consultations }: { clients: Client[]; consultations: Consultation[] }) {
@@ -216,6 +297,11 @@ export function ShopTab({ shop, clients, consultations, onUpdateShop }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Supabase 모드에서만: localStorage → Cloud 이전 UI */}
+      {USE_SUPABASE && shop && (
+        <CloudMigrationSection shopId={shop.id} />
       )}
 
       <DataManagementSection clients={clients} consultations={consultations} />

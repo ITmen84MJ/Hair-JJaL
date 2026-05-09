@@ -254,7 +254,7 @@ export function ConsultationDetail({ consultation, client, onBack, onUpdate, onD
         )}
       </div>
 
-      {showEdit && <ConsultationForm clientId={con.clientId} clientName={client.name} initial={con}
+      {showEdit && <ConsultationForm clientId={con.clientId} clientName={client.name} shopId={con.shopId} initial={con}
         onSave={data => { onUpdate(con.id, data); setShowEdit(false); }} onClose={() => setShowEdit(false)} />}
       {showDeleteModal && (
         <DeleteConsultationModal

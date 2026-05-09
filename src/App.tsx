@@ -300,6 +300,7 @@ export default function App() {
               client={selectedClient}
               consultations={clientConsultations}
               designers={shopDesigners}
+              shopId={shopId}
               onBack={() => store.navigate('clients')}
               onUpdateClient={store.updateClient}
               onAddConsultation={data => store.addConsultation({ ...data, shopId })}

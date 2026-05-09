@@ -17,6 +17,7 @@ interface Props {
   client: Client;
   consultations: Consultation[];
   designers: Designer[];
+  shopId?: string;
   onBack: () => void;
   onUpdateClient: (id: string, data: Partial<Client>) => void;
   onAddConsultation: (data: Omit<Consultation, 'id' | 'shareToken' | 'createdAt' | 'shopId'>) => void;
@@ -60,7 +61,7 @@ function Lightbox({ photos, startIndex, onClose }: {
   );
 }
 
-export function ClientDetail({ client, consultations, designers, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
+export function ClientDetail({ client, consultations, designers, shopId, onBack, onUpdateClient, onAddConsultation, onSelectConsultation }: Props) {
   const [showEditClient, setShowEditClient] = useState(false);
   const [showAddCon, setShowAddCon] = useState(false);
   const [activeTab, setActiveTab] = useState<'history' | 'gallery' | 'stats'>('history');
@@ -369,6 +370,7 @@ export function ClientDetail({ client, consultations, designers, onBack, onUpdat
         <ConsultationForm
           clientId={client.id}
           clientName={client.name}
+          shopId={shopId}
           designers={designers}
           lastConsultation={allSorted[0]}
           onSave={data => { onAddConsultation(data); setShowAddCon(false); }}

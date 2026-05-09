@@ -4,13 +4,14 @@ import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
 import { inputCls as sharedInputCls } from '../../styles/form';
-import { compressImage } from '../../utils/imageCompress';
+import { uploadOrCompressPhoto } from '../../utils/imageCompress';
 import { useFormulaTemplates } from '../../hooks/useFormulaTemplates';
 import { Modal } from '../common/Modal';
 
 interface Props {
   clientId: string;
   clientName: string;
+  shopId?: string;              // Supabase Storage 업로드 경로용 (없으면 base64 사용)
   initial?: Partial<Consultation>;
   designers?: Designer[];
   lastConsultation?: Consultation; // P2-22: 이전 방문 컨텍스트
@@ -24,10 +25,14 @@ function PhotoUpload({
   label,
   value,
   onChange,
+  shopId,
+  clientId,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  shopId?: string;
+  clientId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,9 +42,9 @@ function PhotoUpload({
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const raw = ev.target?.result as string;
-      // 이미지 압축: 최대 1280px, JPEG 80% 품질
-      const compressed = await compressImage(raw);
-      onChange(compressed);
+      // 압축 + Storage 업로드 (Supabase 모드) 또는 base64 압축 (localStorage 모드)
+      const result = await uploadOrCompressPhoto(raw, shopId ?? '', clientId);
+      onChange(result);
     };
     reader.readAsDataURL(file);
   };
@@ -107,7 +112,7 @@ function AccordionSection({ title, hint, defaultOpen = false, children }: {
   );
 }
 
-export function ConsultationForm({ clientId, clientName, initial, designers, lastConsultation, onSave, onClose }: Props) {
+export function ConsultationForm({ clientId, clientName, shopId, initial, designers, lastConsultation, onSave, onClose }: Props) {
   const [showLastVisit, setShowLastVisit] = useState(false);
   const { templates, addTemplate, removeTemplate } = useFormulaTemplates();
   const [showColorTpl, setShowColorTpl] = useState(false);
@@ -504,8 +509,8 @@ export function ConsultationForm({ clientId, clientName, initial, designers, las
             defaultOpen={!!(form.beforePhoto || form.afterPhoto)}
           >
           <div className="grid grid-cols-2 gap-4">
-            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} />
-            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} />
+            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} shopId={shopId} clientId={clientId} />
+            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} shopId={shopId} clientId={clientId} />
           </div>
           </AccordionSection>
 

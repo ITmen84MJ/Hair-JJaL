@@ -104,7 +104,16 @@ export async function uploadOrCompressPhoto(
       .from(BUCKET)
       .getPublicUrl(data.path);
 
-    return publicUrl;
+    // Storage URL 접근 가능 여부 확인 — 버킷이 private이거나 RLS 문제 시 base64로 폴백
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(publicUrl, { method: 'HEAD', signal: ctrl.signal });
+      clearTimeout(tid);
+      if (res.ok) return publicUrl;
+    } catch { /* 타임아웃 또는 CORS — base64 사용 */ }
+    console.warn('[uploadPhoto] Storage URL 접근 불가, base64 사용');
+    return compressed;
   } catch (e) {
     console.warn('[uploadPhoto] 예외 발생, base64 사용:', e);
     return compressed;

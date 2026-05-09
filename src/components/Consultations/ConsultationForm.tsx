@@ -274,22 +274,6 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
 
   return (
     <>
-    {/* 이탈 확인 다이얼로그 */}
-    {showDirtyConfirm && (
-      <Modal onClose={() => setShowDirtyConfirm(false)}>
-        <div className="p-6 space-y-4">
-          <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>작성 중인 내용이 있습니다</h3>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>닫으면 입력한 내용이 모두 사라집니다. 그래도 닫으시겠어요?</p>
-          <div className="flex gap-2">
-            <button onClick={() => setShowDirtyConfirm(false)}
-              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
-            <button onClick={() => { isDirty.current = false; try { localStorage.removeItem(DRAFT_KEY); } catch {} onClose(); }}
-              className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
-          </div>
-        </div>
-      </Modal>
-    )}
     <Modal onClose={handleClose} maxWidth="max-w-2xl">
       <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10 rounded-t-2xl" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div>
@@ -619,6 +603,22 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
           </div>
         </form>
     </Modal>
+    {/* 이탈 확인 다이얼로그 — 메인 폼보다 뒤에 렌더링해야 z-index 없이도 위에 표시됨 */}
+    {showDirtyConfirm && (
+      <Modal onClose={() => setShowDirtyConfirm(false)}>
+        <div className="p-6 space-y-4">
+          <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>작성 중인 내용이 있습니다</h3>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>닫으면 입력한 내용이 모두 사라집니다. 그래도 닫으시겠어요?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowDirtyConfirm(false)}
+              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
+            <button onClick={() => { isDirty.current = false; try { localStorage.removeItem(DRAFT_KEY); } catch {} onClose(); }}
+              className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
+          </div>
+        </div>
+      </Modal>
+    )}
     </>
   );
 }

@@ -595,6 +595,7 @@ export function CustomerLayout({
             onSelectConsultation={onSelectConsultation}
             onNewBooking={onNewBooking}
             onCancelBooking={onCancelBooking}
+            onLogout={onLogout}
           />
         )}
         {tab === 'bookings' && (

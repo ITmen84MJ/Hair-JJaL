@@ -94,7 +94,24 @@ export default function App() {
           onLoginAs={loginAs}
           onRegisterOwner={registerOwner}
           onRegisterCustomer={async (data) => {
-            return await addCustomerAccount(data);
+            // 1. 고객 레코드를 store에 먼저 생성 (clientId 확보)
+            const client = await store.addClient({
+              shopId:    data.shopId,
+              name:      data.name,
+              phone:     data.phone,
+              email:     data.email,
+              gender:    'other' as const,
+              tags:      [],
+              notes:     '',
+            });
+            // 2. 인증 계정 생성 (clientId 전달)
+            const err = await addCustomerAccount({ ...data, clientId: client.id });
+            if (err) {
+              // 계정 생성 실패 시 방금 만든 client 레코드 롤백
+              await store.deleteClient(client.id);
+              return err;
+            }
+            return null;
           }}
           onResetPassword={resetPassword}
           shops={store.shops}

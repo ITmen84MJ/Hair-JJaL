@@ -14,6 +14,7 @@ interface Props {
   onSelectConsultation: (id: string) => void;
   onNewBooking: () => void;
   onCancelBooking?: (id: string) => void;
+  onLogout?: () => void;
 }
 
 const card = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' };
@@ -24,16 +25,30 @@ const BOOKING_STATUS: Record<BookingStatus, { label: string; Icon: React.Element
   cancelled: { label: '취소됨', Icon: XCircle,       bg: 'var(--bg-neutral)', text: 'var(--text-neutral)' },
 };
 
-export function CustomerHome({ client, consultations, bookings, shops = [], onSelectConsultation, onNewBooking, onCancelBooking }: Props) {
+export function CustomerHome({ client, consultations, bookings, shops = [], onSelectConsultation, onNewBooking, onCancelBooking, onLogout }: Props) {
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   if (!client) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-app)' }}>
-        <div className="text-center">
-          <Scissors size={40} className="mx-auto mb-3 text-rose-300" />
-          <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>연결된 고객 정보가 없습니다.</p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>헤어샵에 방문 후 상담 기록을 확인해보세요.</p>
+        <div className="text-center space-y-4 max-w-xs">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto"
+            style={{ backgroundColor: 'var(--bg-muted)' }}>
+            <Scissors size={28} className="text-rose-300" />
+          </div>
+          <div>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>고객 정보가 연결되지 않았습니다.</p>
+            <p className="text-sm mt-2 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              헤어샵 담당자에게 문의하거나,<br />로그아웃 후 새로 가입해 주세요.
+            </p>
+          </div>
+          {onLogout && (
+            <button onClick={onLogout}
+              className="w-full py-2.5 rounded-xl border text-sm font-medium transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+              로그아웃
+            </button>
+          )}
         </div>
       </div>
     );

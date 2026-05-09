@@ -181,11 +181,21 @@ function useLocalAuth() {
     });
   }, []);
 
-  // AUTH-05: localStorage 모드에서는 고객 계정 미지원 (Supabase 전용)
-  const addCustomerAccount = useCallback(async (_data: {
-    shopId: string; name: string; phone: string; email: string; password: string;
+  /** 고객 계정 생성 — localStorage 모드에서도 지원 (clientId는 호출 측에서 먼저 생성 후 전달) */
+  const addCustomerAccount = useCallback(async (data: {
+    shopId: string; name: string; phone: string; email: string; password: string; clientId?: string;
   }): Promise<string | null> => {
-    return '고객 계정은 Supabase 모드에서만 지원됩니다.';
+    const lower = data.email.toLowerCase().trim();
+    if ([...demoUsers, ...loadExtraUsers()].some(u => u.email.toLowerCase() === lower))
+      return '이미 사용 중인 이메일입니다.';
+    const passwordHash = await hashPassword(lower, data.password);
+    const clientId = data.clientId ?? uuidv4();
+    const extras = loadExtraUsers();
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify([...extras, {
+      id: uuidv4(), shopId: data.shopId, name: data.name,
+      role: 'customer', email: lower, passwordHash, clientId,
+    } as AuthUser]));
+    return null;
   }, []);
 
   /** 비밀번호 재설정 — 이름+이메일 일치 확인 후 (localStorage는 실제 발송 불가) */

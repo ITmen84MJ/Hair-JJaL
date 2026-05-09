@@ -64,12 +64,23 @@ function PhotoUpload({
       {value ? (
         <div className="relative">
           {imgError ? (
-            /* 이미지 로드 실패 시 — 재업로드 유도 */
-            <div className="w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer"
-              style={{ borderColor: '#fca5a5', backgroundColor: '#fff1f2', color: '#ef4444' }}
-              onClick={() => inputRef.current?.click()}>
+            /* 이미지 로드 실패 시 — 재업로드 또는 삭제 유도 */
+            <div className="w-full h-32 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1"
+              style={{ borderColor: '#fca5a5', backgroundColor: '#fff1f2', color: '#ef4444' }}>
               <Image size={18} />
-              <span className="text-xs">이미지 로드 실패 — 클릭하여 다시 업로드</span>
+              <span className="text-xs text-center px-2">이미지를 불러올 수 없습니다</span>
+              <div className="flex gap-2 mt-1">
+                <button type="button" onClick={() => inputRef.current?.click()}
+                  className="text-xs px-2.5 py-1 rounded-lg border font-medium"
+                  style={{ borderColor: '#fca5a5', color: '#ef4444', backgroundColor: 'white' }}>
+                  다시 업로드
+                </button>
+                <button type="button" onClick={() => { onChange(''); setImgError(false); }}
+                  className="text-xs px-2.5 py-1 rounded-lg font-medium text-white"
+                  style={{ backgroundColor: '#ef4444' }}>
+                  삭제
+                </button>
+              </div>
             </div>
           ) : (
             <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"

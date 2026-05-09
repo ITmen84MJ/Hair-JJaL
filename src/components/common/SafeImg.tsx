@@ -12,10 +12,19 @@ interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
 export function SafeImg({ src, alt, className, fallbackClassName, onError, ...rest }: Props) {
   const [failed, setFailed] = useState(false);
 
-  // src가 바뀌면 실패 상태를 리셋 — 저장 후 새 이미지가 보이지 않는 버그 방지
+  // src가 바뀌면 실패 상태를 리셋
   useEffect(() => {
     setFailed(false);
   }, [src]);
+
+  // HTTP URL(Supabase Storage)은 응답이 느리면 onError가 한참 뒤에 올 수 있음.
+  // 8초 안에 로드 안 되면 fallback으로 전환
+  useEffect(() => {
+    if (!src || failed) return;
+    if (!src.startsWith('http')) return;
+    const tid = setTimeout(() => setFailed(true), 8000);
+    return () => clearTimeout(tid);
+  }, [src, failed]);
 
   if (failed || !src) {
     return (

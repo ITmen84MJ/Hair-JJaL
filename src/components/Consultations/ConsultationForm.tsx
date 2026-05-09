@@ -38,11 +38,19 @@ function PhotoUpload({
   const [uploading, setUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  // value 가 바뀌면(새 업로드 또는 삭제 후) 에러 상태를 초기화
-  // 이전 이미지가 실패 상태일 때 새 이미지를 올리면 에러 UI가 유지되는 버그를 방지한다
+  // value 가 바뀌면 에러 상태 초기화 (새 업로드 또는 삭제 후)
   useEffect(() => {
     setImgError(false);
   }, [value]);
+
+  // HTTP URL(Storage)은 느린 응답·연결 실패 시 onError가 오래 걸릴 수 있음.
+  // 8초 타임아웃 — 그 안에 onLoad가 안 오면 에러 UI로 전환
+  useEffect(() => {
+    if (!value || imgError) return;
+    if (!value.startsWith('http')) return; // base64는 즉시 렌더링, 타임아웃 불필요
+    const tid = setTimeout(() => setImgError(true), 8000);
+    return () => clearTimeout(tid);
+  }, [value, imgError]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

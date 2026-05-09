@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ImageOff } from 'lucide-react';
 
 interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -11,6 +11,11 @@ interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
  */
 export function SafeImg({ src, alt, className, fallbackClassName, onError, ...rest }: Props) {
   const [failed, setFailed] = useState(false);
+
+  // src가 바뀌면 실패 상태를 리셋 — 저장 후 새 이미지가 보이지 않는 버그 방지
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (failed || !src) {
     return (

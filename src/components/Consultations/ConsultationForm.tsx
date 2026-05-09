@@ -38,6 +38,12 @@ function PhotoUpload({
   const [uploading, setUploading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  // value 가 바뀌면(새 업로드 또는 삭제 후) 에러 상태를 초기화
+  // 이전 이미지가 실패 상태일 때 새 이미지를 올리면 에러 UI가 유지되는 버그를 방지한다
+  useEffect(() => {
+    setImgError(false);
+  }, [value]);
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

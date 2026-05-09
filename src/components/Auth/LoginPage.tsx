@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser, Shop } from '../../types';
@@ -157,6 +157,16 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
 
+  // shops가 나중에 로드되면 shopId를 자동 선택
+  // (스토어 초기화 전에 컴포넌트가 마운트될 수 있으므로 필수)
+  const prevShopsLen = useRef(shops.length);
+  useEffect(() => {
+    if (!form.shopId && shops[0]?.id) {
+      setForm(f => ({ ...f, shopId: shops[0].id }));
+    }
+    prevShopsLen.current = shops.length;
+  }, [shops]);
+
   const f = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm(p => ({ ...p, [k]: e.target.value }));
@@ -172,7 +182,7 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
       setError('비밀번호는 6자 이상이어야 합니다.'); return;
     }
     if (!form.shopId) {
-      setError('지점을 선택해 주세요.'); return;
+      setError('지점 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'); return;
     }
     setLoading(true);
     const err = await onSubmit({
@@ -204,9 +214,32 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
     );
   }
 
+  // 지점 목록 로딩 실패(등록된 지점 없음) 안내
+  if (shops.length === 0) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>
+          등록된 지점 정보를 불러오는 중입니다.<br />잠시 후 다시 시도해 주세요.
+        </p>
+        <button type="button" onClick={onBack}
+          className="w-full py-3 rounded-xl border text-sm font-medium"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          돌아가기
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      {shops.length > 1 && (
+      {/* 지점이 1개면 자동 선택 표시, 2개 이상이면 드롭다운 */}
+      {shops.length === 1 ? (
+        <div className="rounded-xl px-4 py-3 text-sm flex items-center justify-between"
+          style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
+          <span style={{ color: 'var(--text-muted)' }}>방문 지점</span>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{shops[0].name}</span>
+        </div>
+      ) : (
         <div>
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>방문 지점 *</label>
           <select

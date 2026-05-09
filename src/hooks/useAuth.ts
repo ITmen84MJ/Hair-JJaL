@@ -186,6 +186,22 @@ function useLocalAuth() {
     return '고객 계정은 Supabase 모드에서만 지원됩니다.';
   }, []);
 
+  /** 비밀번호 재설정 — localStorage 모드 미지원 */
+  const resetPassword = useCallback(async (_email: string): Promise<string | null> => {
+    return 'localStorage 모드에서는 비밀번호 재설정이 지원되지 않습니다.';
+  }, []);
+
+  /** 비밀번호 변경 — 현재 로그인된 사용자 */
+  const changePassword = useCallback(async (newPassword: string): Promise<string | null> => {
+    if (!user) return '로그인이 필요합니다.';
+    const newHash = await hashPassword(user.email, newPassword);
+    const extras = loadExtraUsers().map(u =>
+      u.email.toLowerCase() === user.email.toLowerCase() ? { ...u, passwordHash: newHash } : u
+    );
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(extras));
+    return null;
+  }, [user]);
+
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_KEY);
     sessionStorage.clear();
@@ -195,7 +211,7 @@ function useLocalAuth() {
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser,
+    updateName, updateExtraUser, resetPassword, changePassword,
   };
 }
 
@@ -428,6 +444,26 @@ function useSupabaseAuth() {
     return null;
   }, []);
 
+  /**
+   * 비밀번호 재설정 이메일 발송.
+   * Supabase가 재설정 링크가 담긴 이메일을 자동 발송한다.
+   */
+  const resetPassword = useCallback(async (email: string): Promise<string | null> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email.toLowerCase().trim(),
+      { redirectTo: window.location.origin + '/' },
+    );
+    if (error) return error.message;
+    return null;
+  }, []);
+
+  /** 현재 로그인된 사용자의 비밀번호 변경 */
+  const changePassword = useCallback(async (newPassword: string): Promise<string | null> => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return error.message;
+    return null;
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -436,7 +472,7 @@ function useSupabaseAuth() {
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser,
+    updateName, updateExtraUser, resetPassword, changePassword,
   };
 }
 

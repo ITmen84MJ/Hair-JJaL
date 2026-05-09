@@ -25,6 +25,7 @@ interface Props {
   onLoginAs: (userId: string) => void;
   onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
   onRegisterCustomer?: (data: CustomerRegisterData) => Promise<string | null>;
+  onResetPassword?: (email: string) => Promise<string | null>;
   shops?: Shop[];
 }
 
@@ -246,14 +247,16 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
 }
 
 // ── 메인 LoginPage ─────────────────────────────────────────────────
-export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, shops = [] }: Props) {
-  const [mode, setMode]       = useState<'login' | 'register' | 'customer-register'>('login');
+export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, onResetPassword, shops = [] }: Props) {
+  const [mode, setMode]       = useState<'login' | 'register' | 'customer-register' | 'reset-password' | 'select-role'>('login');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]   = useState(false);
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent]   = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,50 +314,135 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                   className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors shadow-sm shadow-rose-200">
                   {loading ? '로그인 중...' : '로그인'}
                 </button>
+                {onResetPassword && (
+                  <button type="button" onClick={() => { setResetEmail(email); setMode('reset-password'); setError(''); }}
+                    className="w-full text-center text-xs py-1 transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}>
+                    비밀번호를 잊으셨나요?
+                  </button>
+                )}
               </form>
 
-              {/* 가입 유도 */}
-              <div className="mt-4 pt-4 border-t space-y-2" style={{ borderColor: 'var(--border)' }}>
+              {/* 가입 유도 — 버튼 1개로 통합 */}
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+                <button onClick={() => setMode('select-role')}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                  계정이 없으신가요? <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>회원가입</span>
+                </button>
+              </div>
+            </>
+          ) : mode === 'select-role' ? (
+            <>
+              <div className="flex items-center gap-2 mb-5">
+                <button onClick={() => setMode('login')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                  <ArrowLeft size={18} />
+                </button>
+                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>회원가입</h2>
+              </div>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>해당되는 항목을 선택해 주세요.</p>
+              <div className="space-y-3">
                 {onRegisterCustomer && (
                   <button onClick={() => setMode('customer-register')}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                    <User size={15} className="text-blue-500" />
-                    고객으로 회원가입하기
+                    className="w-full flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all hover:shadow-sm"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-input)' }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eff6ff' }}>
+                      <User size={18} className="text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>고객</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>시술 이력·예약 조회</p>
+                    </div>
                   </button>
                 )}
                 <button onClick={() => setMode('register')}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-                  <Store size={15} className="text-amber-500" />
-                  원장으로 신규 지점 개설하기
+                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl border text-left transition-all hover:shadow-sm"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-input)' }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#fffbeb' }}>
+                    <Crown size={18} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>원장</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>신규 지점 개설 · 직원 관리</p>
+                  </div>
                 </button>
               </div>
             </>
           ) : mode === 'customer-register' && onRegisterCustomer ? (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setMode('login')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={() => setMode('select-role')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
                   <ArrowLeft size={18} />
                 </button>
                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>고객 회원가입</h2>
               </div>
               <CustomerRegisterForm
                 shops={shops}
-                onBack={() => setMode('login')}
+                onBack={() => setMode('select-role')}
                 onSubmit={onRegisterCustomer}
               />
+            </>
+          ) : mode === 'reset-password' && onResetPassword ? (
+            <>
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => { setMode('login'); setResetSent(false); setError(''); }} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                  <ArrowLeft size={18} />
+                </button>
+                <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>비밀번호 재설정</h2>
+              </div>
+              {resetSent ? (
+                <div className="text-center space-y-3 py-4">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: 'var(--bg-success)' }}>
+                    <span className="text-2xl">✉️</span>
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>재설정 이메일을 보냈어요!</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <strong>{resetEmail}</strong>로 발송된 링크를 클릭하면<br />새 비밀번호를 설정할 수 있습니다.
+                  </p>
+                  <button onClick={() => { setMode('login'); setResetSent(false); }}
+                    className="w-full mt-2 py-2.5 rounded-xl border text-sm font-medium"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                    로그인으로 돌아가기
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={async e => {
+                  e.preventDefault();
+                  setLoading(true); setError('');
+                  const err = await onResetPassword(resetEmail);
+                  setLoading(false);
+                  if (err) setError(err);
+                  else setResetSent(true);
+                }} className="space-y-3">
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    가입한 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.
+                  </p>
+                  <input
+                    type="email" required placeholder="이메일" value={resetEmail}
+                    onChange={e => { setResetEmail(e.target.value); setError(''); }}
+                    className={inp}
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                  {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
+                    {loading ? '발송 중...' : '재설정 이메일 보내기'}
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setMode('login')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                <button onClick={() => setMode('select-role')} aria-label="뒤로 가기" className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
                   <ArrowLeft size={18} />
                 </button>
                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>원장 가입 · 지점 개설</h2>
               </div>
               <OwnerRegisterForm
-                onBack={() => setMode('login')}
+                onBack={() => setMode('select-role')}
                 onSubmit={onRegisterOwner}
               />
             </>

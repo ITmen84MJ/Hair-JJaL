@@ -24,7 +24,7 @@ const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBookin
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword } = useAuth();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -83,6 +83,7 @@ export default function App() {
           onRegisterCustomer={async (data) => {
             return await addCustomerAccount(data);
           }}
+          onResetPassword={resetPassword}
           shops={store.shops}
         />
       </ErrorBoundary>
@@ -161,6 +162,7 @@ export default function App() {
         onUpdateConsultation={store.updateConsultation}
         onCancelBooking={id => store.updateBooking(id, { status: 'cancelled', cancelReason: '고객 취소' })}
         onRescheduleBooking={(id, date, time) => store.updateBooking(id, { requestedDate: date, requestedTime: time, status: 'pending' })}
+        onChangePassword={changePassword}
       />
       </Suspense>
       </ErrorBoundary>
@@ -409,6 +411,7 @@ export default function App() {
               }}
               onUpdateShop={myShop ? (data) => store.updateShop(myShop.id, data) : undefined}
               onUpdateName={updateName}
+              onChangePassword={changePassword}
             />
           </Suspense>
         )}

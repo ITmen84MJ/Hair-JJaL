@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Phone, Mail, Edit2, Check, X, BookOpen } from 'lucide-react';
+import { Scissors, Calendar, User as UserIcon, Sun, Moon, LogOut, ArrowLeft, Phone, Mail, Edit2, Check, X, BookOpen, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { format, parseISO, differenceInYears } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AuthUser, Client, Consultation, Booking, Shop, View } from '../../types';
@@ -27,6 +27,7 @@ interface Props {
   onUpdateConsultation: (id: string, data: Partial<Consultation>) => void;
   onCancelBooking: (id: string) => void;
   onRescheduleBooking?: (id: string, date: string, time: string) => void;
+  onChangePassword?: (newPassword: string) => Promise<string | null>;
 }
 
 type CustomerTab = 'home' | 'bookings' | 'profile';
@@ -91,7 +92,7 @@ export function CustomerLayout({
   user, client, consultations, bookings, shop, shops = [], shopName,
   currentView, selectedConsultationId,
   isDark, onToggleTheme, onLogout, onNavigate,
-  onSelectConsultation, onNewBooking, onUpdateClient, onUpdateConsultation, onCancelBooking, onRescheduleBooking,
+  onSelectConsultation, onNewBooking, onUpdateClient, onUpdateConsultation, onCancelBooking, onRescheduleBooking, onChangePassword,
 }: Props) {
   // P2-14: 탭 선택을 sessionStorage에 유지
   const [tab, setTab] = useState<CustomerTab>(() => {
@@ -436,6 +437,78 @@ export function CustomerLayout({
             <span className="text-xs flex-shrink-0 font-medium" style={{ color: '#2563eb' }}>열기 →</span>
           </a>
         </div>
+
+        {/* 비밀번호 변경 */}
+        {onChangePassword && (() => {
+          const [open, setOpen] = useState(false);
+          const [newPw, setNewPw] = useState('');
+          const [confirmPw, setConfirmPw] = useState('');
+          const [showNew, setShowNew] = useState(false);
+          const [showConfirm, setShowConfirm] = useState(false);
+          const [pwError, setPwError] = useState('');
+          const [pwSuccess, setPwSuccess] = useState(false);
+          const [saving, setSaving] = useState(false);
+          const inp2 = "w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
+
+          const handleChangePw = async (e: React.FormEvent) => {
+            e.preventDefault();
+            setPwError(''); setPwSuccess(false);
+            if (newPw.length < 6) { setPwError('비밀번호는 6자 이상이어야 합니다.'); return; }
+            if (newPw !== confirmPw) { setPwError('비밀번호가 일치하지 않습니다.'); return; }
+            setSaving(true);
+            const err = await onChangePassword(newPw);
+            setSaving(false);
+            if (err) { setPwError(err); }
+            else { setPwSuccess(true); setNewPw(''); setConfirmPw(''); setTimeout(() => { setOpen(false); setPwSuccess(false); }, 1500); }
+          };
+
+          return (
+            <div className="rounded-2xl border overflow-hidden" style={card}>
+              <button onClick={() => { setOpen(v => !v); setPwError(''); setPwSuccess(false); }}
+                className="w-full flex items-center justify-between px-4 py-3.5" aria-expanded={open}>
+                <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  <KeyRound size={14} style={{ color: 'var(--text-muted)' }} /> 비밀번호 변경
+                </div>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{open ? '▲' : '▼'}</span>
+              </button>
+              {open && (
+                <form onSubmit={handleChangePw} className="px-4 pb-4 space-y-2.5 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                  {pwSuccess ? (
+                    <p className="text-xs px-3 py-2 rounded-lg text-center font-medium" style={{ color: 'var(--text-success)', backgroundColor: 'var(--bg-success)' }}>✓ 비밀번호가 변경되었습니다.</p>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <input type={showNew ? 'text' : 'password'} required placeholder="새 비밀번호 (6자 이상)"
+                          value={newPw} onChange={e => { setNewPw(e.target.value); setPwError(''); }}
+                          className={`${inp2} pr-10`}
+                          style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                        <button type="button" onClick={() => setShowNew(v => !v)} aria-label={showNew ? '숨기기' : '표시'}
+                          className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                          {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input type={showConfirm ? 'text' : 'password'} required placeholder="새 비밀번호 확인"
+                          value={confirmPw} onChange={e => { setConfirmPw(e.target.value); setPwError(''); }}
+                          className={`${inp2} pr-10`}
+                          style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                        <button type="button" onClick={() => setShowConfirm(v => !v)} aria-label={showConfirm ? '숨기기' : '표시'}
+                          className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                          {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      {pwError && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{pwError}</p>}
+                      <button type="submit" disabled={saving}
+                        className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+                        {saving ? '변경 중...' : '비밀번호 변경'}
+                      </button>
+                    </>
+                  )}
+                </form>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Logout */}
         <div className="rounded-2xl border p-4" style={card}>

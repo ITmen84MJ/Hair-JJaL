@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Mail, Phone, Calendar, Building2, Edit2, Check, X,
   Users, FileText, TrendingUp, Crown, Scissors, User,
-  HardDrive, BookOpen, CalendarDays, Plus, Trash2,
+  HardDrive, BookOpen, CalendarDays, Plus, Trash2, KeyRound, Eye, EyeOff,
 } from 'lucide-react';
 import { getStorageUsage } from '../../utils/backup';
 import { format, parseISO, startOfMonth } from 'date-fns';
@@ -21,6 +21,7 @@ interface Props {
   onUpdateDesigner: (id: string, data: Partial<Designer>) => void;
   onUpdateShop?: (data: Partial<Shop>) => void;   // owner only
   onUpdateName?: (name: string) => void;           // 세션 이름 동기화
+  onChangePassword?: (newPassword: string) => Promise<string | null>;
 }
 
 const card: React.CSSProperties = {
@@ -34,7 +35,7 @@ const inp = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus
 export function StaffProfile({
   user, designer, shop,
   myConsultations, shopConsultations, shopClients, shopDesigners, shopBookings,
-  onUpdateDesigner, onUpdateShop, onUpdateName,
+  onUpdateDesigner, onUpdateShop, onUpdateName, onChangePassword,
 }: Props) {
   const isOwner = user.role === 'owner';
 
@@ -520,6 +521,79 @@ export function StaffProfile({
           데이터 내보내기 기능은 고객 개인정보 보호를 위해 제공되지 않습니다.
         </p>
       </div>
+
+      {/* ── 비밀번호 변경 ── */}
+      {onChangePassword && (() => {
+        const [open, setOpen] = useState(false);
+        const [newPw, setNewPw] = useState('');
+        const [confirmPw, setConfirmPw] = useState('');
+        const [showNew, setShowNew] = useState(false);
+        const [showConfirm, setShowConfirm] = useState(false);
+        const [pwError, setPwError] = useState('');
+        const [pwSuccess, setPwSuccess] = useState(false);
+        const [saving, setSaving] = useState(false);
+
+        const handleChangePw = async (e: React.FormEvent) => {
+          e.preventDefault();
+          setPwError(''); setPwSuccess(false);
+          if (newPw.length < 6) { setPwError('비밀번호는 6자 이상이어야 합니다.'); return; }
+          if (newPw !== confirmPw) { setPwError('비밀번호가 일치하지 않습니다.'); return; }
+          setSaving(true);
+          const err = await onChangePassword(newPw);
+          setSaving(false);
+          if (err) { setPwError(err); }
+          else { setPwSuccess(true); setNewPw(''); setConfirmPw(''); setTimeout(() => { setOpen(false); setPwSuccess(false); }, 1500); }
+        };
+
+        return (
+          <div className="rounded-2xl border overflow-hidden" style={card}>
+            <button onClick={() => { setOpen(v => !v); setPwError(''); setPwSuccess(false); }}
+              className="w-full flex items-center justify-between px-5 py-4"
+              aria-expanded={open}>
+              <div className="flex items-center gap-2">
+                <KeyRound size={15} style={{ color: 'var(--text-muted)' }} />
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>비밀번호 변경</span>
+              </div>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{open ? '닫기 ▲' : '변경 ▼'}</span>
+            </button>
+            {open && (
+              <form onSubmit={handleChangePw} className="px-5 pb-5 space-y-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+                {pwSuccess ? (
+                  <p className="text-xs px-3 py-2 rounded-lg text-center font-medium" style={{ color: 'var(--text-success)', backgroundColor: 'var(--bg-success)' }}>✓ 비밀번호가 변경되었습니다.</p>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <input type={showNew ? 'text' : 'password'} required placeholder="새 비밀번호 (6자 이상)"
+                        value={newPw} onChange={e => { setNewPw(e.target.value); setPwError(''); }}
+                        className={`${inp} pr-10`}
+                        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                      <button type="button" onClick={() => setShowNew(v => !v)} aria-label={showNew ? '숨기기' : '표시'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                        {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input type={showConfirm ? 'text' : 'password'} required placeholder="새 비밀번호 확인"
+                        value={confirmPw} onChange={e => { setConfirmPw(e.target.value); setPwError(''); }}
+                        className={`${inp} pr-10`}
+                        style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+                      <button type="button" onClick={() => setShowConfirm(v => !v)} aria-label={showConfirm ? '숨기기' : '표시'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                        {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    {pwError && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{pwError}</p>}
+                    <button type="submit" disabled={saving}
+                      className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+                      {saving ? '변경 중...' : '비밀번호 변경'}
+                    </button>
+                  </>
+                )}
+              </form>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── 사용 매뉴얼 ── */}
       {(() => {

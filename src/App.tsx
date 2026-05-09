@@ -353,9 +353,20 @@ export default function App() {
                 });
               }}
               onLinkDesigner={async (authUserId: string, data: Omit<import('./types').Designer, 'id' | 'shopId'>) => {
-                // 기존 Supabase 계정을 검색해서 연결하는 경우 — 새 Auth 계정 생성 불필요
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                await store.addDesigner({ ...data, shopId, authUserId } as any);
+                // 같은 이메일의 기존 레코드(퇴직 포함)가 있으면 재활성화 — 중복 생성 방지
+                const existing = store.designers.find(
+                  d => d.email.toLowerCase() === data.email.toLowerCase()
+                );
+                if (existing) {
+                  store.updateDesigner(existing.id, {
+                    status: 'active',
+                    leftAt: undefined,
+                    leftReason: undefined,
+                  });
+                } else {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  await store.addDesigner({ ...data, shopId, authUserId } as any);
+                }
               }}
               onUpdateDesigner={(id, data) => {
                 store.updateDesigner(id, data);

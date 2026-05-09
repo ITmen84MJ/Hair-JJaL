@@ -100,6 +100,24 @@ export function useSupabaseStore() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // ── 로그인/로그아웃 시 데이터 재로드 ─────────────────────────────────────
+  // useStore는 !user 분기 전에 호출되므로 로그인 전(익명) 에 loadAll이 먼저 실행됨.
+  // Auth 상태가 바뀌면(SIGNED_IN) RLS가 활성화되므로 데이터를 다시 불러와야 한다.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        loadAll();
+      } else if (event === 'SIGNED_OUT') {
+        setShops([]);
+        setDesigners([]);
+        setClients([]);
+        setConsultations([]);
+        setBookings([]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [loadAll]);
+
   // ── B4 Realtime 구독 ─────────────────────────────────────────────────────
   useEffect(() => {
     const channel = supabase

@@ -77,6 +77,8 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
   const [selected, setSelected] = useState<CustomerSearchResult | null>(null);
   const [linking, setLinking]   = useState(false);
   const [linkDone, setLinkDone] = useState(false);
+  const [defaultName, setDefaultName] = useState('');
+  const [defaultEmail, setDefaultEmail] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 검색 디바운스
@@ -155,7 +157,20 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
               </div>
               {searching && <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>검색 중…</p>}
               {!searching && results.length === 0 && query.trim().length > 0 && (
-                <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</p>
+                <div className="text-center py-2 space-y-2">
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</p>
+                  <button
+                    onClick={() => {
+                      const q = query.trim();
+                      const isEmail = q.includes('@');
+                      setDefaultName(isEmail ? '' : q);
+                      setDefaultEmail(isEmail ? q : '');
+                      setTab('new');
+                    }}
+                    className="text-xs px-4 py-2 rounded-xl font-medium border border-rose-300 text-rose-500 hover:bg-rose-50 transition-colors">
+                    '{query.trim()}'로 새 고객 추가하기
+                  </button>
+                </div>
               )}
               <div className="space-y-2 max-h-52 overflow-y-auto">
                 {results.map(r => (
@@ -189,7 +204,12 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
           )
         ) : (
           /* 새 고객 추가 — 기존 ClientForm 인라인 */
-          <ClientFormInline onSave={data => { onAdd(data); onClose(); }} onCancel={onClose} />
+          <ClientFormInline
+            initialName={defaultName}
+            initialEmail={defaultEmail}
+            onSave={data => { onAdd(data); onClose(); }}
+            onCancel={onClose}
+          />
         )}
       </div>
     </Modal>
@@ -197,11 +217,13 @@ function AddClientModal({ shopId, onClose, onAdd, onLink }: {
 }
 
 // ClientForm을 모달 없이 인라인으로 사용하기 위한 래퍼
-function ClientFormInline({ onSave, onCancel }: {
+function ClientFormInline({ onSave, onCancel, initialName = '', initialEmail = '' }: {
   onSave: (data: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => void;
   onCancel: () => void;
+  initialName?: string;
+  initialEmail?: string;
 }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', birthDate: '', gender: 'female' as Client['gender'], notes: '', tags: [] as string[] });
+  const [form, setForm] = useState({ name: initialName, phone: '', email: initialEmail, birthDate: '', gender: 'female' as Client['gender'], notes: '', tags: [] as string[] });
   const [tagInput, setTagInput] = useState('');
   const cls2 = "w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300";
   const inpSt = { borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' };

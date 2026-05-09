@@ -30,6 +30,8 @@ function AddDesignerModal({ onClose, onAdd, onLink }: {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── 새 계정 탭 state ──
+  const [defaultName, setDefaultName] = useState('');
+  const [defaultEmail, setDefaultEmail] = useState('');
   const [form, setForm]     = useState({ name: '', email: '', phone: '', password: '' });
   const [newDone, setNewDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -144,7 +146,7 @@ function AddDesignerModal({ onClose, onAdd, onLink }: {
         {USE_SUPABASE && (
           <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
             {([['search', '기존 계정 연결', Search], ['new', '새 계정 생성', UserPlus]] as const).map(([id, label, Icon]) => (
-              <button key={id} onClick={() => { setTab(id); setSelected(null); setQuery(''); setResults([]); }}
+              <button key={id} onClick={() => { setTab(id); setSelected(null); setQuery(''); setResults([]); if (id === 'new') { setForm(prev => ({ ...prev, name: defaultName, email: defaultEmail })); } }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-medium transition-colors"
                 style={tab === id
                   ? { backgroundColor: 'var(--bg-icon-rose)', color: 'var(--text-icon-rose)' }
@@ -176,7 +178,25 @@ function AddDesignerModal({ onClose, onAdd, onLink }: {
               <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>검색 중…</p>
             )}
             {!searching && query.trim().length > 0 && results.length === 0 && (
-              <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</p>
+              <div className="text-center py-2 space-y-2">
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>검색 결과가 없습니다.</p>
+                <button
+                  onClick={() => {
+                    const q = query.trim();
+                    const isEmail = q.includes('@');
+                    const newName = isEmail ? '' : q;
+                    const newEmail = isEmail ? q : '';
+                    setDefaultName(newName);
+                    setDefaultEmail(newEmail);
+                    setForm(prev => ({ ...prev, name: newName, email: newEmail }));
+                    setTab('new');
+                    setQuery('');
+                    setResults([]);
+                  }}
+                  className="text-xs px-4 py-2 rounded-xl font-medium border border-rose-300 text-rose-500 hover:bg-rose-50 transition-colors">
+                  '{query.trim()}'로 새 계정 생성하기
+                </button>
+              </div>
             )}
             {results.length > 0 && !selected && (
               <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)' }}>

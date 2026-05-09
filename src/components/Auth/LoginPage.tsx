@@ -29,10 +29,11 @@ interface Props {
   shops?: Shop[];
 }
 
+// Tailwind 클래스 대신 인라인 스타일로 다크모드 대응
 const roleInfo = {
-  customer: { label: '고객',        Icon: User,   color: 'bg-blue-50 text-blue-600 border-blue-200',  desc: '내 시술 이력 확인' },
-  designer: { label: '헤어디자이너', Icon: Palette, color: 'bg-rose-50 text-rose-600 border-rose-200',  desc: '고객 관리 · 상담 기록' },
-  owner:    { label: '원장',         Icon: Crown,  color: 'bg-amber-50 text-amber-600 border-amber-200', desc: '전체 통계 · 직원 관리' },
+  customer: { label: '고객',        Icon: User,   bg: 'var(--bg-icon-blue, #eff6ff)',   border: 'var(--border-info, #bfdbfe)',  text: 'var(--text-info, #2563eb)',   desc: '내 시술 이력 확인' },
+  designer: { label: '헤어디자이너', Icon: Palette, bg: 'var(--bg-icon-rose)',            border: 'var(--border-rose, #fecdd3)',  text: 'var(--text-icon-rose)',        desc: '고객 관리 · 상담 기록' },
+  owner:    { label: '원장',         Icon: Crown,  bg: 'var(--bg-icon-amber, #fffbeb)',  border: 'var(--border-amber, #fde68a)', text: 'var(--text-icon-amber, #d97706)', desc: '전체 통계 · 직원 관리' },
 } as const;
 
 // ── 원장 회원가입 폼 ───────────────────────────────────────────────
@@ -474,20 +475,21 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                   </div>
                   <div className="space-y-1.5">
                     {users.map(u => {
-                      const { label, Icon, color, desc } = roleInfo[u.role as keyof typeof roleInfo];
+                      const { label, Icon, bg, border, text, desc } = roleInfo[u.role as keyof typeof roleInfo];
                       return (
                         <button key={u.id} onClick={() => onLoginAs(u.id)}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left hover:shadow-sm transition-all group"
                           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
-                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = '#fda4af')}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = border)}
                           onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${color.split(' ')[0]} ${color.split(' ')[1]}`}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                            style={{ backgroundColor: bg, color: text }}>
                             {u.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              <span className={`inline-flex items-center gap-0.5 mr-1.5 ${color.split(' ')[1]}`}>
+                              <span className="inline-flex items-center gap-0.5 mr-1.5" style={{ color: text }}>
                                 <Icon size={9} /> {label}
                               </span>
                               · {desc}

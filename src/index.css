@@ -65,6 +65,9 @@ body {
   --border-danger:   #fecaca;
   --text-danger:     #b91c1c;
 
+  /* Semantic: info (blue) — 캘린더 토요일 등 */
+  --text-info:       #2563eb;
+
   /* Semantic: neutral (gray) */
   --bg-neutral:      #f3f4f6;
   --border-neutral:  #e5e7eb;
@@ -141,6 +144,9 @@ body {
   --bg-danger:       #4c051540;
   --border-danger:   #b91c1c70;
   --text-danger:     #f87171;
+
+  /* Semantic: info (blue) — 캘린더 토요일 등 */
+  --text-info:       #60a5fa;
 
   /* Semantic: neutral (gray) */
   --bg-neutral:      #33415550;

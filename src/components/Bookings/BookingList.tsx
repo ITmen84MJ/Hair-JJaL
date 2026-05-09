@@ -64,10 +64,10 @@ function CancelModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
         />
         <div className="flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+            className="flex-1 py-3 rounded-xl border text-sm font-medium"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>돌아가기</button>
           <button onClick={() => onConfirm(reason)}
-            className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">취소 처리</button>
+            className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">취소 처리</button>
         </div>
       </div>
     </Modal>
@@ -121,7 +121,7 @@ function CalendarView({ bookings, onSelectDate }: {
       <div className="grid grid-cols-7 mb-1">
         {DOW.map(d => (
           <div key={d} className="text-center text-[11px] font-medium py-1"
-            style={{ color: d === '일' ? '#f43f5e' : d === '토' ? '#60a5fa' : 'var(--text-muted)' }}>
+            style={{ color: d === '일' ? 'var(--text-danger)' : d === '토' ? 'var(--text-info)' : 'var(--text-muted)' }}>
             {d}
           </div>
         ))}
@@ -134,7 +134,7 @@ function CalendarView({ bookings, onSelectDate }: {
           const key = format(day, 'yyyy-MM-dd');
           const dots = dotsByDate[key];
           const today = isToday(day);
-          const col = getDay(day) === 0 ? '#f43f5e' : getDay(day) === 6 ? '#60a5fa' : 'var(--text-primary)';
+          const col = getDay(day) === 0 ? 'var(--text-danger)' : getDay(day) === 6 ? 'var(--text-info)' : 'var(--text-primary)';
           return (
             <button
               key={key}
@@ -432,13 +432,13 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => setConfirmTarget(b.id)}
-                          className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+                          className="flex items-center gap-1.5 flex-1 justify-center py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
                         >
                           <CheckCircle2 size={14} /> 예약 확정
                         </button>
                         <button
                           onClick={() => setCancelTarget(b.id)}
-                          className="flex items-center gap-1.5 flex-1 justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors"
+                          className="flex items-center gap-1.5 flex-1 justify-center py-3 rounded-xl border text-sm font-medium transition-colors"
                           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-danger)'; el.style.color = 'var(--text-danger)'; el.style.borderColor = 'var(--border-danger)'; }}
                           onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.color = 'var(--text-secondary)'; el.style.borderColor = 'var(--border)'; }}
@@ -450,7 +450,7 @@ export function BookingList({ bookings, user, onUpdate }: Props) {
                     {b.status === 'confirmed' && (
                       <button
                         onClick={() => setCancelTarget(b.id)}
-                        className="flex items-center gap-1.5 w-full justify-center py-2.5 rounded-xl border text-sm font-medium transition-colors"
+                        className="flex items-center gap-1.5 w-full justify-center py-3 rounded-xl border text-sm font-medium transition-colors"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                         onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = 'var(--bg-danger)'; el.style.color = 'var(--text-danger)'; el.style.borderColor = 'var(--border-danger)'; }}
                         onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.backgroundColor = ''; el.style.color = 'var(--text-secondary)'; el.style.borderColor = 'var(--border)'; }}

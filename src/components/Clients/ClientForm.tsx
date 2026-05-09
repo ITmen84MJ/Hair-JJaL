@@ -148,7 +148,10 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
             </div>
             <div>
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>생년월일</label>
-              <input type="date" value={form.birthDate} onChange={e => set('birthDate', e.target.value)} className={cls} style={inputStyle} />
+              <input type="date" value={form.birthDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={e => set('birthDate', e.target.value)}
+                className={cls} style={inputStyle} />
             </div>
           </div>
           <div>

@@ -19,6 +19,7 @@ interface Props {
  */
 export function Modal({ onClose, maxWidth = 'max-w-sm', children }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevFocusRef = useRef<HTMLElement | null>(null);
 
   // ESC 닫기
   useEffect(() => {
@@ -34,9 +35,13 @@ export function Modal({ onClose, maxWidth = 'max-w-sm', children }: Props) {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // 포커스 트랩 (가장 단순한 형태: 컨테이너에 포커스)
+  // C-1: 모달 열 때 이전 포커스 저장 → 닫힐 때 복원 (키보드·스크린리더 접근성)
   useEffect(() => {
+    prevFocusRef.current = document.activeElement as HTMLElement;
     containerRef.current?.focus();
+    return () => {
+      prevFocusRef.current?.focus();
+    };
   }, []);
 
   return (

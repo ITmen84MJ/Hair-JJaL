@@ -432,7 +432,7 @@ export function CustomerLayout({
     if (editingProfile) return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-2">
-          <button onClick={() => setEditingProfile(false)} style={{ color: 'var(--text-muted)' }}>
+          <button onClick={() => setEditingProfile(false)} aria-label="뒤로 가기" style={{ color: 'var(--text-muted)' }}>
             <ArrowLeft size={18} />
           </button>
           <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>정보 수정</h2>
@@ -464,7 +464,7 @@ export function CustomerLayout({
                 )}
               </div>
             </div>
-            <button onClick={() => setEditingProfile(true)}
+            <button onClick={() => setEditingProfile(true)} aria-label="정보 수정"
               className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)' }}>
               <Edit2 size={15} />
             </button>

@@ -76,7 +76,7 @@ function PhotoUpload({
   return (
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
           {imgError ? (

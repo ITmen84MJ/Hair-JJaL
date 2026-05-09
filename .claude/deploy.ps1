@@ -8,5 +8,5 @@ if ($staged) {
     $ts = Get-Date -Format "HH:mm"
     git commit -m "auto-deploy $ts"
     git push origin main
-    Write-Output "배포 완료 ($ts)"
+    Write-Output "Deployed at $ts"
 }

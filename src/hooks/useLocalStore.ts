@@ -27,7 +27,13 @@ function checkStorageAndWarn() {
 export const STORAGE_KEY  = 'hairlog_data';
 export const DATA_VERSION = 4;
 
-const MOCK_DEFAULTS = () => ({
+/** 빈 초기 상태 — 실사용 기본값 */
+const EMPTY_DEFAULTS = () => ({
+  clients: [], consultations: [], designers: [], bookings: [], shops: [],
+});
+
+/** 데모 데이터 — loginAs() 호출 시에만 명시적으로 로드 */
+export const MOCK_DEFAULTS = () => ({
   clients: mockClients, consultations: mockConsultations,
   designers: mockDesigners, bookings: mockBookings, shops: mockShops,
 });
@@ -37,17 +43,18 @@ function loadFromStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const p = JSON.parse(raw);
-      if (p.version !== DATA_VERSION) { localStorage.removeItem(STORAGE_KEY); return MOCK_DEFAULTS(); }
+      if (p.version !== DATA_VERSION) { localStorage.removeItem(STORAGE_KEY); return EMPTY_DEFAULTS(); }
       return {
-        clients:       p.clients       ?? mockClients,
-        consultations: p.consultations ?? mockConsultations,
-        designers:     p.designers     ?? mockDesigners,
-        bookings:      p.bookings      ?? mockBookings,
-        shops:         p.shops         ?? mockShops,
+        clients:       p.clients       ?? [],
+        consultations: p.consultations ?? [],
+        designers:     p.designers     ?? [],
+        bookings:      p.bookings      ?? [],
+        shops:         p.shops         ?? [],
       };
     }
   } catch {}
-  return MOCK_DEFAULTS();
+  // localStorage 에 데이터 없음 = 새 사용자 → 빈 상태로 시작
+  return EMPTY_DEFAULTS();
 }
 
 const initialData = loadFromStorage();
@@ -183,6 +190,16 @@ export function useLocalStore() {
     toast.success('지점 정보가 저장되었습니다.');
   }, []);
 
+  /** 데모 계정 진입 시 호출 — mock 데이터를 스토어에 로드 */
+  const loadDemoData = useCallback(() => {
+    const demo = MOCK_DEFAULTS();
+    setClients(demo.clients);
+    setConsultations(demo.consultations);
+    setDesigners(demo.designers);
+    setBookings(demo.bookings);
+    setShops(demo.shops);
+  }, []);
+
   return {
     clients, consultations, designers, bookings, shops,
     isLoading: false,
@@ -191,5 +208,6 @@ export function useLocalStore() {
     addDesigner, updateDesigner,
     addBooking, updateBooking,
     addShop, updateShop,
+    loadDemoData,
   };
 }

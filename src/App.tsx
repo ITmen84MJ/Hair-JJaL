@@ -95,7 +95,11 @@ export default function App() {
       <ErrorBoundary>
         <LoginPage
           onLogin={login}
-          onLoginAs={loginAs}
+          onLoginAs={(userId) => {
+            // 데모 계정 진입 시에만 mock 데이터를 스토어에 로드
+            store.loadDemoData();
+            loginAs(userId);
+          }}
           onRegisterOwner={registerOwner}
           onRegisterCustomer={async (data) => {
             // 1. 고객 레코드를 store에 먼저 생성 (clientId 확보)

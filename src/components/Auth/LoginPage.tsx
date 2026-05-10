@@ -560,7 +560,7 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                 <div className="mt-2 text-left text-xs px-3 py-3 rounded-lg space-y-2"
                   style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
                   <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    비밀번호: <span className="font-mono">1234</span> (전 계정 공통)
+                    비밀번호: <span className="font-mono">demo1234</span> (전 계정 공통)
                   </p>
                   <div className="space-y-1 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
                     {demoUsers.map(u => {

@@ -554,12 +554,30 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                 className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
                 style={{ color: 'var(--text-muted)' }}>
                 <HelpCircle size={12} />
-                {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
+                {showHint ? '계정 정보 숨기기' : '이메일/비밀번호로 직접 로그인하기'}
               </button>
               {showHint && (
-                <p className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  데모 계정 비밀번호는 모두 <span className="font-mono font-semibold">1234</span>입니다.
-                </p>
+                <div className="mt-2 text-left text-xs px-3 py-3 rounded-lg space-y-2"
+                  style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    비밀번호: <span className="font-mono">1234</span> (전 계정 공통)
+                  </p>
+                  <div className="space-y-1 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    {demoUsers.map(u => {
+                      const info = roleInfo[u.role as keyof typeof roleInfo];
+                      return (
+                        <div key={u.id} className="flex items-center gap-2">
+                          <span className="w-14 shrink-0 font-medium" style={{ color: info?.text }}>
+                            {info?.label}
+                          </span>
+                          <span className="font-mono text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+                            {u.email}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           </div>

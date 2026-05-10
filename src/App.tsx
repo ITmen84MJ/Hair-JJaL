@@ -86,6 +86,8 @@ export default function App() {
         // 이메일 중복 체크가 먼저 실패하므로 실질적으로 orphan 지점은 드물게 발생)
         return err;
       }
+      // 가입 즉시 자동 로그인
+      await login(data.email, data.password);
       return null;
     };
 
@@ -113,6 +115,8 @@ export default function App() {
               await store.deleteClient(client.id);
               return err;
             }
+            // 가입 즉시 자동 로그인
+            await login(data.email, data.password);
             return null;
           }}
           onResetPassword={resetPassword}

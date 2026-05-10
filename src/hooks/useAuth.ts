@@ -116,7 +116,6 @@ function useLocalAuth() {
   }, []);
 
   const loginAs = useCallback((userId: string) => {
-    if (!import.meta.env.DEV) return;
     const found = [...demoUsers, ...loadExtraUsers()].find(u => u.id === userId);
     if (!found) return;
     const { password: _pw, passwordHash: _ph, ...safe } = found;

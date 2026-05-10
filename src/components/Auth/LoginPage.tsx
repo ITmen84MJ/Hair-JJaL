@@ -66,16 +66,23 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
       return;
     }
     setLoading(true);
-    const err = await onSubmit({
-      name:        form.name.trim(),
-      email:       form.email.trim(),
-      password:    form.password,
-      shopName:    form.shopName.trim(),
-      shopAddress: form.shopAddress.trim() || undefined,
-      shopPhone:   form.shopPhone.trim()   || undefined,
-    });
-    if (err) { setError(err); setLoading(false); }
-    else     { setDone(true); setLoading(false); }
+    setError('');
+    try {
+      const err = await onSubmit({
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        password:    form.password,
+        shopName:    form.shopName.trim(),
+        shopAddress: form.shopAddress.trim() || undefined,
+        shopPhone:   form.shopPhone.trim()   || undefined,
+      });
+      if (err) { setError(err); setLoading(false); }
+      else     { setDone(true); setLoading(false); }
+    } catch (ex) {
+      console.error('[OwnerRegister] 가입 오류:', ex);
+      setError('가입 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setLoading(false);
+    }
   };
 
   if (done) {
@@ -185,15 +192,22 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
       setError('지점 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'); return;
     }
     setLoading(true);
-    const err = await onSubmit({
-      shopId:   form.shopId,
-      name:     form.name.trim(),
-      phone:    form.phone.trim(),
-      email:    form.email.trim(),
-      password: form.password,
-    });
-    if (err) { setError(err); setLoading(false); }
-    else      { setDone(true); setLoading(false); }
+    setError('');
+    try {
+      const err = await onSubmit({
+        shopId:   form.shopId,
+        name:     form.name.trim(),
+        phone:    form.phone.trim(),
+        email:    form.email.trim(),
+        password: form.password,
+      });
+      if (err) { setError(err); setLoading(false); }
+      else      { setDone(true); setLoading(false); }
+    } catch (ex) {
+      console.error('[CustomerRegister] 가입 오류:', ex);
+      setError('가입 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setLoading(false);
+    }
   };
 
   if (done) {
@@ -491,12 +505,11 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
           )}
         </div>
 
-        {/* Demo accounts — DEV 환경 전용 */}
-        {import.meta.env.DEV && (
-          <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        {/* Demo accounts — 체험용 계정 (배포 환경 포함) */}
+        <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>데모 계정으로 체험하기</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">DEV ONLY</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ backgroundColor: '#fef9c3', color: '#854d0e' }}>DEMO</span>
             </div>
             <div className="space-y-4">
               {Object.entries(byShop).map(([sid, users]) => (
@@ -550,7 +563,6 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
               )}
             </div>
           </div>
-        )}
       </div>
     </div>
   );

@@ -362,11 +362,22 @@ function useSupabaseAuth() {
     return null;
   }, []);
 
-  // 개발 환경 전용: 특정 userId 로 즉시 로그인 (Supabase 모드에서는 demo 데이터만)
-  const loginAs = useCallback((_userId: string) => {
-    if (!import.meta.env.DEV) return;
-    // Supabase 모드에서는 loginAs 미지원 (실제 이메일/비밀번호 로그인 필요)
-    console.warn('[useAuth] Supabase 모드에서는 loginAs 가 지원되지 않습니다.');
+  /**
+   * 데모 계정으로 즉시 로그인.
+   * Supabase 모드에서는 실제 signInWithPassword 를 호출하므로
+   * seed-demo Edge Function 으로 계정이 미리 생성되어 있어야 한다.
+   */
+  const loginAs = useCallback(async (userId: string) => {
+    const demo = demoUsers.find(u => u.id === userId);
+    if (!demo?.email || !demo?.password) return;
+    const { error } = await supabase.auth.signInWithPassword({
+      email:    demo.email,
+      password: demo.password, // 'demo1234' (VITE_DEMO_PASSWORD 기본값)
+    });
+    if (error) {
+      console.error('[loginAs] 데모 계정 로그인 실패:', error.message,
+        '— seed-demo Edge Function 을 먼저 실행해 주세요.');
+    }
   }, []);
 
   /**

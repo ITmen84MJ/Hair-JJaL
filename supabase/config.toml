@@ -1,0 +1,20 @@
+# Supabase 로컬 설정 (GitHub Actions 및 CLI 사용 시 필요)
+# project_id 는 GitHub Secret SUPABASE_PROJECT_REF 로 주입됨.
+# 로컬 개발 환경에서는 `supabase link --project-ref <ref>` 로 연결.
+
+[project]
+project_id = "placeholder"
+
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"

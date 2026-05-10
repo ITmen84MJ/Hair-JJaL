@@ -26,7 +26,7 @@ const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBookin
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword, disableDesignerAccount } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, setNewPassword, changePassword, disableDesignerAccount } = useAuth();
   const { needsUpdate, applyUpdate, dismiss } = usePWAUpdate();
 
   // Share link — always accessible without login
@@ -124,6 +124,12 @@ export default function App() {
             return null;
           }}
           onResetPassword={resetPassword}
+          onSetNewPassword={USE_SUPABASE ? undefined : async (email, newPw) => {
+            const err = await setNewPassword(email, newPw);
+            if (err) return err;
+            // 새 비밀번호로 자동 로그인
+            return await login(email, newPw);
+          }}
           shops={store.shops}
         />
       </ErrorBoundary>

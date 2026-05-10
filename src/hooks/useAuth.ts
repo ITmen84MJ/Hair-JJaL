@@ -197,7 +197,10 @@ function useLocalAuth() {
     return null;
   }, []);
 
-  /** 비밀번호 재설정 — 이름+이메일 일치 확인 후 (localStorage는 실제 발송 불가) */
+  /**
+   * 비밀번호 재설정 1단계 — 이름+이메일 일치 확인.
+   * localStorage 모드: 일치하면 null(성공) 반환 → LoginPage에서 새 비밀번호 입력 단계로 진입.
+   */
   const resetPassword = useCallback(async (email: string, name: string): Promise<string | null> => {
     const lower = email.toLowerCase().trim();
     const lowerName = name.trim().toLowerCase();
@@ -205,7 +208,23 @@ function useLocalAuth() {
       u => u.email.toLowerCase() === lower && u.name.trim().toLowerCase() === lowerName
     );
     if (!found) return '이메일 또는 이름이 일치하는 계정이 없습니다.';
-    return 'localStorage 모드에서는 이메일 발송이 지원되지 않습니다.\nSupabase 모드에서 사용해 주세요.';
+    return null; // 인증 성공 → LoginPage가 새 비밀번호 입력 단계를 표시
+  }, []);
+
+  /**
+   * 비밀번호 재설정 2단계 — 새 비밀번호 저장 (기존 비밀번호 확인 없음, reset 전용).
+   * extraUsers 에서 이메일 일치 계정의 passwordHash 를 교체.
+   */
+  const setNewPassword = useCallback(async (email: string, newPassword: string): Promise<string | null> => {
+    const lower = email.toLowerCase().trim();
+    if (newPassword.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+    const newHash = await hashPassword(lower, newPassword);
+    const extras = loadExtraUsers();
+    const idx = extras.findIndex(u => u.email.toLowerCase() === lower);
+    if (idx === -1) return '계정을 찾을 수 없습니다. 처음부터 다시 시도해 주세요.';
+    extras[idx] = { ...extras[idx], passwordHash: newHash };
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(extras));
+    return null;
   }, []);
 
   /** 비밀번호 변경 — 현재 로그인된 사용자 (현재 비밀번호 확인 포함) */
@@ -249,7 +268,7 @@ function useLocalAuth() {
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser, resetPassword, changePassword,
+    updateName, updateExtraUser, resetPassword, setNewPassword, changePassword,
     disableDesignerAccount,
   };
 }
@@ -544,10 +563,13 @@ function useSupabaseAuth() {
     setUser(null);
   }, []);
 
+  // Supabase 모드에서는 이메일 링크로 재설정 → setNewPassword 불필요
+  const setNewPassword = useCallback(async (_email: string, _newPassword: string): Promise<string | null> => null, []);
+
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser, resetPassword, changePassword,
+    updateName, updateExtraUser, resetPassword, setNewPassword, changePassword,
     disableDesignerAccount,
   };
 }

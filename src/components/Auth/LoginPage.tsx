@@ -26,6 +26,8 @@ interface Props {
   onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
   onRegisterCustomer?: (data: CustomerRegisterData) => Promise<string | null>;
   onResetPassword?: (email: string, name: string) => Promise<string | null>;
+  /** localStorage 모드 전용: 새 비밀번호 저장 + 자동 로그인 */
+  onSetNewPassword?: (email: string, newPassword: string) => Promise<string | null>;
   shops?: Shop[];
 }
 
@@ -295,7 +297,7 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
 }
 
 // ── 메인 LoginPage ─────────────────────────────────────────────────
-export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, onResetPassword, shops = [] }: Props) {
+export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, onResetPassword, onSetNewPassword, shops = [] }: Props) {
   const [mode, setMode]       = useState<'login' | 'register' | 'customer-register' | 'reset-password' | 'select-role'>('login');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
@@ -303,9 +305,12 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetName, setResetName]   = useState('');
-  const [resetSent, setResetSent]   = useState(false);
+  const [resetEmail, setResetEmail]       = useState('');
+  const [resetName, setResetName]         = useState('');
+  const [resetSent, setResetSent]         = useState(false);
+  const [newPw, setNewPw]                 = useState('');
+  const [newPwConfirm, setNewPwConfirm]   = useState('');
+  const [showNewPw, setShowNewPw]         = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -441,7 +446,48 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                 </button>
                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>비밀번호 재설정</h2>
               </div>
-              {resetSent ? (
+              {resetSent && onSetNewPassword ? (
+                /* localStorage 모드: 본인 확인 완료 → 새 비밀번호 입력 */
+                <form onSubmit={async e => {
+                  e.preventDefault();
+                  if (newPw !== newPwConfirm) { setError('비밀번호가 일치하지 않습니다.'); return; }
+                  if (newPw.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return; }
+                  setLoading(true); setError('');
+                  const err = await onSetNewPassword(resetEmail, newPw);
+                  setLoading(false);
+                  if (err) setError(err);
+                  // 성공 시 자동 로그인 → 컴포넌트 언마운트되므로 별도 처리 불필요
+                }} className="space-y-3">
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <strong>{resetEmail}</strong> 계정의 새 비밀번호를 입력해 주세요.
+                  </p>
+                  <div className="relative">
+                    <input
+                      required type={showNewPw ? 'text' : 'password'}
+                      placeholder="새 비밀번호 (6자 이상) *"
+                      value={newPw} onChange={e => { setNewPw(e.target.value); setError(''); }}
+                      className={`${inp} pr-10`}
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                    />
+                    <button type="button" onClick={() => setShowNewPw(v => !v)} aria-label={showNewPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                      {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  <input
+                    required type="password" placeholder="비밀번호 확인 *"
+                    value={newPwConfirm} onChange={e => { setNewPwConfirm(e.target.value); setError(''); }}
+                    className={inp}
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                  {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
+                    {loading ? '저장 중...' : '비밀번호 변경 및 로그인'}
+                  </button>
+                </form>
+              ) : resetSent ? (
+                /* Supabase 모드: 이메일 발송 완료 */
                 <div className="text-center space-y-3 py-4">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: 'var(--bg-success)' }}>
                     <span className="text-2xl">✉️</span>

@@ -3,6 +3,7 @@ import { AuthUser } from '../types';
 import { USE_SUPABASE, supabase } from '../lib/supabase';
 import { demoUsers } from '../data/mockData';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from './useToast';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공통 상수
@@ -372,11 +373,11 @@ function useSupabaseAuth() {
     if (!demo?.email || !demo?.password) return;
     const { error } = await supabase.auth.signInWithPassword({
       email:    demo.email,
-      password: demo.password, // 'demo1234' (VITE_DEMO_PASSWORD 기본값)
+      password: demo.password,
     });
     if (error) {
-      console.error('[loginAs] 데모 계정 로그인 실패:', error.message,
-        '— seed-demo Edge Function 을 먼저 실행해 주세요.');
+      console.error('[loginAs] 데모 계정 로그인 실패:', error.message);
+      toast.error('데모 계정 로그인에 실패했습니다. Supabase에 데모 데이터가 아직 생성되지 않았을 수 있습니다.');
     }
   }, []);
 

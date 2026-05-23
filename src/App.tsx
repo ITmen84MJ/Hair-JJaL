@@ -95,31 +95,41 @@ export default function App() {
       <ErrorBoundary>
         <LoginPage
           onLogin={login}
-          onLoginAs={(userId) => {
-            // 데모 계정 진입 시에만 mock 데이터를 스토어에 로드
-            store.loadDemoData();
-            loginAs(userId);
+          onLoginAs={async (userId) => {
+            if (USE_SUPABASE) {
+              // Supabase 모드: 실제 signInWithPassword 호출 (계정이 없으면 toast 에러 표시)
+              await loginAs(userId);
+            } else {
+              // localStorage 모드: mock 데이터 먼저 로드 후 세션 설정
+              store.loadDemoData();
+              loginAs(userId);
+            }
           }}
           onRegisterOwner={registerOwner}
           onRegisterCustomer={async (data) => {
-            // 1. 고객 레코드를 store에 먼저 생성 (clientId 확보)
+            if (USE_SUPABASE) {
+              // Supabase 모드: register_customer() RPC 가 내부에서 client 레코드 생성+연결
+              // store.addClient 를 먼저 호출하면 이중 생성되므로 addCustomerAccount 에만 위임
+              const err = await addCustomerAccount(data);
+              if (err) return err;
+              await login(data.email, data.password);
+              return null;
+            }
+            // localStorage 모드: clientId 를 먼저 확보한 뒤 auth 계정 생성
             const client = await store.addClient({
-              shopId:    data.shopId,
-              name:      data.name,
-              phone:     data.phone,
-              email:     data.email,
-              gender:    'other' as const,
-              tags:      [],
-              notes:     '',
+              shopId: data.shopId,
+              name:   data.name,
+              phone:  data.phone,
+              email:  data.email,
+              gender: 'other' as const,
+              tags:   [],
+              notes:  '',
             });
-            // 2. 인증 계정 생성 (clientId 전달)
             const err = await addCustomerAccount({ ...data, clientId: client.id });
             if (err) {
-              // 계정 생성 실패 시 방금 만든 client 레코드 롤백
               await store.deleteClient(client.id);
               return err;
             }
-            // 가입 즉시 자동 로그인
             await login(data.email, data.password);
             return null;
           }}

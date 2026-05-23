@@ -3,6 +3,7 @@ import { AuthUser } from '../types';
 import { USE_SUPABASE, supabase } from '../lib/supabase';
 import { demoUsers } from '../data/mockData';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from './useToast';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공통 상수
@@ -116,7 +117,6 @@ function useLocalAuth() {
   }, []);
 
   const loginAs = useCallback((userId: string) => {
-    if (!import.meta.env.DEV) return;
     const found = [...demoUsers, ...loadExtraUsers()].find(u => u.id === userId);
     if (!found) return;
     const { password: _pw, passwordHash: _ph, ...safe } = found;
@@ -198,7 +198,10 @@ function useLocalAuth() {
     return null;
   }, []);
 
-  /** 비밀번호 재설정 — 이름+이메일 일치 확인 후 (localStorage는 실제 발송 불가) */
+  /**
+   * 비밀번호 재설정 1단계 — 이름+이메일 일치 확인.
+   * localStorage 모드: 일치하면 null(성공) 반환 → LoginPage에서 새 비밀번호 입력 단계로 진입.
+   */
   const resetPassword = useCallback(async (email: string, name: string): Promise<string | null> => {
     const lower = email.toLowerCase().trim();
     const lowerName = name.trim().toLowerCase();
@@ -206,7 +209,23 @@ function useLocalAuth() {
       u => u.email.toLowerCase() === lower && u.name.trim().toLowerCase() === lowerName
     );
     if (!found) return '이메일 또는 이름이 일치하는 계정이 없습니다.';
-    return 'localStorage 모드에서는 이메일 발송이 지원되지 않습니다.\nSupabase 모드에서 사용해 주세요.';
+    return null; // 인증 성공 → LoginPage가 새 비밀번호 입력 단계를 표시
+  }, []);
+
+  /**
+   * 비밀번호 재설정 2단계 — 새 비밀번호 저장 (기존 비밀번호 확인 없음, reset 전용).
+   * extraUsers 에서 이메일 일치 계정의 passwordHash 를 교체.
+   */
+  const setNewPassword = useCallback(async (email: string, newPassword: string): Promise<string | null> => {
+    const lower = email.toLowerCase().trim();
+    if (newPassword.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+    const newHash = await hashPassword(lower, newPassword);
+    const extras = loadExtraUsers();
+    const idx = extras.findIndex(u => u.email.toLowerCase() === lower);
+    if (idx === -1) return '계정을 찾을 수 없습니다. 처음부터 다시 시도해 주세요.';
+    extras[idx] = { ...extras[idx], passwordHash: newHash };
+    localStorage.setItem(EXTRA_USERS_KEY, JSON.stringify(extras));
+    return null;
   }, []);
 
   /** 비밀번호 변경 — 현재 로그인된 사용자 (현재 비밀번호 확인 포함) */
@@ -250,7 +269,7 @@ function useLocalAuth() {
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser, resetPassword, changePassword,
+    updateName, updateExtraUser, resetPassword, setNewPassword, changePassword,
     disableDesignerAccount,
   };
 }
@@ -344,11 +363,22 @@ function useSupabaseAuth() {
     return null;
   }, []);
 
-  // 개발 환경 전용: 특정 userId 로 즉시 로그인 (Supabase 모드에서는 demo 데이터만)
-  const loginAs = useCallback((_userId: string) => {
-    if (!import.meta.env.DEV) return;
-    // Supabase 모드에서는 loginAs 미지원 (실제 이메일/비밀번호 로그인 필요)
-    console.warn('[useAuth] Supabase 모드에서는 loginAs 가 지원되지 않습니다.');
+  /**
+   * 데모 계정으로 즉시 로그인.
+   * Supabase 모드에서는 실제 signInWithPassword 를 호출하므로
+   * seed-demo Edge Function 으로 계정이 미리 생성되어 있어야 한다.
+   */
+  const loginAs = useCallback(async (userId: string) => {
+    const demo = demoUsers.find(u => u.id === userId);
+    if (!demo?.email || !demo?.password) return;
+    const { error } = await supabase.auth.signInWithPassword({
+      email:    demo.email,
+      password: demo.password,
+    });
+    if (error) {
+      console.error('[loginAs] 데모 계정 로그인 실패:', error.message);
+      toast.error('데모 계정 로그인에 실패했습니다. Supabase에 데모 데이터가 아직 생성되지 않았을 수 있습니다.');
+    }
   }, []);
 
   /**
@@ -545,10 +575,13 @@ function useSupabaseAuth() {
     setUser(null);
   }, []);
 
+  // Supabase 모드에서는 이메일 링크로 재설정 → setNewPassword 불필요
+  const setNewPassword = useCallback(async (_email: string, _newPassword: string): Promise<string | null> => null, []);
+
   return {
     user, login, loginAs, logout,
     addDesignerAccount, addOwnerAccount, addCustomerAccount,
-    updateName, updateExtraUser, resetPassword, changePassword,
+    updateName, updateExtraUser, resetPassword, setNewPassword, changePassword,
     disableDesignerAccount,
   };
 }

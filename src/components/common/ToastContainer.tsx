@@ -28,7 +28,7 @@ export function ToastContainer() {
             style={{ backgroundColor: bg, borderColor: border }}>
             <Icon size={16} style={{ color: iconColor, flexShrink: 0, marginTop: 2 }} />
             <p className="flex-1 text-sm font-medium" style={{ color: text }}>{t.message}</p>
-            <button onClick={() => toastStore.dismiss(t.id)} style={{ color: text, opacity: 0.6 }}>
+            <button onClick={() => toastStore.dismiss(t.id)} aria-label="알림 닫기" style={{ color: text, opacity: 0.6 }}>
               <X size={14} />
             </button>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Client } from '../../types';
 import { inputClsSm as cls, inputStyle } from '../../styles/form';
@@ -16,6 +16,8 @@ const isValidPhone = (p: string) =>
 
 export function ClientForm({ initial, clients, onSave, onClose }: Props) {
   const [phoneWarning, setPhoneWarning] = useState('');
+  const [nameError, setNameError] = useState('');
+  const tagInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: initial?.name ?? '',
     phone: initial?.phone ?? '',
@@ -43,15 +45,37 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
-  const addTag = () => {
+  const addTag = useCallback(() => {
     const t = tagInput.trim();
     if (t && !form.tags.includes(t)) set('tags', [...form.tags, t]);
     setTagInput('');
-  };
+    // B-4: 태그 추가 후 입력창 포커스 유지 (모바일 키보드 유지)
+    setTimeout(() => tagInputRef.current?.focus(), 0);
+  }, [tagInput, form.tags]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) return;
+
+    // 이름 공백 체크
+    if (!form.name.trim()) {
+      setNameError('이름을 입력해 주세요.');
+      return;
+    }
+
+    // 형식 오류 시 저장 차단
+    if (phoneWarning === 'format') return;
+
+    // 중복 전화번호: submit 시점에도 재확인 후 차단
+    if (clients) {
+      const p = form.phone.trim();
+      const dup = clients.find(c => c.id !== initial?.id && c.phone.replace(/-/g, '') === p.replace(/-/g, ''));
+      if (dup) {
+        setPhoneWarning(`dup:${dup.name}`);
+        return;
+      }
+    }
+
     isDirty.current = false;
     onSave({ name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined, birthDate: form.birthDate || undefined, gender: form.gender, notes: form.notes.trim() || undefined, tags: form.tags.length ? form.tags : undefined });
   };
@@ -74,12 +98,17 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>이름 *</label>
-              <input required value={form.name} onChange={e => set('name', e.target.value)} className={cls} style={inputStyle} placeholder="홍길동" />
+              <input required value={form.name}
+                onChange={e => { set('name', e.target.value); setNameError(''); }}
+                onBlur={e => { if (!e.target.value.trim()) setNameError('이름을 입력해 주세요.'); }}
+                className={cls} style={inputStyle} placeholder="홍길동" />
+              {nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
             </div>
             <div>
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>전화번호 *</label>
               <input
                 required
+                inputMode="tel"
                 value={form.phone}
                 onChange={e => { set('phone', e.target.value); setPhoneWarning(''); }}
                 onBlur={() => {
@@ -119,7 +148,10 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
             </div>
             <div>
               <label className={lbl} style={{ color: 'var(--text-secondary)' }}>생년월일</label>
-              <input type="date" value={form.birthDate} onChange={e => set('birthDate', e.target.value)} className={cls} style={inputStyle} />
+              <input type="date" value={form.birthDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={e => set('birthDate', e.target.value)}
+                className={cls} style={inputStyle} />
             </div>
           </div>
           <div>
@@ -136,7 +168,7 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
               ))}
             </div>
             <div className="flex gap-2">
-              <input value={tagInput} onChange={e => setTagInput(e.target.value)}
+              <input ref={tagInputRef} value={tagInput} onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
                 className={cls} style={inputStyle} placeholder="태그 입력 후 Enter" />
               <button type="button" onClick={addTag} className="px-3 py-2 rounded-lg text-sm transition-colors" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
@@ -146,7 +178,13 @@ export function ClientForm({ initial, clients, onSave, onClose }: Props) {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={handleClose} className="flex-1 border rounded-lg py-2.5 text-sm font-medium transition-colors" style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>취소</button>
-            <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">{initial ? '수정 완료' : '고객 추가'}</button>
+            <button
+              type="submit"
+              disabled={phoneWarning === 'format' || phoneWarning.startsWith('dup:')}
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {initial ? '수정 완료' : '고객 추가'}
+            </button>
           </div>
         </form>
       </Modal>

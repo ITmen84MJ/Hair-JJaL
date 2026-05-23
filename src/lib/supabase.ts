@@ -1,8 +1,15 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 
-/** Feature Flag: Vite 빌드 시 정적으로 결정되어 트리쉐이킹됨 */
-export const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
+/**
+ * Feature Flag: Vite 빌드 시 정적으로 결정되어 트리쉐이킹됨
+ * VITE_USE_SUPABASE=true 이더라도 URL·KEY 가 없으면 localStorage 모드로 자동 폴백.
+ * (GitHub Actions Secret 에 VITE_USE_SUPABASE=true 만 설정하고 URL/KEY 를 생략한 경우 포함)
+ */
+export const USE_SUPABASE =
+  import.meta.env.VITE_USE_SUPABASE === 'true' &&
+  !!import.meta.env.VITE_SUPABASE_URL &&
+  !!import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * Supabase 클라이언트 싱글톤 (lazy).

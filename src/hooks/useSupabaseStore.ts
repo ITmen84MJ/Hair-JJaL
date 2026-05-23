@@ -352,6 +352,9 @@ export function useSupabaseStore() {
     toast.success('지점 정보가 저장되었습니다.');
   }, []);
 
+  // Supabase 모드에서는 데이터가 서버에 있으므로 데모 데이터 로드 불필요
+  const loadDemoData = useCallback(() => {}, []);
+
   return {
     clients, consultations, designers, bookings, shops,
     isLoading,
@@ -360,5 +363,6 @@ export function useSupabaseStore() {
     addDesigner, updateDesigner,
     addBooking, updateBooking,
     addShop, updateShop,
+    loadDemoData,
   };
 }

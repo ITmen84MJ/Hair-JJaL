@@ -134,10 +134,15 @@ export function CustomerConsultationView({
           </p>
           {con.nextVisitNote && <p className="text-sm mb-2" style={{ color: 'var(--text-warning)' }}>{con.nextVisitNote}</p>}
           {onBookNextVisit && con.nextVisitDate >= new Date().toISOString().slice(0, 10) && (
-            <button onClick={() => onBookNextVisit(con.nextVisitDate!)}
-              className="text-xs px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors">
-              이 날짜로 예약하기
-            </button>
+            <div className="space-y-1">
+              <button onClick={() => onBookNextVisit(con.nextVisitDate!)}
+                className="text-xs px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold transition-colors">
+                이 날짜로 예약하기
+              </button>
+              <p className="text-[10px]" style={{ color: 'var(--text-warning)' }}>
+                날짜가 자동 선택됩니다. 예약 시간은 직접 선택해 주세요.
+              </p>
+            </div>
           )}
         </div>
       )}

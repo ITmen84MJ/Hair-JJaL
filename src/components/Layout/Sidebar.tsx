@@ -129,6 +129,7 @@ export function Sidebar({ currentView, onNavigate, isDark, onToggleTheme, user, 
             </button>
           )}
           <button onClick={onToggleTheme}
+            aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors"
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)')}

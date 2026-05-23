@@ -172,6 +172,26 @@
 </style>
 </head>
 <body>
+
+<!-- 닫기 버튼 — 인쇄 시 숨김, 모바일 PWA에서 탭 닫기/뒤로가기 -->
+<button id="close-btn" onclick="window.close(); setTimeout(()=>history.back(),150);"
+  title="닫기"
+  style="
+    position: fixed; top: 14px; right: 14px; z-index: 9999;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 999px; border: none; cursor: pointer;
+    background: #d97706; color: #fff;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    -webkit-tap-highlight-color: transparent;
+  ">
+  ← 앱으로 돌아가기
+</button>
+<style>
+  @media print { #close-btn { display: none !important; } }
+  #close-btn:active { opacity: .75; }
+</style>
+
 <div class="page">
 
   <!-- 표지 -->

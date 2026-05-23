@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Scissors, User, Palette, Crown, Eye, EyeOff, HelpCircle, Store, ArrowLeft } from 'lucide-react';
 import { demoUsers, mockShops } from '../../data/mockData';
 import { AuthUser, Shop } from '../../types';
@@ -26,13 +26,16 @@ interface Props {
   onRegisterOwner: (data: OwnerRegisterData) => Promise<string | null>;
   onRegisterCustomer?: (data: CustomerRegisterData) => Promise<string | null>;
   onResetPassword?: (email: string, name: string) => Promise<string | null>;
+  /** localStorage 모드 전용: 새 비밀번호 저장 + 자동 로그인 */
+  onSetNewPassword?: (email: string, newPassword: string) => Promise<string | null>;
   shops?: Shop[];
 }
 
+// Tailwind 클래스 대신 인라인 스타일로 다크모드 대응
 const roleInfo = {
-  customer: { label: '고객',        Icon: User,   color: 'bg-blue-50 text-blue-600 border-blue-200',  desc: '내 시술 이력 확인' },
-  designer: { label: '헤어디자이너', Icon: Palette, color: 'bg-rose-50 text-rose-600 border-rose-200',  desc: '고객 관리 · 상담 기록' },
-  owner:    { label: '원장',         Icon: Crown,  color: 'bg-amber-50 text-amber-600 border-amber-200', desc: '전체 통계 · 직원 관리' },
+  customer: { label: '고객',        Icon: User,   bg: 'var(--bg-icon-blue, #eff6ff)',   border: 'var(--border-info, #bfdbfe)',  text: 'var(--text-info, #2563eb)',   desc: '내 시술 이력 확인' },
+  designer: { label: '헤어디자이너', Icon: Palette, bg: 'var(--bg-icon-rose)',            border: 'var(--border-rose, #fecdd3)',  text: 'var(--text-icon-rose)',        desc: '고객 관리 · 상담 기록' },
+  owner:    { label: '원장',         Icon: Crown,  bg: 'var(--bg-icon-amber, #fffbeb)',  border: 'var(--border-amber, #fde68a)', text: 'var(--text-icon-amber, #d97706)', desc: '전체 통계 · 직원 관리' },
 } as const;
 
 // ── 원장 회원가입 폼 ───────────────────────────────────────────────
@@ -65,16 +68,23 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
       return;
     }
     setLoading(true);
-    const err = await onSubmit({
-      name:        form.name.trim(),
-      email:       form.email.trim(),
-      password:    form.password,
-      shopName:    form.shopName.trim(),
-      shopAddress: form.shopAddress.trim() || undefined,
-      shopPhone:   form.shopPhone.trim()   || undefined,
-    });
-    if (err) { setError(err); setLoading(false); }
-    else     { setDone(true); setLoading(false); }
+    setError('');
+    try {
+      const err = await onSubmit({
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        password:    form.password,
+        shopName:    form.shopName.trim(),
+        shopAddress: form.shopAddress.trim() || undefined,
+        shopPhone:   form.shopPhone.trim()   || undefined,
+      });
+      if (err) { setError(err); setLoading(false); }
+      else     { setDone(true); setLoading(false); }
+    } catch (ex) {
+      console.error('[OwnerRegister] 가입 오류:', ex);
+      setError('가입 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setLoading(false);
+    }
   };
 
   if (done) {
@@ -128,7 +138,7 @@ function OwnerRegisterForm({ onBack, onSubmit }: {
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
       <input placeholder="주소 (선택)" value={form.shopAddress} onChange={f('shopAddress')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-      <input placeholder="전화번호 (선택)" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
+      <input placeholder="전화번호 (선택)" inputMode="tel" value={form.shopPhone} onChange={f('shopPhone')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
 
       {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
@@ -156,6 +166,16 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
   const [loading, setLoading] = useState(false);
   const [done, setDone]       = useState(false);
 
+  // shops가 나중에 로드되면 shopId를 자동 선택
+  // (스토어 초기화 전에 컴포넌트가 마운트될 수 있으므로 필수)
+  const prevShopsLen = useRef(shops.length);
+  useEffect(() => {
+    if (!form.shopId && shops[0]?.id) {
+      setForm(f => ({ ...f, shopId: shops[0].id }));
+    }
+    prevShopsLen.current = shops.length;
+  }, [shops]);
+
   const f = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm(p => ({ ...p, [k]: e.target.value }));
@@ -171,18 +191,25 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
       setError('비밀번호는 6자 이상이어야 합니다.'); return;
     }
     if (!form.shopId) {
-      setError('지점을 선택해 주세요.'); return;
+      setError('지점 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'); return;
     }
     setLoading(true);
-    const err = await onSubmit({
-      shopId:   form.shopId,
-      name:     form.name.trim(),
-      phone:    form.phone.trim(),
-      email:    form.email.trim(),
-      password: form.password,
-    });
-    if (err) { setError(err); setLoading(false); }
-    else      { setDone(true); setLoading(false); }
+    setError('');
+    try {
+      const err = await onSubmit({
+        shopId:   form.shopId,
+        name:     form.name.trim(),
+        phone:    form.phone.trim(),
+        email:    form.email.trim(),
+        password: form.password,
+      });
+      if (err) { setError(err); setLoading(false); }
+      else      { setDone(true); setLoading(false); }
+    } catch (ex) {
+      console.error('[CustomerRegister] 가입 오류:', ex);
+      setError('가입 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      setLoading(false);
+    }
   };
 
   if (done) {
@@ -203,9 +230,32 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
     );
   }
 
+  // 지점 목록 로딩 실패(등록된 지점 없음) 안내
+  if (shops.length === 0) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>
+          등록된 지점 정보를 불러오는 중입니다.<br />잠시 후 다시 시도해 주세요.
+        </p>
+        <button type="button" onClick={onBack}
+          className="w-full py-3 rounded-xl border text-sm font-medium"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          돌아가기
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      {shops.length > 1 && (
+      {/* 지점이 1개면 자동 선택 표시, 2개 이상이면 드롭다운 */}
+      {shops.length === 1 ? (
+        <div className="rounded-xl px-4 py-3 text-sm flex items-center justify-between"
+          style={{ backgroundColor: 'var(--bg-muted)', border: '1px solid var(--border)' }}>
+          <span style={{ color: 'var(--text-muted)' }}>방문 지점</span>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{shops[0].name}</span>
+        </div>
+      ) : (
         <div>
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>방문 지점 *</label>
           <select
@@ -220,7 +270,7 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
       )}
       <input required placeholder="이름 *" value={form.name} onChange={f('name')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-      <input required placeholder="전화번호 * (010-1234-5678)" value={form.phone} onChange={f('phone')} className={inp}
+      <input required inputMode="tel" placeholder="전화번호 * (010-1234-5678)" value={form.phone} onChange={f('phone')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
       <input required type="email" placeholder="이메일 (로그인 ID) *" value={form.email} onChange={f('email')} className={inp}
         style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }} />
@@ -247,7 +297,7 @@ function CustomerRegisterForm({ shops, onBack, onSubmit }: {
 }
 
 // ── 메인 LoginPage ─────────────────────────────────────────────────
-export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, onResetPassword, shops = [] }: Props) {
+export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCustomer, onResetPassword, onSetNewPassword, shops = [] }: Props) {
   const [mode, setMode]       = useState<'login' | 'register' | 'customer-register' | 'reset-password' | 'select-role'>('login');
   const [email, setEmail]     = useState('');
   const [password, setPassword] = useState('');
@@ -255,9 +305,12 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetName, setResetName]   = useState('');
-  const [resetSent, setResetSent]   = useState(false);
+  const [resetEmail, setResetEmail]       = useState('');
+  const [resetName, setResetName]         = useState('');
+  const [resetSent, setResetSent]         = useState(false);
+  const [newPw, setNewPw]                 = useState('');
+  const [newPwConfirm, setNewPwConfirm]   = useState('');
+  const [showNewPw, setShowNewPw]         = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,7 +446,48 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                 </button>
                 <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>비밀번호 재설정</h2>
               </div>
-              {resetSent ? (
+              {resetSent && onSetNewPassword ? (
+                /* localStorage 모드: 본인 확인 완료 → 새 비밀번호 입력 */
+                <form onSubmit={async e => {
+                  e.preventDefault();
+                  if (newPw !== newPwConfirm) { setError('비밀번호가 일치하지 않습니다.'); return; }
+                  if (newPw.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return; }
+                  setLoading(true); setError('');
+                  const err = await onSetNewPassword(resetEmail, newPw);
+                  setLoading(false);
+                  if (err) setError(err);
+                  // 성공 시 자동 로그인 → 컴포넌트 언마운트되므로 별도 처리 불필요
+                }} className="space-y-3">
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <strong>{resetEmail}</strong> 계정의 새 비밀번호를 입력해 주세요.
+                  </p>
+                  <div className="relative">
+                    <input
+                      required type={showNewPw ? 'text' : 'password'}
+                      placeholder="새 비밀번호 (6자 이상) *"
+                      value={newPw} onChange={e => { setNewPw(e.target.value); setError(''); }}
+                      className={`${inp} pr-10`}
+                      style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                    />
+                    <button type="button" onClick={() => setShowNewPw(v => !v)} aria-label={showNewPw ? '비밀번호 숨기기' : '비밀번호 표시'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
+                      {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  <input
+                    required type="password" placeholder="비밀번호 확인 *"
+                    value={newPwConfirm} onChange={e => { setNewPwConfirm(e.target.value); setError(''); }}
+                    className={inp}
+                    style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
+                  {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ color: 'var(--text-danger)', backgroundColor: 'var(--bg-danger)' }}>{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-60 text-white rounded-xl py-3 text-sm font-semibold transition-colors">
+                    {loading ? '저장 중...' : '비밀번호 변경 및 로그인'}
+                  </button>
+                </form>
+              ) : resetSent ? (
+                /* Supabase 모드: 이메일 발송 완료 */
                 <div className="text-center space-y-3 py-4">
                   <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: 'var(--bg-success)' }}>
                     <span className="text-2xl">✉️</span>
@@ -457,12 +551,11 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
           )}
         </div>
 
-        {/* Demo accounts — DEV 환경 전용 */}
-        {import.meta.env.DEV && (
-          <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+        {/* Demo accounts — 체험용 계정 (배포 환경 포함) */}
+        <div className="rounded-2xl shadow-xl p-6 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>데모 계정으로 체험하기</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold">DEV ONLY</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ backgroundColor: '#fef9c3', color: '#854d0e' }}>DEMO</span>
             </div>
             <div className="space-y-4">
               {Object.entries(byShop).map(([sid, users]) => (
@@ -474,20 +567,21 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                   </div>
                   <div className="space-y-1.5">
                     {users.map(u => {
-                      const { label, Icon, color, desc } = roleInfo[u.role as keyof typeof roleInfo];
+                      const { label, Icon, bg, border, text, desc } = roleInfo[u.role as keyof typeof roleInfo];
                       return (
                         <button key={u.id} onClick={() => onLoginAs(u.id)}
                           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left hover:shadow-sm transition-all group"
                           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
-                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = '#fda4af')}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = border)}
                           onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'var(--border)')}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${color.split(' ')[0]} ${color.split(' ')[1]}`}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                            style={{ backgroundColor: bg, color: text }}>
                             {u.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                              <span className={`inline-flex items-center gap-0.5 mr-1.5 ${color.split(' ')[1]}`}>
+                              <span className="inline-flex items-center gap-0.5 mr-1.5" style={{ color: text }}>
                                 <Icon size={9} /> {label}
                               </span>
                               · {desc}
@@ -506,16 +600,33 @@ export function LoginPage({ onLogin, onLoginAs, onRegisterOwner, onRegisterCusto
                 className="inline-flex items-center gap-1 text-xs hover:text-rose-500 transition-colors"
                 style={{ color: 'var(--text-muted)' }}>
                 <HelpCircle size={12} />
-                {showHint ? '비밀번호 힌트 숨기기' : '로그인 비밀번호를 모르시나요?'}
+                {showHint ? '계정 정보 숨기기' : '이메일/비밀번호로 직접 로그인하기'}
               </button>
               {showHint && (
-                <p className="mt-2 text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
-                  데모 계정 비밀번호는 모두 <span className="font-mono font-semibold">1234</span>입니다.
-                </p>
+                <div className="mt-2 text-left text-xs px-3 py-3 rounded-lg space-y-2"
+                  style={{ backgroundColor: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    비밀번호: <span className="font-mono">demo1234</span> (전 계정 공통)
+                  </p>
+                  <div className="space-y-1 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    {demoUsers.map(u => {
+                      const info = roleInfo[u.role as keyof typeof roleInfo];
+                      return (
+                        <div key={u.id} className="flex items-center gap-2">
+                          <span className="w-14 shrink-0 font-medium" style={{ color: info?.text }}>
+                            {info?.label}
+                          </span>
+                          <span className="font-mono text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
+                            {u.email}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           </div>
-        )}
       </div>
     </div>
   );

@@ -78,37 +78,11 @@ export async function uploadOrCompressPhoto(
   shopId:   string,
   clientId: string,
 ): Promise<string> {
-  // 먼저 압축
+  // 이미지를 Canvas로 압축 후 base64 반환
+  // Supabase Storage 업로드는 버킷 Public 설정·RLS 정책 등 인프라 구성이 완료된 후 별도 활성화
+  // (Storage 의존성을 제거해 로컬/배포 환경 모두 동일하게 동작하도록 함)
   const compressed = await compressImage(dataUrl);
-
-  if (!USE_SUPABASE) {
-    // localStorage 모드: base64 그대로 반환
-    return compressed;
-  }
-
-  // Supabase 모드: Storage 업로드
-  try {
-    const blob = dataURLtoBlob(compressed);
-    const path = `${shopId}/${clientId}/${uuidv4()}.jpg`;
-
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-
-    if (error || !data) {
-      console.warn('[uploadPhoto] Storage 업로드 실패, base64 사용:', error?.message);
-      return compressed; // 폴백: base64 사용
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from(BUCKET)
-      .getPublicUrl(data.path);
-
-    return publicUrl;
-  } catch (e) {
-    console.warn('[uploadPhoto] 예외 발생, base64 사용:', e);
-    return compressed;
-  }
+  return compressed;
 }
 
 /**

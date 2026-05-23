@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Plus, Trash2, Upload, Image, Bookmark, ChevronDown, RotateCcw } from 'lucide-react';
+import { X, Plus, Trash2, Image, Bookmark, ChevronDown, RotateCcw } from 'lucide-react';
 import { Consultation, Service, ServiceType, Designer } from '../../types';
 import { SERVICE_LABELS } from './serviceLabels';
 import { VoiceNoteButton } from './VoiceNoteButton';
@@ -25,23 +25,47 @@ function PhotoUpload({
   label,
   value,
   onChange,
+  onUploadingChange,
   shopId,
   clientId,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   shopId?: string;
   clientId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  // 업로드 상태 변경 시 부모에게 알림
+  const setUploadingState = (v: boolean) => {
+    setUploading(v);
+    onUploadingChange?.(v);
+  };
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  // value 가 바뀌면 에러·로드 상태 초기화 (새 업로드 또는 삭제 후)
+  useEffect(() => {
+    setImgError(false);
+    setImgLoaded(false);
+  }, [value]);
+
+  // HTTP URL(Storage)은 느린 응답·연결 실패 시 onError가 오래 걸릴 수 있음.
+  // 8초 타임아웃 — onLoad가 이미 성공했거나 에러 상태면 타이머 설정 안 함
+  useEffect(() => {
+    if (!value || imgError || imgLoaded) return;
+    if (!value.startsWith('http')) return; // base64는 즉시 렌더링, 타임아웃 불필요
+    const tid = setTimeout(() => setImgError(true), 8000);
+    return () => clearTimeout(tid);
+  }, [value, imgError, imgLoaded]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true);
+    setUploadingState(true);
     setImgError(false);
     const reader = new FileReader();
     reader.onload = async (ev) => {
@@ -49,18 +73,18 @@ function PhotoUpload({
       // 압축 + Storage 업로드 (Supabase 모드) 또는 base64 압축 (localStorage 모드)
       const result = await uploadOrCompressPhoto(raw, shopId ?? '', clientId);
       onChange(result);
-      setUploading(false);
+      setUploadingState(false);
       // input 초기화 — 같은 파일 재선택 허용
       if (inputRef.current) inputRef.current.value = '';
     };
-    reader.onerror = () => setUploading(false);
+    reader.onerror = () => setUploadingState(false);
     reader.readAsDataURL(file);
   };
 
   return (
     <div>
       <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-      <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} className="hidden" />
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       {value ? (
         <div className="relative">
           {imgError ? (
@@ -84,14 +108,14 @@ function PhotoUpload({
             </div>
           ) : (
             <img src={value} alt={label} className="w-full h-32 object-cover rounded-xl"
-              onLoad={() => setImgError(false)}
+              onLoad={() => { setImgError(false); setImgLoaded(true); }}
               onError={() => setImgError(true)} />
           )}
           <div className="absolute top-2 right-2 flex gap-1">
             <button type="button" onClick={() => inputRef.current?.click()} aria-label="사진 변경"
               className="p-1.5 rounded-lg shadow transition-colors"
               style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)' }}>
-              <Upload size={12} />
+              <Image size={12} />
             </button>
             <button type="button" onClick={() => { onChange(''); setImgError(false); }} aria-label="사진 삭제"
               className="p-1.5 rounded-lg shadow transition-colors text-red-500"
@@ -101,21 +125,22 @@ function PhotoUpload({
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="w-full h-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-rose-300 hover:text-rose-400 transition-colors disabled:opacity-60"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+        <div className="w-full h-24 border-2 border-dashed rounded-xl flex items-center justify-center gap-3 disabled:opacity-60"
+          style={{ borderColor: 'var(--border)' }}>
           {uploading ? (
-            <>
+            <div className="flex flex-col items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
               <div className="w-5 h-5 border-2 border-rose-400 border-t-transparent rounded-full animate-spin" />
               <span className="text-xs">업로드 중…</span>
-            </>
+            </div>
           ) : (
-            <>
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+              className="flex flex-col items-center gap-1.5"
+              style={{ color: 'var(--text-muted)' }}>
               <Image size={20} />
               <span className="text-xs">클릭하여 사진 업로드</span>
-            </>
+            </button>
           )}
-        </button>
+        </div>
       )}
     </div>
   );
@@ -159,6 +184,10 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
   const [showDirtyConfirm, setShowDirtyConfirm] = useState(false);
   const [serviceError, setServiceError] = useState('');
   const isDirty = useRef(false);
+  // 사진 업로드 진행 중인 개수 — 0 이상이면 submit 차단
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const handlePhotoUploading = (uploading: boolean) =>
+    setUploadingCount(n => uploading ? n + 1 : Math.max(0, n - 1));
 
   const [form, setForm] = useState({
     date: initial?.date ?? new Date().toISOString().slice(0, 10),
@@ -213,9 +242,15 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
 
   const updateService = (i: number, key: keyof Service, val: string | number) => {
     setServiceError('');
-    const updated = form.services.map((s, idx) =>
-      idx === i ? { ...s, [key]: key === 'price' ? (val === '' ? undefined : Number(val)) : val } : s
-    );
+    const updated = form.services.map((s, idx) => {
+      if (idx !== i) return s;
+      if (key === 'price') {
+        if (val === '' || val === undefined) return { ...s, price: undefined };
+        const n = Number(val);
+        return { ...s, price: isNaN(n) ? undefined : Math.max(0, n) }; // 음수 방지
+      }
+      return { ...s, [key]: val };
+    });
     setField('services', updated);
   };
 
@@ -268,22 +303,6 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
 
   return (
     <>
-    {/* 이탈 확인 다이얼로그 */}
-    {showDirtyConfirm && (
-      <Modal onClose={() => setShowDirtyConfirm(false)}>
-        <div className="p-6 space-y-4">
-          <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>작성 중인 내용이 있습니다</h3>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>닫으면 입력한 내용이 모두 사라집니다. 그래도 닫으시겠어요?</p>
-          <div className="flex gap-2">
-            <button onClick={() => setShowDirtyConfirm(false)}
-              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
-            <button onClick={() => { isDirty.current = false; try { localStorage.removeItem(DRAFT_KEY); } catch {} onClose(); }}
-              className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
-          </div>
-        </div>
-      </Modal>
-    )}
     <Modal onClose={handleClose} maxWidth="max-w-2xl">
       <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10 rounded-t-2xl" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div>
@@ -405,10 +424,18 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
                   <div className="flex gap-1.5 flex-1">
                     <input value={svc.description} onChange={e => updateService(i, 'description', e.target.value)}
                       className={`flex-1 ${inputCls}`} placeholder="시술 설명" />
-                    <input type="number" min={0} value={svc.price ?? ''} onChange={e => updateService(i, 'price', e.target.value)}
+                    <input
+                      type="number" min={0} inputMode="numeric"
+                      value={svc.price ?? ''}
+                      onChange={e => updateService(i, 'price', e.target.value)}
+                      onBlur={e => {
+                        // 포커스를 잃을 때 음수면 0으로 교정
+                        const n = Number(e.target.value);
+                        if (!isNaN(n) && n < 0) updateService(i, 'price', 0);
+                      }}
                       className="w-24 border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
                       style={{ borderColor: 'var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
-                      placeholder="금액" />
+                      placeholder="금액(선택)" />
                     {form.services.length > 1 && (
                       <button type="button" onClick={() => removeService(i)} aria-label="시술 항목 삭제"
                         className="hover:text-red-500 py-2 transition-colors flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
@@ -562,8 +589,8 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
             defaultOpen={!!initial || !!(form.beforePhoto || form.afterPhoto)}
           >
           <div className="grid grid-cols-2 gap-4">
-            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} shopId={shopId} clientId={clientId} />
-            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} shopId={shopId} clientId={clientId} />
+            <PhotoUpload label="Before 사진" value={form.beforePhoto} onChange={v => setField('beforePhoto', v)} onUploadingChange={handlePhotoUploading} shopId={shopId} clientId={clientId} />
+            <PhotoUpload label="After 사진" value={form.afterPhoto} onChange={v => setField('afterPhoto', v)} onUploadingChange={handlePhotoUploading} shopId={shopId} clientId={clientId} />
           </div>
           </AccordionSection>
 
@@ -601,18 +628,41 @@ export function ConsultationForm({ clientId, clientName, shopId, initial, design
             </label>
           </div>
 
+          {uploadingCount > 0 && (
+            <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              사진 업로드 중입니다. 완료 후 저장할 수 있습니다.
+            </p>
+          )}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={handleClose}
               className="flex-1 border rounded-lg py-2.5 text-sm font-medium transition-colors"
               style={{ borderColor: 'var(--border-input)', color: 'var(--text-secondary)' }}>
               취소
             </button>
-            <button type="submit" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors">
-              {initial ? '수정 완료' : '상담 저장'}
+            <button type="submit"
+              disabled={uploadingCount > 0}
+              className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              {uploadingCount > 0 ? '업로드 중…' : initial ? '수정 완료' : '상담 저장'}
             </button>
           </div>
         </form>
     </Modal>
+    {/* 이탈 확인 다이얼로그 — 메인 폼보다 뒤에 렌더링해야 z-index 없이도 위에 표시됨 */}
+    {showDirtyConfirm && (
+      <Modal onClose={() => setShowDirtyConfirm(false)}>
+        <div className="p-6 space-y-4">
+          <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>작성 중인 내용이 있습니다</h3>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>닫으면 입력한 내용이 모두 사라집니다. 그래도 닫으시겠어요?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowDirtyConfirm(false)}
+              className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>계속 작성</button>
+            <button onClick={() => { isDirty.current = false; try { localStorage.removeItem(DRAFT_KEY); } catch {} onClose(); }}
+              className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold">닫기</button>
+          </div>
+        </div>
+      </Modal>
+    )}
     </>
   );
 }

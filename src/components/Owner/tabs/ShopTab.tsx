@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Store, Edit2, Check, X, Download, Upload, Database, FileText, Cloud, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { Store, Edit2, Check, X, Download, Upload, Database, FileText, Cloud, CheckCircle, AlertCircle, Loader, Trash2 } from 'lucide-react';
 import { Client, Consultation, Shop } from '../../../types';
 import { getStorageUsage, exportData, importData } from '../../../utils/backup';
 import { exportAllClients } from '../../../utils/csv';
@@ -90,7 +90,16 @@ function CloudMigrationSection({ shopId }: { shopId: string }) {
 // ── DataManagementSection ────────────────────────────────────────────────────
 function DataManagementSection({ clients, consultations }: { clients: Client[]; consultations: Consultation[] }) {
   const [importError, setImportError] = useState('');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const { usedMB, percent } = getStorageUsage();
+
+  const handleDemoReset = () => {
+    // 데이터·계정·세션 모두 초기화 → 페이지 리로드 시 mockData로 복원됨
+    localStorage.removeItem('hairlog_data');
+    localStorage.removeItem('hairjjal_extra_users');
+    localStorage.removeItem('hairjjal_auth');
+    window.location.reload();
+  };
 
   const barColor = percent >= 80 ? '#ef4444' : percent >= 60 ? '#f59e0b' : '#10b981';
 
@@ -158,6 +167,41 @@ function DataManagementSection({ clients, consultations }: { clients: Client[]; 
           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
           <FileText size={13} /> 전체 고객 CSV ({clients.length}명)
         </button>
+      </div>
+
+      {/* 데모 데이터 초기화 */}
+      <div className="space-y-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+        <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>데모 데이터 초기화</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          모든 데이터를 기본 샘플 상태로 되돌립니다. 현재 계정과 추가한 데이터가 모두 삭제됩니다.
+        </p>
+        {!showResetConfirm ? (
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl border transition-colors hover:border-red-400 hover:text-red-500"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+            <Trash2 size={13} /> 데이터 초기화
+          </button>
+        ) : (
+          <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: 'var(--bg-danger)', border: '1px solid var(--border-danger, #fecaca)' }}>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-danger)' }}>
+              ⚠ 정말 초기화하시겠어요? 이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDemoReset}
+                className="flex items-center gap-1 text-xs px-3 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors">
+                <Trash2 size={12} /> 초기화
+              </button>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="text-xs px-3 py-2 rounded-xl border transition-colors"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                취소
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

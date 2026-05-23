@@ -10,6 +10,7 @@ import { ShareView } from './components/Share/ShareView';
 import { LoginPage, type OwnerRegisterData } from './components/Auth/LoginPage';
 import { OnboardingTour } from './components/common/OnboardingTour';
 import { SkeletonList } from './components/common/Skeleton';
+import { usePWAUpdate } from './hooks/usePWAUpdate';
 
 // 라우트별 lazy 분리 — 초기 번들 최소화
 const Dashboard        = lazy(() => import('./components/Dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -25,7 +26,8 @@ const CustomerBooking  = lazy(() => import('./components/Customer/CustomerBookin
 export default function App() {
   const store = useStore();
   const { isDark, toggle } = useTheme();
-  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, changePassword, disableDesignerAccount } = useAuth();
+  const { user, login, loginAs, logout, addDesignerAccount, addOwnerAccount, addCustomerAccount, updateName, updateExtraUser, resetPassword, setNewPassword, changePassword, disableDesignerAccount } = useAuth();
+  const { needsUpdate, applyUpdate, dismiss } = usePWAUpdate();
 
   // Share link — always accessible without login
   useEffect(() => {
@@ -84,6 +86,8 @@ export default function App() {
         // 이메일 중복 체크가 먼저 실패하므로 실질적으로 orphan 지점은 드물게 발생)
         return err;
       }
+      // 가입 즉시 자동 로그인
+      await login(data.email, data.password);
       return null;
     };
 
@@ -91,29 +95,51 @@ export default function App() {
       <ErrorBoundary>
         <LoginPage
           onLogin={login}
-          onLoginAs={loginAs}
+          onLoginAs={async (userId) => {
+            if (USE_SUPABASE) {
+              // Supabase 모드: 실제 signInWithPassword 호출 (계정이 없으면 toast 에러 표시)
+              await loginAs(userId);
+            } else {
+              // localStorage 모드: mock 데이터 먼저 로드 후 세션 설정
+              store.loadDemoData();
+              loginAs(userId);
+            }
+          }}
           onRegisterOwner={registerOwner}
           onRegisterCustomer={async (data) => {
-            // 1. 고객 레코드를 store에 먼저 생성 (clientId 확보)
+            if (USE_SUPABASE) {
+              // Supabase 모드: register_customer() RPC 가 내부에서 client 레코드 생성+연결
+              // store.addClient 를 먼저 호출하면 이중 생성되므로 addCustomerAccount 에만 위임
+              const err = await addCustomerAccount(data);
+              if (err) return err;
+              await login(data.email, data.password);
+              return null;
+            }
+            // localStorage 모드: clientId 를 먼저 확보한 뒤 auth 계정 생성
             const client = await store.addClient({
-              shopId:    data.shopId,
-              name:      data.name,
-              phone:     data.phone,
-              email:     data.email,
-              gender:    'other' as const,
-              tags:      [],
-              notes:     '',
+              shopId: data.shopId,
+              name:   data.name,
+              phone:  data.phone,
+              email:  data.email,
+              gender: 'other' as const,
+              tags:   [],
+              notes:  '',
             });
-            // 2. 인증 계정 생성 (clientId 전달)
             const err = await addCustomerAccount({ ...data, clientId: client.id });
             if (err) {
-              // 계정 생성 실패 시 방금 만든 client 레코드 롤백
               await store.deleteClient(client.id);
               return err;
             }
+            await login(data.email, data.password);
             return null;
           }}
           onResetPassword={resetPassword}
+          onSetNewPassword={USE_SUPABASE ? undefined : async (email, newPw) => {
+            const err = await setNewPassword(email, newPw);
+            if (err) return err;
+            // 새 비밀번호로 자동 로그인
+            return await login(email, newPw);
+          }}
           shops={store.shops}
         />
       </ErrorBoundary>
@@ -287,6 +313,14 @@ export default function App() {
     )}
     <OnboardingTour role={user.role} />
     <ToastContainer />
+    {/* PWA 업데이트 배너 */}
+    {needsUpdate && (
+      <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 9998, backgroundColor: '#1e293b', color: 'white', padding: '10px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, fontSize: '13px', fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', whiteSpace: 'nowrap', maxWidth: 'calc(100vw - 32px)' }}>
+        <span>🔄 새 버전이 있습니다</span>
+        <button onClick={applyUpdate} style={{ backgroundColor: '#e11d48', border: 'none', borderRadius: 8, padding: '5px 12px', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>업데이트</button>
+        <button onClick={dismiss} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '12px' }}>나중에</button>
+      </div>
+    )}
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-app)' }}>
       <Sidebar
         currentView={store.currentView}

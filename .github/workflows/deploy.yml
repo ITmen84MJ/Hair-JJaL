@@ -1,18 +1,20 @@
 # ══════════════════════════════════════════════════════════════════
-# Hair JJaL — GitHub Pages 자동 배포
+# Hair JJaL — GitHub Pages 자동 배포 + Supabase 자동 설정
 #
 # 트리거: main 브랜치 push 또는 수동 실행(workflow_dispatch)
-# 흐름:  코드 체크아웃 → Node 설치 → npm ci → tsc → build → Pages 배포
+# 흐름:  체크아웃 → 빌드 → Pages 배포 → (Supabase) 마이그레이션+함수 배포+데모 시드
 #
-# ── Supabase 모드 전환 방법 ─────────────────────────────────────
-# GitHub 저장소 → Settings → Secrets and variables → Actions → New secret
-#
+# ── 필요한 GitHub Secrets ────────────────────────────────────────
+# 필수:
 #   VITE_USE_SUPABASE       = true
 #   VITE_SUPABASE_URL       = https://xxxx.supabase.co
 #   VITE_SUPABASE_ANON_KEY  = eyJ...
-#   VITE_VAPID_PUBLIC_KEY   = B...  (선택 — Web Push 사용 시)
+# Supabase 자동 설정용 (선택 — 없으면 Supabase job 건너뜀):
+#   SUPABASE_ACCESS_TOKEN   = sbp_...  (계정 → Access Tokens)
+#   SUPABASE_PROJECT_REF    = xxxx     (URL 의 subdomain 부분)
+#   SUPABASE_SERVICE_ROLE_KEY = eyJ... (Settings → API → service_role)
 #
-# Secret이 등록되어 있지 않으면 VITE_USE_SUPABASE=false(localStorage 모드)로 빌드됨.
+# Secret이 없으면 VITE_USE_SUPABASE=false(localStorage 모드)로 빌드됨.
 # ══════════════════════════════════════════════════════════════════
 
 name: Deploy to GitHub Pages
@@ -80,3 +82,68 @@ jobs:
       - name: GitHub Pages 배포
         uses: actions/deploy-pages@v4
         id: deployment
+
+  # ── 3. Supabase 설정 (SUPABASE_ACCESS_TOKEN Secret 있을 때만 실행) ────────
+  supabase-setup:
+    name: Supabase Setup
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase Secret 유무 확인
+        id: check
+        run: |
+          if [ -n "$ACCESS_TOKEN" ] && [ -n "$PROJECT_REF" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "⏭ SUPABASE_ACCESS_TOKEN 또는 SUPABASE_PROJECT_REF 미설정 — Supabase 설정 건너뜀"
+          fi
+        env:
+          ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF:  ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: 코드 체크아웃
+        if: steps.check.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      - name: Supabase CLI 설치
+        if: steps.check.outputs.enabled == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Supabase 프로젝트 연결
+        if: steps.check.outputs.enabled == 'true'
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: DB 마이그레이션 적용
+        if: steps.check.outputs.enabled == 'true'
+        run: supabase db push --include-all
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: seed-demo Edge Function 배포
+        if: steps.check.outputs.enabled == 'true'
+        run: supabase functions deploy seed-demo --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: 데모 데이터 + 계정 시드 실행
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "$SUPABASE_URL/functions/v1/seed-demo" \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"secret":"demo-seed-2024"}')
+          echo "seed-demo HTTP status: $RESPONSE"
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✓ 데모 데이터 시드 완료"
+          else
+            echo "⚠ seed-demo 응답 $RESPONSE — 로그를 확인하세요"
+          fi
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          ANON_KEY:     ${{ secrets.VITE_SUPABASE_ANON_KEY }}

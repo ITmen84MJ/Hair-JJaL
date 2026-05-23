@@ -1,6 +1,7 @@
 -- ===================================================
 -- Hair JJaL — Initial Database Schema
 -- Supabase PostgreSQL 마이그레이션
+-- 모든 CREATE POLICY 앞에 DROP POLICY IF EXISTS 추가 (멱등성 보장)
 -- ===================================================
 
 -- ── 테이블 생성 ──────────────────────────────────────
@@ -142,9 +143,11 @@ $$;
 
 -- ── shops 정책 ──────────────────────────────────────
 
+DROP POLICY IF EXISTS "shops_select" ON shops;
 CREATE POLICY "shops_select" ON shops
   FOR SELECT USING (id = auth_shop_id());
 
+DROP POLICY IF EXISTS "shops_update" ON shops;
 CREATE POLICY "shops_update" ON shops
   FOR UPDATE USING (
     id = auth_shop_id()
@@ -152,14 +155,17 @@ CREATE POLICY "shops_update" ON shops
   );
 
 -- 최초 가입 시 앱 서버(서비스 키)가 생성 — 브라우저 삽입은 허용 안 함
+DROP POLICY IF EXISTS "shops_insert" ON shops;
 CREATE POLICY "shops_insert" ON shops
   FOR INSERT WITH CHECK (true);
 
 -- ── designers 정책 ──────────────────────────────────
 
+DROP POLICY IF EXISTS "designers_select" ON designers;
 CREATE POLICY "designers_select" ON designers
   FOR SELECT USING (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "designers_update" ON designers;
 CREATE POLICY "designers_update" ON designers
   FOR UPDATE USING (
     shop_id = auth_shop_id()
@@ -169,6 +175,7 @@ CREATE POLICY "designers_update" ON designers
     )
   );
 
+DROP POLICY IF EXISTS "designers_insert" ON designers;
 CREATE POLICY "designers_insert" ON designers
   FOR INSERT WITH CHECK (
     shop_id = auth_shop_id()
@@ -177,15 +184,19 @@ CREATE POLICY "designers_insert" ON designers
 
 -- ── clients 정책 ───────────────────────────────────
 
+DROP POLICY IF EXISTS "clients_select" ON clients;
 CREATE POLICY "clients_select" ON clients
   FOR SELECT USING (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "clients_insert" ON clients;
 CREATE POLICY "clients_insert" ON clients
   FOR INSERT WITH CHECK (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "clients_update" ON clients;
 CREATE POLICY "clients_update" ON clients
   FOR UPDATE USING (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "clients_delete" ON clients;
 CREATE POLICY "clients_delete" ON clients
   FOR DELETE USING (
     shop_id = auth_shop_id()
@@ -195,16 +206,20 @@ CREATE POLICY "clients_delete" ON clients
 -- ── consultations 정책 ─────────────────────────────
 
 -- 공유 링크: 인증 없이 읽기 가능
+DROP POLICY IF EXISTS "consultations_public_share" ON consultations;
 CREATE POLICY "consultations_public_share" ON consultations
   FOR SELECT USING (is_shared = true);
 
 -- 같은 지점 읽기
+DROP POLICY IF EXISTS "consultations_select" ON consultations;
 CREATE POLICY "consultations_select" ON consultations
   FOR SELECT USING (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "consultations_insert" ON consultations;
 CREATE POLICY "consultations_insert" ON consultations
   FOR INSERT WITH CHECK (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "consultations_update" ON consultations;
 CREATE POLICY "consultations_update" ON consultations
   FOR UPDATE USING (
     shop_id = auth_shop_id()
@@ -214,6 +229,7 @@ CREATE POLICY "consultations_update" ON consultations
     )
   );
 
+DROP POLICY IF EXISTS "consultations_delete" ON consultations;
 CREATE POLICY "consultations_delete" ON consultations
   FOR DELETE USING (
     shop_id = auth_shop_id()
@@ -225,24 +241,30 @@ CREATE POLICY "consultations_delete" ON consultations
 
 -- ── bookings 정책 ──────────────────────────────────
 
+DROP POLICY IF EXISTS "bookings_select" ON bookings;
 CREATE POLICY "bookings_select" ON bookings
   FOR SELECT USING (shop_id = auth_shop_id());
 
 -- 고객이 익명으로 예약 신청 가능 (앱에서 shopId 관리)
+DROP POLICY IF EXISTS "bookings_insert" ON bookings;
 CREATE POLICY "bookings_insert" ON bookings
   FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "bookings_update" ON bookings;
 CREATE POLICY "bookings_update" ON bookings
   FOR UPDATE USING (shop_id = auth_shop_id());
 
 -- ── push_subscriptions 정책 ───────────────────────
 
+DROP POLICY IF EXISTS "push_select" ON push_subscriptions;
 CREATE POLICY "push_select" ON push_subscriptions
   FOR SELECT USING (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "push_upsert" ON push_subscriptions;
 CREATE POLICY "push_upsert" ON push_subscriptions
   FOR INSERT WITH CHECK (shop_id = auth_shop_id());
 
+DROP POLICY IF EXISTS "push_update" ON push_subscriptions;
 CREATE POLICY "push_update" ON push_subscriptions
   FOR UPDATE USING (
     designer_id IN (
@@ -258,15 +280,18 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit)
 VALUES ('consultation-photos', 'consultation-photos', true, 5242880)
 ON CONFLICT DO NOTHING;
 
+DROP POLICY IF EXISTS "photos_read" ON storage.objects;
 CREATE POLICY "photos_read" ON storage.objects
   FOR SELECT USING (bucket_id = 'consultation-photos');
 
+DROP POLICY IF EXISTS "photos_upload" ON storage.objects;
 CREATE POLICY "photos_upload" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'consultation-photos'
     AND (storage.foldername(name))[1] = auth_shop_id()::text
   );
 
+DROP POLICY IF EXISTS "photos_delete" ON storage.objects;
 CREATE POLICY "photos_delete" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'consultation-photos'
